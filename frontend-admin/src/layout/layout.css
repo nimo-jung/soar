@@ -1,0 +1,344 @@
+/* ─────────────────────────────────────────────────────────────────
+   Sakai-style Layout  (frontend-admin)
+   Based on PrimeReact Sakai template layout structure
+───────────────────────────────────────────────────────────────── */
+
+/* ── Root wrapper ─────────────────────────────────────────────── */
+.layout-wrapper {
+    min-height: 100vh;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.layout-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 17rem;
+    height: 100%;
+    z-index: 999;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    transition: transform 0.2s ease, left 0.2s ease;
+    background-color: var(--surface-overlay);
+    border-right: 1px solid var(--surface-border);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+    padding-bottom: 1rem;
+}
+
+.layout-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.layout-sidebar::-webkit-scrollbar-thumb {
+    background-color: var(--surface-border);
+    border-radius: 4px;
+}
+
+/* ── Sidebar logo area ─────────────────────────────────────────── */
+.layout-sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    text-decoration: none;
+    border-bottom: 1px solid var(--surface-border);
+    margin-bottom: 0.5rem;
+}
+
+.layout-sidebar-logo span {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+/* ── Sidebar menu ─────────────────────────────────────────────── */
+.layout-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 1rem;
+    flex: 1;
+}
+
+.layout-menu .layout-menu-category {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08rem;
+    color: var(--text-color-secondary);
+    padding: 1rem 0.75rem 0.25rem;
+}
+
+.layout-menu li {
+    list-style: none;
+}
+
+.layout-menu li > a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    margin-bottom: 2px;
+    white-space: nowrap;
+}
+
+.layout-menu li > a .layout-menuitem-icon {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    transition: color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.layout-menu li > a:hover {
+    background-color: var(--surface-hover);
+    color: var(--primary-color);
+}
+
+.layout-menu li > a:hover .layout-menuitem-icon {
+    color: var(--primary-color);
+}
+
+.layout-menu li > a.active-route {
+    background-color: var(--primary-color);
+    color: var(--primary-color-text);
+}
+
+.layout-menu li > a.active-route .layout-menuitem-icon {
+    color: var(--primary-color-text);
+}
+
+/* ── Sidebar footer (logout) ──────────────────────────────────── */
+.layout-sidebar-footer {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--surface-border);
+    margin-top: auto;
+}
+
+.layout-sidebar-footer button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.75rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--red-400);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.15s ease;
+}
+
+.layout-sidebar-footer button:hover {
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+/* ── Main container ───────────────────────────────────────────── */
+.layout-main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin-left: 17rem;
+    transition: margin-left 0.2s ease;
+}
+
+/* ── Topbar ───────────────────────────────────────────────────── */
+.layout-topbar {
+    position: sticky;
+    top: 0;
+    height: 4rem;
+    z-index: 997;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    background-color: var(--surface-card);
+    border-bottom: 1px solid var(--surface-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.layout-menu-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.layout-menu-button:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-color);
+}
+
+.layout-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.layout-topbar-actions .topbar-label {
+    font-size: 0.825rem;
+    color: var(--text-color-secondary);
+}
+
+.layout-topbar-actions button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+    font-size: 1rem;
+}
+
+.layout-topbar-actions button:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-color);
+}
+
+/* ── Main content area ────────────────────────────────────────── */
+.layout-main {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+/* ── Overlay mask (mobile) ────────────────────────────────────── */
+.layout-mask {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 998;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    animation: fadein 0.15s;
+    cursor: pointer;
+}
+
+/* ── Static layout states ─────────────────────────────────────── */
+.layout-wrapper.layout-static .layout-sidebar {
+    transform: translateX(0);
+}
+
+.layout-wrapper.layout-static.layout-static-inactive .layout-sidebar {
+    transform: translateX(-100%);
+}
+
+.layout-wrapper.layout-static.layout-static-inactive .layout-main-container {
+    margin-left: 0;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 991px) {
+    .layout-main-container {
+        margin-left: 0;
+    }
+
+    .layout-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .layout-wrapper.layout-mobile-active .layout-sidebar {
+        transform: translateX(0);
+    }
+
+    .layout-wrapper.layout-mobile-active .layout-mask {
+        display: block;
+    }
+}
+
+/* ── Page content helpers ─────────────────────────────────────── */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* ── Login page ───────────────────────────────────────────────── */
+.layout-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-ground);
+}
+
+.layout-login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 2.5rem;
+    border-radius: 12px;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.layout-login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.layout-login-logo span {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.layout-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ── Field wrapper: label + input 수직 정렬, 완전 너비 보장 ── */
+.layout-login-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 100%;
+}
+
+.layout-login-form .field label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+}
+
+/* PrimeReact Password: 외부 래퍼 → 내부 p-icon-field 전체 체인 full-width 강제 */
+.layout-login-form .field .p-password,
+.layout-login-form .field .p-password .p-icon-field {
+    width: 100%;
+    display: flex;
+}

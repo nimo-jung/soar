@@ -1,3 +1,4 @@
+import './i18n';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,6 +6,7 @@ import 'primereact/resources/themes/lara-dark-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
+import './layout/layout.css';
 import App from './App';
 import { useBrandingStore } from './store/branding.store';
 

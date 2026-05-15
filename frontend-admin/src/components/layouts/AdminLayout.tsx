@@ -1,53 +1,91 @@
-import React from 'react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const navItems = [
-  { label: '테넌트 관리', path: '/tenants', icon: 'pi pi-building' },
-  { label: '위협 인텔리전스', path: '/threat-intel', icon: 'pi pi-shield' },
-  { label: '빌링', path: '/billing', icon: 'pi pi-chart-bar' },
-  { label: '모니터링', path: '/monitoring', icon: 'pi pi-desktop' },
+  { labelKey: 'nav.tenants', path: '/tenants', icon: 'pi pi-building' },
+  { labelKey: 'nav.threatIntel', path: '/threat-intel', icon: 'pi pi-shield' },
+  { labelKey: 'nav.billing', path: '/billing', icon: 'pi pi-chart-bar' },
+  { labelKey: 'nav.monitoring', path: '/monitoring', icon: 'pi pi-desktop' },
 ];
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
+  const { t } = useTranslation();
+  const [staticInactive, setStaticInactive] = useState(false);
+  const [mobileActive, setMobileActive] = useState(false);
+
+  const toggleMenu = () => {
+    if (window.innerWidth < 992) {
+      setMobileActive((v) => !v);
+    } else {
+      setStaticInactive((v) => !v);
+    }
+  };
+
+  const wrapperClass = [
+    'layout-wrapper',
+    'layout-static',
+    staticInactive ? 'layout-static-inactive' : '',
+    mobileActive ? 'layout-mobile-active' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 flex flex-column p-3 gap-2">
-        <div className="text-xl font-bold text-blue-400 p-3 mb-2">SOAR Admin</div>
-        {navItems.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => navigate(item.path)}
-            className={`flex align-items-center gap-2 p-3 rounded cursor-pointer border-none text-left w-full transition-colors ${
-              location.pathname.startsWith(item.path)
-                ? 'bg-blue-700 text-white'
-                : 'bg-transparent text-gray-300 hover:bg-gray-700'
-            }`}
-          >
-            <i className={item.icon} />
-            {item.label}
-          </button>
-        ))}
-        <div className="mt-auto">
-          <button
-            onClick={() => { logout(); navigate('/login'); }}
-            className="flex align-items-center gap-2 p-3 rounded w-full border-none bg-transparent text-red-400 hover:bg-red-900 cursor-pointer"
-          >
+    <div className={wrapperClass}>
+      {/* ── Sidebar ── */}
+      <div className="layout-sidebar">
+        <div className="layout-sidebar-logo">
+          <i className="pi pi-shield" style={{ fontSize: '1.5rem', color: 'var(--primary-color)' }} />
+          <span>SOAR Admin</span>
+        </div>
+
+        <ul className="layout-menu">
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) => (isActive ? 'active-route' : '')}
+                onClick={() => setMobileActive(false)}
+              >
+                <i className={`layout-menuitem-icon ${item.icon}`} />
+                <span>{t(item.labelKey)}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        <div className="layout-sidebar-footer">
+          <button onClick={() => { logout(); navigate('/login'); }}>
             <i className="pi pi-sign-out" />
-            로그아웃
+            <span>{t('common.logout')}</span>
           </button>
         </div>
-      </aside>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
+      {/* ── Main container ── */}
+      <div className="layout-main-container">
+        <div className="layout-topbar">
+          <button className="layout-menu-button" onClick={toggleMenu} aria-label="메뉴 토글">
+            <i className="pi pi-bars" />
+          </button>
+          <div className="layout-topbar-actions">
+            <LanguageSwitcher />
+            <span className="topbar-label">{t('nav.masterAdmin')}</span>
+          </div>
+        </div>
+
+        <div className="layout-main">
+          <Outlet />
+        </div>
+      </div>
+
+      {/* ── Mobile overlay ── */}
+      <div className="layout-mask" onClick={() => setMobileActive(false)} />
     </div>
   );
 };

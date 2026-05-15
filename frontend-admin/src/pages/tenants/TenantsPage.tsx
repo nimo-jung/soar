@@ -6,6 +6,7 @@ import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 
 interface Tenant {
@@ -25,10 +26,13 @@ const statusSeverity = (status: string) => {
 
 const TenantsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ slug: '', name: '', contactEmail: '' });
+
+  const locale = i18n.language.startsWith('ko') ? 'ko-KR' : 'en-US';
 
   const load = async () => {
     setLoading(true);
@@ -58,34 +62,34 @@ const TenantsPage: React.FC = () => {
   return (
     <div className="p-4">
       <div className="flex justify-content-between align-items-center mb-4">
-        <h1 className="text-2xl font-bold">테넌트 관리</h1>
-        <Button label="테넌트 생성" icon="pi pi-plus" onClick={() => setShowCreate(true)} />
+        <h1 className="text-2xl font-bold">{t('tenants.title')}</h1>
+        <Button label={t('tenants.createBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
       </div>
 
       <DataTable value={tenants} loading={loading} paginator rows={10} className="p-datatable-sm">
-        <Column field="id" header="ID" style={{ width: '60px' }} />
-        <Column field="slug" header="슬러그" />
-        <Column field="name" header="고객사명" />
+        <Column field="id" header={t('tenants.table.id')} style={{ width: '60px' }} />
+        <Column field="slug" header={t('tenants.table.slug')} />
+        <Column field="name" header={t('tenants.table.name')} />
         <Column
           field="status"
-          header="상태"
+          header={t('common.status')}
           body={(row: Tenant) => (
             <Tag value={row.status} severity={statusSeverity(row.status) as any} />
           )}
         />
-        <Column field="contactEmail" header="담당자 이메일" />
+        <Column field="contactEmail" header={t('tenants.table.contactEmail')} />
         <Column
           field="createdAt"
-          header="생성일"
-          body={(row: Tenant) => new Date(row.createdAt).toLocaleDateString('ko-KR')}
+          header={t('common.createdAt')}
+          body={(row: Tenant) => new Date(row.createdAt).toLocaleDateString(locale)}
         />
         <Column
-          header="액션"
+          header={t('common.actions')}
           body={(row: Tenant) => (
             <div className="flex gap-2">
               <Button
                 size="small"
-                label={row.status === 'ACTIVE' ? '정지' : '활성화'}
+                label={row.status === 'ACTIVE' ? t('tenants.table.suspendBtn') : t('tenants.table.activateBtn')}
                 severity={row.status === 'ACTIVE' ? 'warning' : 'success'}
                 onClick={() => handleSuspend(row.id, row.status)}
               />
@@ -101,23 +105,23 @@ const TenantsPage: React.FC = () => {
       </DataTable>
 
       <Dialog
-        header="테넌트 생성"
+        header={t('tenants.dialog.title')}
         visible={showCreate}
         style={{ width: '480px' }}
         onHide={() => setShowCreate(false)}
       >
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">슬러그 (영문 소문자)</label>
+            <label className="block mb-1 text-sm">{t('tenants.dialog.slug')}</label>
             <InputText
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value })}
               className="w-full"
-              placeholder="acme-corp"
+              placeholder={t('tenants.dialog.slugPlaceholder')}
             />
           </div>
           <div>
-            <label className="block mb-1 text-sm">고객사명</label>
+            <label className="block mb-1 text-sm">{t('tenants.dialog.companyName')}</label>
             <InputText
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -125,14 +129,14 @@ const TenantsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block mb-1 text-sm">담당자 이메일</label>
+            <label className="block mb-1 text-sm">{t('tenants.dialog.contactEmail')}</label>
             <InputText
               value={form.contactEmail}
               onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
               className="w-full"
             />
           </div>
-          <Button label="생성" onClick={handleCreate} />
+          <Button label={t('common.create')} onClick={handleCreate} />
         </div>
       </Dialog>
     </div>

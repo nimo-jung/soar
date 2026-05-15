@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from 'primereact/card';
+import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
@@ -10,6 +10,7 @@ import { useAuthStore } from '../../store/auth.store';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const setToken = useAuthStore((s) => s.setToken);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +19,7 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('이메일과 비밀번호를 입력하세요.');
+      setError(t('auth.errorEmpty'));
       return;
     }
     setLoading(true);
@@ -31,45 +32,62 @@ const LoginPage: React.FC = () => {
       setToken(res.data.accessToken);
       navigate('/tenants');
     } catch {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      setError(t('auth.errorInvalid'));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleLogin();
+  };
+
   return (
-    <div className="flex align-items-center justify-content-center min-h-screen bg-gray-900">
-      <Card title="SOAR Master Admin" className="w-full md:w-4">
-        <div className="flex flex-column gap-3">
-          {error && <Message severity="error" text={error} />}
-          <div>
-            <label className="block mb-1 text-sm">이메일</label>
+    <div className="layout-login">
+      <div className="layout-login-card">
+        <div className="layout-login-logo">
+          <i className="pi pi-shield" style={{ fontSize: '2.5rem', color: 'var(--primary-color)' }} />
+          <span>{t('auth.title')}</span>
+        </div>
+
+        <div className="layout-login-form" onKeyDown={handleKeyDown}>
+          {error && <Message severity="error" text={error} className="w-full" />}
+
+          <div className="field">
+            <label htmlFor="email">{t('common.email')}</label>
             <InputText
+              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full"
-              placeholder="admin@soar.io"
+              placeholder={t('auth.emailPlaceholder')}
+              autoComplete="username"
             />
           </div>
-          <div>
-            <label className="block mb-1 text-sm">비밀번호</label>
+
+          <div className="field">
+            <label htmlFor="password">{t('common.password')}</label>
             <Password
+              inputId="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full"
+              inputClassName="w-full"
               feedback={false}
               toggleMask
+              autoComplete="current-password"
             />
           </div>
+
           <Button
-            label="로그인"
+            label={t('auth.submit')}
             icon="pi pi-sign-in"
             onClick={handleLogin}
             loading={loading}
             className="w-full"
           />
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

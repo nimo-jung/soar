@@ -1,0 +1,91 @@
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "logout": "Logout",
+    "actions": "Actions",
+    "status": "Status",
+    "createdAt": "Created At",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "register": "Register",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "loading": "Loading...",
+    "name": "Name",
+    "description": "Description"
+  },
+  "nav": {
+    "categories": {
+      "security": "Security Ops",
+      "collection": "Collection",
+      "management": "Management"
+    },
+    "dashboard": "Dashboard",
+    "alerts": "Alerts",
+    "playbooks": "Playbooks",
+    "collectors": "Collector",
+    "settings": "Settings"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "subtitle": "Sign in to continue to the portal.",
+    "tenantSlug": "Tenant Slug",
+    "tenantSlugPlaceholder": "acme-corp",
+    "submit": "Sign In",
+    "errorEmpty": "Please fill in all fields.",
+    "errorInvalid": "Please check your login credentials.",
+    "tagline": "Security Orchestration, Automation & Response.\nYour smart platform for instant threat response.",
+    "features": {
+      "realtime": "Real-time threat detection & automated response",
+      "isolation": "Tenant-isolated security data management",
+      "playbook": "Playbook-based automation workflows"
+    }
+  },
+  "collectors": {
+    "title": "Collector Management",
+    "registerBtn": "Register Collector",
+    "apiKeyWarning": "API Key (shown only once — save it immediately!)",
+    "dialog": {
+      "title": "Register Collector",
+      "name": "Name",
+      "description": "Description"
+    },
+    "table": {
+      "name": "Name",
+      "description": "Description",
+      "registeredAt": "Registered At",
+      "deactivateBtn": "Deactivate"
+    }
+  },
+  "alerts": {
+    "title": "Alert List",
+    "table": {
+      "title": "Title",
+      "severity": "Severity",
+      "sourceIp": "Source IP",
+      "occurredAt": "Occurred At",
+      "acknowledgeBtn": "Acknowledge"
+    }
+  },
+  "playbooks": {
+    "title": "Playbooks",
+    "createBtn": "Create Playbook",
+    "dialog": {
+      "title": "Create Playbook",
+      "name": "Name",
+      "description": "Description",
+      "definition": "Workflow Definition (JSON)"
+    },
+    "table": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status",
+      "runBtn": "Run"
+    }
+  }
+}

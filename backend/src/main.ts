@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { runAdminSeed } from './database/seeds/admin.seeder';
+import { runTenantSeed } from './database/seeds/tenant.seeder';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -36,6 +37,13 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'development') {
     const dataSource = app.get(DataSource);
     await runAdminSeed(dataSource);
+    await runTenantSeed(
+      dataSource,
+      process.env.DB_HOST ?? 'localhost',
+      parseInt(process.env.DB_PORT ?? '3306', 10),
+      process.env.DB_USER ?? 'soar',
+      process.env.DB_PASSWORD ?? 'soarpassword',
+    );
   }
 
   const port = process.env.PORT_BACKEND ?? 3000;

@@ -5,6 +5,7 @@ import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 
 interface ThreatFeed {
@@ -18,6 +19,7 @@ interface ThreatFeed {
 }
 
 const ThreatIntelPage: React.FC = () => {
+  const { t } = useTranslation();
   const [feeds, setFeeds] = useState<ThreatFeed[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -49,16 +51,16 @@ const ThreatIntelPage: React.FC = () => {
   return (
     <div className="p-4">
       <div className="flex justify-content-between align-items-center mb-4">
-        <h1 className="text-2xl font-bold">글로벌 위협 인텔리전스</h1>
-        <Button label="TI 등록" icon="pi pi-plus" onClick={() => setShowCreate(true)} />
+        <h1 className="text-2xl font-bold">{t('threatIntel.title')}</h1>
+        <Button label={t('threatIntel.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
       </div>
 
       <DataTable value={feeds} loading={loading} paginator rows={10} className="p-datatable-sm">
-        <Column field="feedType" header="유형" />
-        <Column field="indicator" header="지표" />
+        <Column field="feedType" header={t('threatIntel.table.type')} />
+        <Column field="indicator" header={t('threatIntel.table.indicator')} />
         <Column
           field="severity"
-          header="위험도"
+          header={t('threatIntel.table.severity')}
           body={(row: ThreatFeed) => (
             <Tag
               value={row.severity}
@@ -66,13 +68,13 @@ const ThreatIntelPage: React.FC = () => {
             />
           )}
         />
-        <Column field="source" header="출처" />
+        <Column field="source" header={t('threatIntel.table.source')} />
         <Column
-          header="액션"
+          header={t('common.actions')}
           body={(row: ThreatFeed) => (
             <Button
               size="small"
-              label="비활성화"
+              label={t('threatIntel.table.deactivateBtn')}
               severity="danger"
               onClick={() => handleDeactivate(row.id)}
               disabled={!row.isActive}
@@ -81,25 +83,25 @@ const ThreatIntelPage: React.FC = () => {
         />
       </DataTable>
 
-      <Dialog header="TI 피드 등록" visible={showCreate} style={{ width: '480px' }} onHide={() => setShowCreate(false)}>
+      <Dialog header={t('threatIntel.dialog.title')} visible={showCreate} style={{ width: '480px' }} onHide={() => setShowCreate(false)}>
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">유형</label>
+            <label className="block mb-1 text-sm">{t('threatIntel.dialog.type')}</label>
             <InputText value={form.feedType} onChange={(e) => setForm({ ...form, feedType: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">지표</label>
+            <label className="block mb-1 text-sm">{t('threatIntel.dialog.indicator')}</label>
             <InputText value={form.indicator} onChange={(e) => setForm({ ...form, indicator: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">위험도</label>
+            <label className="block mb-1 text-sm">{t('threatIntel.dialog.severity')}</label>
             <InputText value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">출처</label>
+            <label className="block mb-1 text-sm">{t('threatIntel.dialog.source')}</label>
             <InputText value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} className="w-full" />
           </div>
-          <Button label="등록" onClick={handleCreate} />
+          <Button label={t('common.register')} onClick={handleCreate} />
         </div>
       </Dialog>
     </div>

@@ -1,0 +1,74 @@
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "logout": "Logout",
+    "actions": "Actions",
+    "status": "Status",
+    "createdAt": "Created At",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "register": "Register",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "suspend": "Suspend",
+    "loading": "Loading...",
+    "name": "Name",
+    "description": "Description"
+  },
+  "nav": {
+    "tenants": "Tenant Management",
+    "threatIntel": "Threat Intelligence",
+    "billing": "Billing",
+    "monitoring": "Monitoring",
+    "masterAdmin": "Master Admin"
+  },
+  "auth": {
+    "title": "SOAR Master Admin",
+    "emailPlaceholder": "admin@soar.io",
+    "submit": "Sign In",
+    "errorEmpty": "Please enter email and password.",
+    "errorInvalid": "Incorrect email or password."
+  },
+  "tenants": {
+    "title": "Tenant Management",
+    "createBtn": "Create Tenant",
+    "dialog": {
+      "title": "Create Tenant",
+      "slug": "Slug (lowercase)",
+      "slugPlaceholder": "acme-corp",
+      "companyName": "Company Name",
+      "contactEmail": "Contact Email"
+    },
+    "table": {
+      "id": "ID",
+      "slug": "Slug",
+      "name": "Company Name",
+      "contactEmail": "Contact Email",
+      "suspendBtn": "Suspend",
+      "activateBtn": "Activate"
+    }
+  },
+  "threatIntel": {
+    "title": "Global Threat Intelligence",
+    "registerBtn": "Register TI",
+    "dialog": {
+      "title": "Register TI Feed",
+      "type": "Type",
+      "indicator": "Indicator",
+      "severity": "Severity",
+      "source": "Source"
+    },
+    "table": {
+      "type": "Type",
+      "indicator": "Indicator",
+      "severity": "Severity",
+      "source": "Source",
+      "deactivateBtn": "Deactivate"
+    }
+  }
+}

@@ -1,0 +1,651 @@
+/* ─────────────────────────────────────────────────────────────────
+   Verona-style Layout  (frontend-tenant)
+   Based on PrimeReact Verona template layout structure
+   Branding colors injected via --brand-primary / --brand-gradient
+───────────────────────────────────────────────────────────────── */
+
+/* ── CSS custom property defaults ────────────────────────────── */
+:root {
+    --brand-primary: var(--primary-color);
+    --brand-gradient-from: #6366f1;
+    --brand-gradient-to: #312e81;
+}
+
+/* ── Root wrapper ─────────────────────────────────────────────── */
+.layout-wrapper {
+    min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR  (Verona: logo + grouped menu categories)
+═══════════════════════════════════════════════════════════════ */
+
+.layout-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 17rem;
+    height: 100%;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--surface-overlay);
+    border-right: 1px solid var(--surface-border);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.layout-sidebar::-webkit-scrollbar { width: 3px; }
+.layout-sidebar::-webkit-scrollbar-thumb {
+    background: var(--surface-border);
+    border-radius: 3px;
+}
+
+/* ── Sidebar: brand header ─────────────────────────────────────── */
+.layout-sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1.5rem 1.25rem;
+    border-bottom: 1px solid var(--surface-border);
+    flex-shrink: 0;
+}
+
+.layout-sidebar-header .brand-logo {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+}
+
+.layout-sidebar-header .brand-icon {
+    font-size: 1.6rem;
+    color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.layout-sidebar-header .brand-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+/* ── Sidebar: scrollable menu area ──────────────────────────────── */
+.layout-menu-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.layout-menu-container::-webkit-scrollbar { width: 3px; }
+.layout-menu-container::-webkit-scrollbar-thumb {
+    background: var(--surface-border);
+    border-radius: 3px;
+}
+
+/* ── Sidebar: grouped menu (Verona style) ──────────────────────── */
+.layout-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0 1rem;
+}
+
+/* Category section label */
+.layout-menu .layout-menu-category {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    color: var(--text-color-secondary);
+    padding: 1.25rem 0.5rem 0.35rem;
+    opacity: 0.7;
+}
+
+.layout-menu > li:first-child .layout-menu-category {
+    padding-top: 0.5rem;
+}
+
+.layout-menu li { list-style: none; }
+
+.layout-menu li > a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.layout-menu li > a .menu-icon {
+    font-size: 0.95rem;
+    color: var(--text-color-secondary);
+    flex-shrink: 0;
+    width: 1.25rem;
+    text-align: center;
+    transition: color 0.15s ease;
+}
+
+.layout-menu li > a .menu-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layout-menu li > a:hover {
+    background-color: var(--surface-hover);
+    color: var(--brand-primary);
+    padding-left: 1rem;
+}
+
+.layout-menu li > a:hover .menu-icon {
+    color: var(--brand-primary);
+}
+
+/* Active: left accent bar + gradient background */
+.layout-menu li > a.active-route {
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--brand-primary) 20%, transparent),
+        color-mix(in srgb, var(--brand-primary) 8%, transparent)
+    );
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.layout-menu li > a.active-route::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background-color: var(--brand-primary);
+}
+
+.layout-menu li > a.active-route .menu-icon {
+    color: var(--brand-primary);
+}
+
+/* ── Sidebar: user profile footer ─────────────────────────────── */
+.layout-sidebar-profile {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--surface-border);
+    flex-shrink: 0;
+}
+
+.layout-sidebar-profile .profile-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.layout-sidebar-profile .profile-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 55%, #000));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.layout-sidebar-profile .profile-text { flex: 1; min-width: 0; }
+
+.layout-sidebar-profile .profile-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layout-sidebar-profile .profile-role {
+    font-size: 0.7rem;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+.layout-sidebar-profile .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--red-400);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.825rem;
+    transition: background-color 0.15s ease;
+}
+
+.layout-sidebar-profile .logout-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN CONTAINER
+═══════════════════════════════════════════════════════════════ */
+
+.layout-main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin-left: 17rem;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOPBAR  (Verona: breadcrumb left + profile chip right)
+═══════════════════════════════════════════════════════════════ */
+
+.layout-topbar {
+    position: sticky;
+    top: 0;
+    height: 4.5rem;
+    z-index: 997;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    background-color: var(--surface-card);
+    border-bottom: 1px solid var(--surface-border);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    gap: 1rem;
+}
+
+.layout-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.layout-menu-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.layout-menu-button:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-color);
+}
+
+/* Verona-style breadcrumb */
+.layout-topbar-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.825rem;
+    color: var(--text-color-secondary);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-home {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-separator {
+    font-size: 0.7rem;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-current {
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Topbar: right actions ─────────────────────────────────────── */
+.layout-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.topbar-icon-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    font-size: 1rem;
+    position: relative;
+}
+
+.topbar-icon-btn:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-color);
+}
+
+.topbar-icon-btn .badge {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background-color: var(--red-400);
+    border: 2px solid var(--surface-card);
+}
+
+/* User profile chip */
+.topbar-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.35rem;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid var(--surface-border);
+    transition: background-color 0.15s ease;
+}
+
+.topbar-profile:hover { background-color: var(--surface-hover); }
+
+.topbar-profile .topbar-avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 55%, #000));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.topbar-profile .topbar-username {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN CONTENT AREA
+═══════════════════════════════════════════════════════════════ */
+
+.layout-main {
+    flex: 1;
+    padding: 2rem;
+    background-color: var(--surface-ground);
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+}
+
+.page-header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.page-header .page-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    margin: 0.25rem 0 0;
+}
+
+/* ── Mobile overlay ───────────────────────────────────────────── */
+.layout-mask {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadein 0.15s;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT STATE CLASSES
+═══════════════════════════════════════════════════════════════ */
+
+.layout-wrapper.layout-static .layout-sidebar {
+    transform: translateX(0);
+}
+
+.layout-wrapper.layout-static.layout-static-inactive .layout-sidebar {
+    transform: translateX(-100%);
+}
+
+.layout-wrapper.layout-static.layout-static-inactive .layout-main-container {
+    margin-left: 0;
+}
+
+@media (max-width: 991px) {
+    .layout-main-container { margin-left: 0; }
+    .layout-sidebar { transform: translateX(-100%); }
+
+    .layout-wrapper.layout-mobile-active .layout-sidebar {
+        transform: translateX(0);
+    }
+    .layout-wrapper.layout-mobile-active .layout-mask {
+        display: block;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN PAGE  (Verona split-screen style)
+═══════════════════════════════════════════════════════════════ */
+
+.layout-login-verona {
+    min-height: 100vh;
+    display: flex;
+}
+
+/* Left decorative panel */
+.layout-login-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 4rem;
+    background: linear-gradient(
+        145deg,
+        var(--brand-gradient-from, #6366f1) 0%,
+        var(--brand-gradient-to, #312e81) 100%
+    );
+    position: relative;
+    overflow: hidden;
+}
+
+.layout-login-left::before {
+    content: '';
+    position: absolute;
+    top: -8rem;
+    right: -8rem;
+    width: 24rem;
+    height: 24rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+}
+
+.layout-login-left::after {
+    content: '';
+    position: absolute;
+    bottom: -6rem;
+    left: -4rem;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+}
+
+.login-left-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 28rem;
+}
+
+.login-left-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+}
+
+.login-left-logo img { height: 3rem; }
+
+.login-left-logo .logo-icon {
+    font-size: 2.5rem;
+    color: #fff;
+    opacity: 0.95;
+}
+
+.login-left-logo .logo-name {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+.login-left-tagline {
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.65;
+    margin-bottom: 2.5rem;
+}
+
+.login-feature-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+}
+
+.login-feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.login-feature-list li i {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    flex-shrink: 0;
+}
+
+/* Right form panel */
+.layout-login-right {
+    width: 30rem;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem;
+    background: var(--surface-ground);
+    overflow-y: auto;
+}
+
+.login-right-header {
+    margin-bottom: 2rem;
+}
+
+.login-right-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 0.4rem;
+}
+
+.login-right-header p {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    margin: 0;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ── Field wrapper: label + input 수직 정렬, 완전 너비 보장 ── */
+.login-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 100%;
+}
+
+.login-form .field label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+}
+
+/* PrimeReact Password: 외부 래퍼 → 내부 p-icon-field 전체 체인 full-width 강제 */
+.login-form .field .p-password,
+.login-form .field .p-password .p-icon-field {
+    width: 100%;
+    display: flex;
+}
+
+@media (max-width: 900px) {
+    .layout-login-left { display: none; }
+    .layout-login-right {
+        width: 100%;
+        padding: 2rem 1.5rem;
+    }
+}

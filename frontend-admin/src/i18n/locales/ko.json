@@ -1,0 +1,74 @@
+{
+  "common": {
+    "email": "이메일",
+    "password": "비밀번호",
+    "login": "로그인",
+    "logout": "로그아웃",
+    "actions": "액션",
+    "status": "상태",
+    "createdAt": "생성일",
+    "create": "생성",
+    "save": "저장",
+    "cancel": "취소",
+    "register": "등록",
+    "active": "활성",
+    "inactive": "비활성",
+    "deactivate": "비활성화",
+    "activate": "활성화",
+    "suspend": "정지",
+    "loading": "로딩 중...",
+    "name": "이름",
+    "description": "설명"
+  },
+  "nav": {
+    "tenants": "테넌트 관리",
+    "threatIntel": "위협 인텔리전스",
+    "billing": "빌링",
+    "monitoring": "모니터링",
+    "masterAdmin": "Master Admin"
+  },
+  "auth": {
+    "title": "SOAR Master Admin",
+    "emailPlaceholder": "admin@soar.io",
+    "submit": "로그인",
+    "errorEmpty": "이메일과 비밀번호를 입력하세요.",
+    "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다."
+  },
+  "tenants": {
+    "title": "테넌트 관리",
+    "createBtn": "테넌트 생성",
+    "dialog": {
+      "title": "테넌트 생성",
+      "slug": "슬러그 (영문 소문자)",
+      "slugPlaceholder": "acme-corp",
+      "companyName": "고객사명",
+      "contactEmail": "담당자 이메일"
+    },
+    "table": {
+      "id": "ID",
+      "slug": "슬러그",
+      "name": "고객사명",
+      "contactEmail": "담당자 이메일",
+      "suspendBtn": "정지",
+      "activateBtn": "활성화"
+    }
+  },
+  "threatIntel": {
+    "title": "글로벌 위협 인텔리전스",
+    "registerBtn": "TI 등록",
+    "dialog": {
+      "title": "TI 피드 등록",
+      "type": "유형",
+      "indicator": "지표",
+      "severity": "위험도",
+      "source": "출처"
+    },
+    "table": {
+      "type": "유형",
+      "indicator": "지표",
+      "severity": "위험도",
+      "source": "출처",
+      "deactivateBtn": "비활성화"
+    }
+  }
+}
