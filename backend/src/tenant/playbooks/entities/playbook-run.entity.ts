@@ -14,7 +14,7 @@ export class PlaybookRun {
   @Column({ name: 'playbook_id', comment: '실행된 플레이북 ID' })
   playbookId: number;
 
-  @Column({ name: 'alert_id', nullable: true, comment: '트리거된 알람 ID' })
+  @Column({ name: 'alert_id', type: 'int', nullable: true, comment: '트리거된 알람 ID' })
   alertId: number | null;
 
   @Column({

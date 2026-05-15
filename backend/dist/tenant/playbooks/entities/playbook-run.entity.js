@@ -37,7 +37,7 @@ __decorate([
     __metadata("design:type", Number)
 ], PlaybookRun.prototype, "playbookId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'alert_id', nullable: true, comment: '트리거된 알람 ID' }),
+    (0, typeorm_1.Column)({ name: 'alert_id', type: 'int', nullable: true, comment: '트리거된 알람 ID' }),
     __metadata("design:type", Object)
 ], PlaybookRun.prototype, "alertId", void 0);
 __decorate([

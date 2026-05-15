@@ -60,7 +60,7 @@ start_backend() {
 start_admin() {
   info "Frontend Admin (Vite dev) 기동 중..."
   cd "$REPO_ROOT/frontend-admin"
-  [[ -d node_modules ]] || npm ci
+  [[ -d node_modules ]] || npm install
   npm run dev &
   save_pid frontend-admin
   success "Admin UI PID: $(cat "$PID_DIR/frontend-admin.pid")  →  http://localhost:${PORT_FRONTEND_ADMIN:-5174}"
@@ -70,7 +70,7 @@ start_admin() {
 start_tenant() {
   info "Frontend Tenant (Vite dev) 기동 중..."
   cd "$REPO_ROOT/frontend-tenant"
-  [[ -d node_modules ]] || npm ci
+  [[ -d node_modules ]] || npm install
   npm run dev &
   save_pid frontend-tenant
   success "Tenant UI PID: $(cat "$PID_DIR/frontend-tenant.pid")  →  http://localhost:${PORT_FRONTEND_TENANT:-5173}"

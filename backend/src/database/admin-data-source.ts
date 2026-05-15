@@ -16,7 +16,7 @@ export default new DataSource({
   password: process.env.DB_PASSWORD ?? 'soarpassword',
   database: 'soar_admin',
   entities: [path.join(__dirname, '../**/*.entity{.ts,.js}')],
-  migrations: [path.join(__dirname, '../database/migrations/admin/**/*{.ts,.js}')],
+  migrations: [path.join(__dirname, './migrations/admin/**/*{.ts,.js}')],
   synchronize: false,
   charset: 'utf8mb4',
   timezone: '+00:00',
