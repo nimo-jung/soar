@@ -1,0 +1,21 @@
+#!/bin/bash
+# infra/mariadb/init/01-init.sh
+# ─────────────────────────────────────────────────────────────────────────────
+# 목적: 앱 계정(MYSQL_USER)에 테넌트 DB 동적 생성 권한 부여
+#
+# NestJS의 TenantProvisioningService가 신규 테넌트 생성 시
+# QueryRunner를 통해 "CREATE DATABASE tenant_db_{id}" 를 실행합니다.
+# 기본 MYSQL_USER 권한은 soar_admin 에만 한정되므로,
+# tenant_db_* 패턴의 DB에 대한 CREATE/ALL 권한을 명시적으로 추가합니다.
+# ─────────────────────────────────────────────────────────────────────────────
+set -e
+
+mysql -u root -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
+  -- 테넌트 전용 DB (tenant_db_*) 에 대한 전체 권한 부여
+  GRANT ALL PRIVILEGES ON \`tenant_db_%\`.* TO '${MYSQL_USER}'@'%';
+
+  -- 신규 DB 생성 권한 (테넌트 프로비저닝 시 필요)
+  GRANT CREATE ON *.* TO '${MYSQL_USER}'@'%';
+
+  FLUSH PRIVILEGES;
+EOSQL

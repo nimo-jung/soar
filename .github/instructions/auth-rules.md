@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Auth & User Business Rules
 
 ## 1. 회원가입 (Signup)

@@ -1,0 +1,8 @@
+<!-- infra/clickhouse/config/logging.xml -->
+<!-- 개발 환경에서 ClickHouse 로그 레벨을 낮춰 노이즈를 줄입니다. -->
+<clickhouse>
+    <logger>
+        <level>warning</level>
+        <console>true</console>
+    </logger>
+</clickhouse>

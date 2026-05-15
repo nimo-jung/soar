@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Log Ingestion & Processing Rules
 
 ## 1. 수집 엔진 (GoLang)
