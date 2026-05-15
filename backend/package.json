@@ -18,9 +18,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migration:generate:admin": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/admin/$npm_config_name",
-    "migration:run:admin": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
-    "migration:revert:admin": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert",
+    "migration:generate:admin": "typeorm-ts-node-commonjs -d src/database/admin-data-source.ts migration:generate src/database/migrations/admin/$npm_config_name",
+    "migration:run:admin": "typeorm-ts-node-commonjs -d src/database/admin-data-source.ts migration:run",
+    "migration:revert:admin": "typeorm-ts-node-commonjs -d src/database/admin-data-source.ts migration:revert",
+    "migration:run:tenant": "typeorm-ts-node-commonjs -d src/database/tenant-data-source.ts migration:run",
+    "migration:revert:tenant": "typeorm-ts-node-commonjs -d src/database/tenant-data-source.ts migration:revert",
     "setup": "ts-node src/database/seeds/admin.seeder.ts"
   },
   "dependencies": {
