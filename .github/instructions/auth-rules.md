@@ -4,16 +4,31 @@ applyTo: "**"
 
 # Auth & User Business Rules
 
-## 1. 회원가입 (Signup)
-- 모든 유저는 특정 `Tenant`에 소속되어야 함.
-- 비밀번호는 반드시 `bcrypt`를 사용하여 솔팅(Salting) 후 해시 저장.
-- 회원가입 성공 시, 해당 테넌트의 전용 MariaDB 스키마가 존재하는지 확인하고 없으면 자동 생성 스크립트 실행.
+## 1. 계정/비밀번호 기본 규칙
+- 비밀번호 저장은 반드시 bcrypt 해시를 사용한다.
+- Master Admin 계정은 soar_admin.master_users에서 관리한다.
+- Tenant 사용자 계정은 tenant_db_{slug}.tenant_users에서 관리한다.
 
-## 2. 로그인 (Login)
-- JWT 전략을 사용하며 Payload에 `userId`, `tenantId`, `role`을 포함함.
-- 로그인 시도 5회 실패 시 Redis를 이용해 30분간 해당 IP 차단.
-- 모든 API 요청 시 JWT의 `tenantId`와 요청 헤더의 `x-tenant-id`가 일치하는지 Interceptor에서 검증.
+## 2. 로그인 엔드포인트 규칙
+- Master 로그인 엔드포인트는 POST /auth/master/login 이다.
+- Tenant 로그인 엔드포인트는 POST /auth/tenant/login 이다.
+- Master 로그인 요청 본문은 email, password를 포함해야 한다.
+- Tenant 로그인 요청 본문은 tenantSlug, email, password를 포함해야 한다.
+- Tenant 로그인 응답에는 accessToken과 brandingConfig를 포함해야 한다.
 
-## 3. 권한 (RBAC)
-- Role은 `SUPER_ADMIN`, `TENANT_ADMIN`, `USER`로 구분.
-- 테넌트 설정 변경은 `TENANT_ADMIN` 이상만 가능함.
+## 3. JWT 및 권한 규칙
+- JWT에는 isMaster, role, tenantId(tenant 계정인 경우)를 포함한다.
+- Master API는 MasterGuard로 보호하고, Tenant API는 TenantGuard + RolesGuard로 보호한다.
+- Tenant RBAC 역할은 운영자(OPERATOR), 분석가(ANALYST), 감사자(AUDITOR)를 사용한다.
+
+## 4. Dev/Prod 접근 경로 규칙
+- Dev 모드에서는 각 UI가 Vite proxy를 통해 backend-dev로 인증 요청을 전달해야 한다.
+- 컨테이너 환경의 dev proxy target은 localhost가 아닌 backend-dev 서비스명을 기본값으로 사용한다.
+- Prod 모드 외부 진입은 gateway-prod 단일 엔드포인트를 사용한다.
+- Prod 경로는 /admin, /tenant, /api, /auth, /docs 로 분리한다.
+
+## 5. 인증 장애 예방/검증 규칙
+- 로그인 500 에러 발생 시 우선 DB 스키마와 권한(soar_admin, tenant_db_*)을 확인한다.
+- 운영 환경에서는 auto-migration을 사용하지 않고 마이그레이션을 명시적으로 수행한다.
+- 배포/변경 후 scripts/smoke.sh dev 또는 scripts/smoke.sh prod 로 인증 스모크 테스트를 수행한다.
+- 프론트에서 ECONNREFUSED가 보이면 Vite proxy target과 backend 서비스 상태를 우선 점검한다.

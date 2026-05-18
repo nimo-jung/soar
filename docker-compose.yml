@@ -2,8 +2,10 @@ name: soar
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 실행 방법
+#   개발 모드:       docker compose --profile dev --env-file .env.dev up -d --build
+#   운영 모드:       docker compose --profile prod --env-file .env.prod up -d --build
+#   운영 진입점:      http://localhost:${PORT_ADMIN_GATEWAY:-8088}/admin (Master), /tenant (Tenant), /docs
 #   인프라만:        docker compose up -d
-#   전체(앱 포함):   docker compose --profile app up -d
 #   인프라 종료:     docker compose down
 #   데이터까지 삭제: docker compose down -v
 # ─────────────────────────────────────────────────────────────────────────────
@@ -74,7 +76,7 @@ services:
     networks:
       - soar-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- 'http://localhost:8123/?query=SELECT%201' | grep -q '1'"]
+      test: ["CMD-SHELL", "clickhouse-client --host localhost --port 9000 --query 'SELECT 1' >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -139,19 +141,22 @@ services:
         condition: service_healthy
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Application  (docker compose --profile app up -d)
+  # Application
+  #   Dev:  docker compose --profile dev --env-file .env.dev up -d --build
+  #   Prod: docker compose --profile prod --env-file .env.prod up -d --build
   # ───────────────────────────────────────────────────────────────────────────
 
-  backend:
-    profiles: [app]
+  backend-dev:
+    profiles: [dev]
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: development          # 개발: hot-reload / 프로덕션: target: production
-    container_name: soar-backend
-    env_file: .env
+      target: development
+    container_name: soar-backend-dev
+    env_file:
+      - .env.dev
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: development
       # MariaDB (soar_admin)
       DB_HOST: mariadb
       DB_PORT: "3306"
@@ -190,12 +195,60 @@ services:
       redpanda:
         condition: service_healthy
 
-  go-engine:
-    profiles: [app]
+  backend-prod:
+    profiles: [prod]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: soar-backend-prod
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+      # MariaDB (soar_admin)
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+      DB_NAME: soar_admin
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # ClickHouse
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_HTTP_PORT: "8123"
+      CLICKHOUSE_NATIVE_PORT: "9000"
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      # RedPanda (컨테이너 내부 주소)
+      KAFKA_BROKERS: redpanda:9092
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+    ports:
+      - "${PORT_BACKEND:-3000}:3000"
+    networks:
+      - soar-network
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
+  go-engine-dev:
+    profiles: [dev]
     build:
       context: ./go-engine
       dockerfile: Dockerfile
-    container_name: soar-go-engine
+    container_name: soar-go-engine-dev
+    env_file:
+      - .env.dev
     environment:
       # Redis
       REDIS_ADDR: redis:6379
@@ -219,14 +272,47 @@ services:
       redpanda:
         condition: service_healthy
 
+  go-engine-prod:
+    profiles: [prod]
+    build:
+      context: ./go-engine
+      dockerfile: Dockerfile
+    container_name: soar-go-engine-prod
+    env_file:
+      - .env.prod
+    environment:
+      # Redis
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # RedPanda (컨테이너 내부 주소)
+      KAFKA_BROKERS: redpanda:9092
+      # ClickHouse (Native TCP — 고성능 배치 적재용)
+      CLICKHOUSE_DSN: clickhouse://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:9000/default
+      # General
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      HTTP_PORT: "8081"
+    ports:
+      - "${PORT_GO_ENGINE:-8081}:8081"
+    networks:
+      - soar-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+
   # Master Admin UI  —  공급자용 (테넌트 생성·쿼터·TI 배포·빌링)
-  frontend-admin:
-    profiles: [app]
+  frontend-admin-dev:
+    profiles: [dev]
     build:
       context: ./frontend-admin
       dockerfile: Dockerfile
       target: development
-    container_name: soar-frontend-admin
+    container_name: soar-frontend-admin-dev
+    env_file:
+      - .env.dev
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
@@ -237,16 +323,35 @@ services:
     networks:
       - soar-network
     depends_on:
-      - backend
+      - backend-dev
+
+  frontend-admin-prod:
+    profiles: [prod]
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+      target: production
+    container_name: soar-frontend-admin-prod
+    env_file:
+      - .env.prod
+    environment:
+      VITE_API_BASE_URL: /api
+      VITE_BASE_PATH: /admin/
+    networks:
+      - soar-network
+    depends_on:
+      - backend-prod
 
   # Tenant UI  —  고객사용 (SIEM 대시보드·플레이북·알림·화이트라벨링)
-  frontend-tenant:
-    profiles: [app]
+  frontend-tenant-dev:
+    profiles: [dev]
     build:
       context: ./frontend-tenant
       dockerfile: Dockerfile
       target: development
-    container_name: soar-frontend-tenant
+    container_name: soar-frontend-tenant-dev
+    env_file:
+      - .env.dev
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
@@ -257,7 +362,39 @@ services:
     networks:
       - soar-network
     depends_on:
-      - backend
+      - backend-dev
+
+  frontend-tenant-prod:
+    profiles: [prod]
+    build:
+      context: ./frontend-tenant
+      dockerfile: Dockerfile
+      target: production
+    container_name: soar-frontend-tenant-prod
+    env_file:
+      - .env.prod
+    environment:
+      VITE_API_BASE_URL: /api
+      VITE_BASE_PATH: /tenant/
+    networks:
+      - soar-network
+    depends_on:
+      - backend-prod
+
+  gateway-prod:
+    profiles: [prod]
+    image: nginx:1.27-alpine
+    container_name: soar-gateway-prod
+    ports:
+      - "${PORT_ADMIN_GATEWAY:-8088}:80"
+    volumes:
+      - ./infra/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - soar-network
+    depends_on:
+      - backend-prod
+      - frontend-admin-prod
+      - frontend-tenant-prod
 
 # ─────────────────────────────────────────────────────────────────────────────
 networks:

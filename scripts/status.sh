@@ -7,9 +7,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PID_DIR="$REPO_ROOT/.pids"
-ENV_FILE="$REPO_ROOT/.env"
+ENV_DEV_FILE="$REPO_ROOT/.env.dev"
+ENV_PROD_FILE="$REPO_ROOT/.env.prod"
 
-[[ -f "$ENV_FILE" ]] && { set -a; source "$ENV_FILE"; set +a; }
+[[ -f "$ENV_DEV_FILE" ]] && { set -a; source "$ENV_DEV_FILE"; set +a; }
+[[ -f "$ENV_PROD_FILE" ]] && { set -a; source "$ENV_PROD_FILE"; set +a; }
 
 BOLD='\033[1m'; GREEN='\033[0;32m'; RED='\033[0;31m'
 YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
@@ -45,7 +47,20 @@ check_container soar-clickhouse "ClickHouse"
 check_container soar-redpanda   "RedPanda"
 check_container soar-redpanda-console "RedPanda Console"
 
-echo -e "\n${CYAN}[ 애플리케이션 프로세스 ]${RESET}"
+echo -e "\n${CYAN}[ Dev 컨테이너 ]${RESET}"
+check_container soar-backend-dev "Backend Dev"
+check_container soar-go-engine-dev "Go Engine Dev"
+check_container soar-frontend-admin-dev "Admin UI Dev"
+check_container soar-frontend-tenant-dev "Tenant UI Dev"
+
+echo -e "\n${CYAN}[ Prod 컨테이너 ]${RESET}"
+check_container soar-backend-prod "Backend Prod"
+check_container soar-go-engine-prod "Go Engine Prod"
+check_container soar-frontend-admin-prod "Admin UI Prod"
+check_container soar-frontend-tenant-prod "Tenant UI Prod"
+check_container soar-gateway-prod "Gateway Prod"
+
+echo -e "\n${CYAN}[ 로컬 프로세스 ]${RESET}"
 check_pid backend       "Backend (NestJS)"   "http://localhost:${PORT_BACKEND:-3000}"
 check_pid go-engine     "Go Engine"          "http://localhost:${PORT_GO_ENGINE:-8081}"
 check_pid frontend-admin  "Admin UI"         "http://localhost:${PORT_FRONTEND_ADMIN:-5174}"

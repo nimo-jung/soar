@@ -8,6 +8,24 @@
 
 ## 2. 기술 스택 및 핵심 규칙
 
+### Runtime Profiles & Gateway (중요)
+
+* Docker Compose 실행은 `dev`/`prod` profile을 명확히 분리한다.
+* Dev 모드에서는 `*-dev` 서비스(`backend-dev`, `frontend-admin-dev`, `frontend-tenant-dev`)를 사용하고, Prod 모드에서는 `*-prod` 서비스를 사용한다.
+* Prod 외부 진입은 단일 Gateway(`gateway-prod`)로 통일하고 경로 기반 라우팅을 사용한다.
+	* `/admin` → Master Admin UI
+	* `/tenant` → Tenant UI
+	* `/api`, `/auth`, `/docs` → Backend
+* Master Admin UI와 Tenant UI는 보안 경계가 다르므로 앱을 물리적으로 합치지 않는다. 단일 진입점은 Gateway로 제공한다.
+* 컨테이너 내 프론트엔드 dev proxy는 `localhost`가 아닌 Docker 서비스명(`backend-dev`)을 기본 타깃으로 사용한다.
+
+### Operations Reliability (중요)
+
+* Host bind mount를 사용할 경우 기동 전 preflight로 디렉토리 권한·소유권·쓰기 가능 여부를 점검한다.
+* 데이터 경로 권한은 최소 권한 원칙을 적용한다 (`750` 또는 `770` 권장, `777` 금지).
+* 스모크 테스트 스크립트(`scripts/smoke.sh`)로 dev/prod 로그인 및 게이트웨이 라우팅을 검증한다.
+* 운영 환경에서는 Auto-Migration을 활성화하지 않고, 마이그레이션/권한 부여를 명시적으로 수행한다.
+
 ### Backend - NestJS
 
 * ORM은 반드시 **TypeORM**을 사용한다.

@@ -17,6 +17,8 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 | Tenant UI | `frontend-tenant/` | 고객사 운영자·분석가·감사자 | `RolesGuard` + tenant scope, 화이트라벨링 적용 |
 
 * 두 앱은 동일한 NestJS API(`/api`)를 바라보되, 진입점 URL과 인증 Guard가 다르다.
+* 운영 배포에서는 단일 Gateway 진입점을 사용하되, 경로 기반으로 분리한다. (`/admin` = Master Admin UI, `/tenant` = Tenant UI)
+* 경로 기반 배포 시 React Router basename 및 Vite base path를 앱별로 명시해 라우팅 충돌을 방지한다.
 * Tenant UI에서만 로그인 응답의 `brandingConfig`를 기반으로 PrimeReact CSS 변수를 동적으로 적용한다.
 * 공용 UI 컴포넌트(디자인 시스템)는 별도 패키지(`packages/ui`)로 분리하여 두 앱이 공유할 수 있다.
 

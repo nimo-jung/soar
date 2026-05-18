@@ -4,7 +4,7 @@
 # 사용법: ./scripts/prod.sh [service]
 #   ./scripts/prod.sh          → 전체 빌드 후 기동
 #   ./scripts/prod.sh build    → 전체 빌드만 (기동 안 함)
-#   ./scripts/prod.sh docker   → docker compose --profile app up -d (권장)
+#   ./scripts/prod.sh docker   → docker compose --profile prod --env-file .env.prod up -d (권장)
 #   ./scripts/prod.sh backend  → 백엔드 빌드 + 기동
 #   ./scripts/prod.sh admin    → Frontend Admin 빌드 (정적 파일 생성)
 #   ./scripts/prod.sh tenant   → Frontend Tenant 빌드 (정적 파일 생성)
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="$REPO_ROOT/.env"
+ENV_FILE="${SOAR_ENV_FILE:-$REPO_ROOT/.env.prod}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
@@ -23,7 +23,8 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  error ".env 파일이 없습니다. cp .env.example .env 후 설정하세요."
+  error "환경변수 파일이 없습니다: $ENV_FILE"
+  error "예시: cp .env.example .env.prod 후 운영 값으로 수정하세요."
   exit 1
 fi
 set -a; source "$ENV_FILE"; set +a
@@ -36,10 +37,195 @@ PID_DIR="$REPO_ROOT/.pids"
 mkdir -p "$PID_DIR"
 save_pid() { echo "$!" > "$PID_DIR/$1.pid"; }
 
+# ── 데이터 마운트 사전 점검(권한/쓰기 가능 여부) ─────────────────────────────
+DATA_ROOT="${SOAR_DATA_ROOT:-/home1/soar}"
+PREFLIGHT_AUTOFIX="${SOAR_PREFLIGHT_AUTOFIX:-0}"
+STRICT_OWNER_CHECK="${SOAR_STRICT_OWNER_CHECK:-0}"
+
+is_world_writable() {
+  local mode="$1"
+  local last_digit="${mode: -1}"
+  [[ "$last_digit" =~ [2367] ]]
+}
+
+check_mount_writable() {
+  local service_name="$1"
+  local image="$2"
+  local host_dir="$3"
+  local container_dir="$4"
+  local run_user="${5:-}"
+
+  if [[ -n "$run_user" ]]; then
+    if ! docker run --rm \
+        --user "$run_user" \
+        -v "$host_dir:$container_dir" \
+        --entrypoint sh "$image" \
+        -lc "touch '$container_dir/.perm_check' && rm -f '$container_dir/.perm_check'" >/dev/null 2>&1; then
+      error "$service_name 데이터 경로 쓰기 테스트 실패: $host_dir"
+      return 1
+    fi
+  else
+    if ! docker run --rm \
+        -v "$host_dir:$container_dir" \
+        --entrypoint sh "$image" \
+        -lc "touch '$container_dir/.perm_check' && rm -f '$container_dir/.perm_check'" >/dev/null 2>&1; then
+      error "$service_name 데이터 경로 쓰기 테스트 실패: $host_dir"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+get_service_uid_gid() {
+  local service_name="$1"
+  local image="$2"
+
+  case "$service_name" in
+    MariaDB)
+      docker run --rm --entrypoint sh "$image" -lc 'id -u mysql 2>/dev/null && id -g mysql 2>/dev/null' 2>/dev/null | paste -sd ':' -
+      ;;
+    Redis)
+      docker run --rm --entrypoint sh "$image" -lc 'id -u redis 2>/dev/null && id -g redis 2>/dev/null' 2>/dev/null | paste -sd ':' -
+      ;;
+    ClickHouse)
+      docker run --rm --entrypoint sh "$image" -lc 'id -u clickhouse 2>/dev/null && id -g clickhouse 2>/dev/null' 2>/dev/null | paste -sd ':' -
+      ;;
+    RedPanda)
+      docker run --rm --entrypoint sh "$image" -lc 'id -u && id -g' 2>/dev/null | paste -sd ':' -
+      ;;
+    *)
+      docker run --rm --entrypoint sh "$image" -lc 'id -u && id -g' 2>/dev/null | paste -sd ':' -
+      ;;
+  esac
+}
+
+try_autofix_permissions() {
+  local host_dir="$1"
+  local owner="$2"
+
+  if [[ "$PREFLIGHT_AUTOFIX" != "1" ]]; then
+    return 1
+  fi
+
+  if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    info "자동 보정 적용: sudo chown -R $owner $host_dir && sudo chmod -R 750 $host_dir"
+    sudo chown -R "$owner" "$host_dir"
+    sudo chmod -R 750 "$host_dir"
+    return 0
+  fi
+
+  if command -v sudo >/dev/null 2>&1 && [[ -t 0 ]]; then
+    info "자동 보정을 위해 sudo 권한 승인을 시도합니다."
+    if sudo chown -R "$owner" "$host_dir" && sudo chmod -R 750 "$host_dir"; then
+      return 0
+    fi
+  fi
+
+  warn "자동 보정을 요청했지만 sudo 무비밀번호 권한이 없어 적용할 수 없습니다."
+  return 1
+}
+
+check_owner_match() {
+  local service_name="$1"
+  local host_dir="$2"
+  local expected_owner="$3"
+  local required="${4:-0}"
+  local owner
+
+  if [[ -z "$expected_owner" ]]; then
+    warn "$service_name UID/GID 확인 실패. 소유권 검증을 건너뜁니다."
+    return 0
+  fi
+
+  owner="$(stat -c '%u:%g' "$host_dir")"
+  if [[ "$owner" == "$expected_owner" ]]; then
+    return 0
+  fi
+
+  warn "$service_name 디렉토리 소유권 불일치: 현재 $owner, 권장 $expected_owner"
+  if try_autofix_permissions "$host_dir" "$expected_owner"; then
+    owner="$(stat -c '%u:%g' "$host_dir")"
+    if [[ "$owner" == "$expected_owner" ]]; then
+      success "$service_name 소유권 자동 보정 완료"
+      return 0
+    fi
+  fi
+
+  warn "권장 조치: sudo chown -R $expected_owner $host_dir && sudo chmod -R 750 $host_dir"
+  if [[ "$required" == "1" || "$STRICT_OWNER_CHECK" == "1" ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+check_redpanda_owner() {
+  local dir="$1"
+  local expected_owner
+  expected_owner="$(get_service_uid_gid RedPanda redpandadata/redpanda:v24.2.18 || true)"
+  check_owner_match "RedPanda" "$dir" "$expected_owner" 1
+}
+
+preflight_data_mounts() {
+  if [[ "${SOAR_SKIP_PREFLIGHT:-0}" == "1" ]]; then
+    warn "SOAR_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
+    return 0
+  fi
+
+  info "데이터 마운트 사전 점검 중... (root: $DATA_ROOT)"
+  if [[ "$PREFLIGHT_AUTOFIX" == "1" ]]; then
+    info "자동 보정 모드 활성화: 소유권/권한 불일치 시 수정 시도"
+  fi
+  if [[ "$STRICT_OWNER_CHECK" == "1" ]]; then
+    info "엄격 소유권 점검 모드 활성화: 불일치 시 실패 처리"
+  fi
+
+  local services=(mariadb redis clickhouse redpanda)
+  local failed=0
+  local dir mode
+
+  for svc in "${services[@]}"; do
+    dir="$DATA_ROOT/$svc"
+    mkdir -p "$dir"
+    mode="$(stat -c '%a' "$dir")"
+    if is_world_writable "$mode"; then
+      warn "$dir 권한이 과도하게 열려있습니다($mode). 권장: 750 또는 770"
+    fi
+  done
+
+  # 서비스별 이미지 사용자와 소유권 일치 여부를 점검한다.
+  local mariadb_owner redis_owner clickhouse_owner redpanda_owner
+  mariadb_owner="$(get_service_uid_gid MariaDB mariadb:11.4 || true)"
+  redis_owner="$(get_service_uid_gid Redis redis:7.4-alpine || true)"
+  clickhouse_owner="$(get_service_uid_gid ClickHouse clickhouse/clickhouse-server:24.8 || true)"
+  redpanda_owner="$(get_service_uid_gid RedPanda redpandadata/redpanda:v24.2.18 || true)"
+
+  check_owner_match "MariaDB" "$DATA_ROOT/mariadb" "$mariadb_owner" || failed=1
+  check_owner_match "Redis" "$DATA_ROOT/redis" "$redis_owner" || failed=1
+  check_owner_match "ClickHouse" "$DATA_ROOT/clickhouse" "$clickhouse_owner" || failed=1
+
+  check_mount_writable "MariaDB" "mariadb:11.4" "$DATA_ROOT/mariadb" "/var/lib/mysql" "$mariadb_owner" || failed=1
+  check_mount_writable "Redis" "redis:7.4-alpine" "$DATA_ROOT/redis" "/data" "$redis_owner" || failed=1
+  check_mount_writable "ClickHouse" "clickhouse/clickhouse-server:24.8" "$DATA_ROOT/clickhouse" "/var/lib/clickhouse" "$clickhouse_owner" || failed=1
+  check_mount_writable "RedPanda" "redpandadata/redpanda:v24.2.18" "$DATA_ROOT/redpanda" "/var/lib/redpanda/data" "$redpanda_owner" || failed=1
+
+  check_redpanda_owner "$DATA_ROOT/redpanda" || failed=1
+
+  if [[ "$failed" -ne 0 ]]; then
+    error "데이터 마운트 사전 점검 실패. 권한 조정 후 다시 실행하세요."
+    error "임시 우회가 필요하면 SOAR_SKIP_PREFLIGHT=1 로 실행할 수 있습니다."
+    return 1
+  fi
+
+  success "데이터 마운트 사전 점검 통과"
+}
+
 # ── 인프라 ────────────────────────────────────────────────────────────────────
 start_infra() {
+  preflight_data_mounts
   info "인프라 컨테이너 기동 중..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" up -d \
+  docker compose -f "$REPO_ROOT/docker-compose.yml" --env-file "$ENV_FILE" up -d \
     mariadb redis clickhouse redpanda
   success "인프라 기동 완료"
 }
@@ -106,18 +292,20 @@ start_engine_prod() {
 
 # ── Docker Compose 통합 기동 (권장) ──────────────────────────────────────────
 start_docker() {
-  info "Docker Compose로 전체 앱 기동 중 (--profile app)..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile app up -d --build
+  preflight_data_mounts
+  info "Docker Compose로 전체 앱 기동 중 (--profile prod)..."
+  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile prod --env-file "$ENV_FILE" up -d --build
   echo ""
   echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
   echo -e "${BOLD} SOAR 운영 서버 기동 완료 (Docker)${RESET}"
-  echo -e "  Backend    → http://localhost:${PORT_BACKEND:-3000}"
-  echo -e "  Swagger    → http://localhost:${PORT_BACKEND:-3000}/docs"
-  echo -e "  Admin UI   → http://localhost:${PORT_FRONTEND_ADMIN:-5174}"
-  echo -e "  Tenant UI  → http://localhost:${PORT_FRONTEND_TENANT:-5173}"
+  echo -e "  Gateway    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
+  echo -e "  Admin UI   → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/admin"
+  echo -e "  Tenant UI  → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/tenant"
+  echo -e "  Swagger    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/docs"
+  echo -e "  API/Auth   → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/api, /auth"
   echo -e "  Go Engine  → http://localhost:${PORT_GO_ENGINE:-8081}"
   echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-  echo -e "${YELLOW}종료: docker compose --profile app down${RESET}"
+  echo -e "${YELLOW}종료: docker compose down${RESET}"
 }
 
 # ── 메인 ─────────────────────────────────────────────────────────────────────

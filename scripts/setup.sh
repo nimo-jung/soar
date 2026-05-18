@@ -15,12 +15,19 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 echo -e "${BOLD}SOAR 초기 설치 시작${RESET}"
 echo ""
 
-# ── .env 초기화 ───────────────────────────────────────────────────────────────
-if [[ ! -f "$REPO_ROOT/.env" ]]; then
-  cp "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"
-  warn ".env 파일을 생성했습니다. 비밀번호를 반드시 변경하세요: $REPO_ROOT/.env"
+# ── .env.dev / .env.prod 초기화 ──────────────────────────────────────────────
+if [[ ! -f "$REPO_ROOT/.env.dev" ]]; then
+  cp "$REPO_ROOT/.env.example" "$REPO_ROOT/.env.dev"
+  warn ".env.dev 파일을 생성했습니다. 개발 비밀번호를 확인하세요: $REPO_ROOT/.env.dev"
 else
-  info ".env 파일이 이미 존재합니다. 스킵"
+  info ".env.dev 파일이 이미 존재합니다. 스킵"
+fi
+
+if [[ ! -f "$REPO_ROOT/.env.prod" ]]; then
+  cp "$REPO_ROOT/.env.example" "$REPO_ROOT/.env.prod"
+  warn ".env.prod 파일을 생성했습니다. 운영 비밀번호/시크릿을 반드시 교체하세요: $REPO_ROOT/.env.prod"
+else
+  info ".env.prod 파일이 이미 존재합니다. 스킵"
 fi
 
 # ── Backend npm ci ────────────────────────────────────────────────────────────
@@ -50,7 +57,7 @@ fi
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo -e "${BOLD} 설치 완료! 다음 단계:${RESET}"
-echo -e "  1. .env 파일에서 비밀번호 설정 확인"
+echo -e "  1. .env.dev / .env.prod 비밀번호 설정 확인"
 echo -e "  2. 인프라 기동:  docker compose up -d"
 echo -e "  3. DB 마이그레이션: ./scripts/migrate.sh run"
 echo -e "  4. 개발 서버:    ./scripts/dev.sh"

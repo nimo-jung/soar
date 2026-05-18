@@ -48,6 +48,7 @@ backend/
 
 ```
 frontend-admin/
+├── nginx.conf                 # Prod 정적 서빙용 Nginx 설정
 └── src/
     ├── pages/
     │   ├── tenants/             # 테넌트 목록·생성·정지·삭제
@@ -68,6 +69,7 @@ frontend-admin/
 
 ```
 frontend-tenant/
+├── nginx.conf                 # Prod 정적 서빙용 Nginx 설정
 └── src/
     ├── pages/
     │   ├── dashboard/           # 커스텀 위젯 대시보드
@@ -87,6 +89,41 @@ frontend-tenant/
 
 ## Analysis Engine (GoLang) — `go-engine/`
 
+```
+
+---
+
+## Infrastructure & Runtime — `infra/`, root files
+
+운영 모드에서는 단일 진입점 Gateway를 사용하고, 개발/운영은 profile 기반으로 분리한다.
+
+```
+infra/
+├── mariadb/
+├── clickhouse/
+└── gateway/
+    └── nginx.conf             # Prod 통합 진입점 (/admin, /tenant, /api, /auth, /docs)
+
+.
+├── docker-compose.yml         # dev/prod profile 및 gateway-prod 정의
+├── .env.dev                   # 개발 모드 환경변수
+└── .env.prod                  # 운영 모드 환경변수
+```
+
+---
+
+## Operations Scripts — `scripts/`
+
+운영 안정성 확보를 위한 스크립트는 아래를 기본으로 유지한다.
+
+```
+scripts/
+├── dev.sh                     # 개발 모드 기동 + 데이터 마운트 preflight
+├── prod.sh                    # 운영 모드 기동 + gateway 안내
+├── smoke.sh                   # dev/prod 로그인·라우팅 스모크 테스트
+├── migrate.sh
+├── status.sh
+└── stop.sh
 ```
 go-engine/
 └── internal/

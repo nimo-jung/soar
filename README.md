@@ -39,6 +39,15 @@ Security Orchestration, Automation and Response 플랫폼.
 ./scripts/dev.sh admin    # Frontend Admin (Vite dev, 포트 5174)
 ./scripts/dev.sh tenant   # Frontend Tenant (Vite dev, 포트 5173)
 ./scripts/dev.sh engine   # Go Engine (go run, 포트 8081)
+
+# 데이터 마운트 권한 자동 보정(가능한 경우 sudo 필요)
+SOAR_PREFLIGHT_AUTOFIX=1 ./scripts/dev.sh infra
+
+# dev.sh는 기본적으로 자동 보정을 시도합니다. 비활성화하려면:
+SOAR_PREFLIGHT_AUTOFIX=0 ./scripts/dev.sh infra
+
+# 임시로 권한 사전 점검 우회 (권장하지 않음)
+SOAR_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 ```
 
 기동 후 접속 주소:
@@ -66,7 +75,23 @@ Security Orchestration, Automation and Response 플랫폼.
 ./scripts/prod.sh engine   # Go 바이너리 빌드 후 실행
 ./scripts/prod.sh admin    # Vite 빌드 → frontend-admin/dist/
 ./scripts/prod.sh tenant   # Vite 빌드 → frontend-tenant/dist/
+
+# 데이터 마운트 권한 자동 보정(가능한 경우 sudo 필요)
+SOAR_PREFLIGHT_AUTOFIX=1 ./scripts/prod.sh docker
+
+# 임시로 권한 사전 점검 우회 (권장하지 않음)
+SOAR_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 ```
+
+운영 모드 단일 진입점:
+
+| 용도 | 주소 |
+|------|------|
+| Gateway | http://localhost:8088 |
+| Master Admin UI | http://localhost:8088/admin |
+| Tenant UI | http://localhost:8088/tenant |
+| Backend API/Auth | http://localhost:8088/api, http://localhost:8088/auth |
+| Swagger | http://localhost:8088/docs |
 
 ### 4. 서비스 종료
 
@@ -91,22 +116,41 @@ Security Orchestration, Automation and Response 플랫폼.
 ./scripts/status.sh   # 인프라 컨테이너 + 앱 프로세스 상태 일괄 확인
 ```
 
+### 7. 스모크 테스트
+
+```bash
+# 개발 모드 검증 (백엔드/프록시 로그인 포함)
+./scripts/smoke.sh dev
+
+# 운영 모드 검증 (게이트웨이 기준)
+./scripts/smoke.sh prod
+```
+
 ---
 
 ## Docker 직접 사용법
 
 ```bash
 # 환경 변수 파일 준비
-cp .env.example .env
+cp .env.example .env.dev
+cp .env.example .env.prod
 
 # 인프라만 기동 (MariaDB, Redis, ClickHouse, RedPanda)
 docker compose up -d
 
-# 전체 기동 (앱 포함)
-docker compose --profile app up -d
+# 개발 모드 전체 기동
+docker compose --profile dev --env-file .env.dev up -d --build
+
+# 운영 모드 전체 기동
+docker compose --profile prod --env-file .env.prod up -d --build
+
+# 운영 모드 단일 진입점
+# http://localhost:8088/admin
+# http://localhost:8088/tenant
+# http://localhost:8088/docs
 
 # 종료
-docker compose --profile app down
+docker compose down
 
 # 데이터 볼륨까지 삭제
 docker compose down -v
@@ -127,7 +171,7 @@ soar/
 ├── frontend-admin/       # Master Admin UI (포트 5174)
 ├── frontend-tenant/      # Tenant UI, 화이트라벨링 (포트 5173)
 ├── go-engine/            # 로그 수집·파싱·RedPanda 발행·ClickHouse 적재
-├── infra/                # MariaDB init, ClickHouse config
-├── scripts/              # dev.sh / prod.sh / stop.sh / status.sh / migrate.sh
+├── infra/                # MariaDB init, ClickHouse config, prod gateway nginx
+├── scripts/              # dev.sh / prod.sh / stop.sh / status.sh / migrate.sh / smoke.sh
 └── docker-compose.yml
 ```

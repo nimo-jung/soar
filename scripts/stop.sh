@@ -5,6 +5,8 @@
 #   ./scripts/stop.sh          → 모든 서비스 종료
 #   ./scripts/stop.sh backend  → 백엔드만 종료
 #   ./scripts/stop.sh docker   → Docker Compose 전체 종료
+#   ./scripts/stop.sh dev      → Docker Compose dev 프로파일만 종료
+#   ./scripts/stop.sh prod     → Docker Compose prod 프로파일만 종료
 #   ./scripts/stop.sh infra    → 인프라 컨테이너만 종료
 # =============================================================================
 set -euo pipefail
@@ -37,8 +39,20 @@ kill_service() {
 
 stop_docker() {
   info "Docker Compose 컨테이너 종료 중..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile app down
+  docker compose -f "$REPO_ROOT/docker-compose.yml" down
   success "Docker Compose 종료 완료"
+}
+
+stop_dev() {
+  info "Docker Compose dev 프로파일 종료 중..."
+  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile dev down
+  success "dev 프로파일 종료 완료"
+}
+
+stop_prod() {
+  info "Docker Compose prod 프로파일 종료 중..."
+  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile prod down
+  success "prod 프로파일 종료 완료"
 }
 
 stop_infra() {
@@ -51,6 +65,8 @@ SERVICE="${1:-all}"
 
 case "$SERVICE" in
   docker)  stop_docker ;;
+  dev)     stop_dev ;;
+  prod)    stop_prod ;;
   infra)   stop_infra ;;
   backend) kill_service backend ;;
   admin)   kill_service frontend-admin ;;
@@ -65,7 +81,7 @@ case "$SERVICE" in
     info "인프라 컨테이너도 종료하려면: ./scripts/stop.sh infra"
     ;;
   *)
-    echo "사용법: $0 [all|docker|infra|backend|admin|tenant|engine]"
+    echo "사용법: $0 [all|docker|dev|prod|infra|backend|admin|tenant|engine]"
     exit 1
     ;;
 esac
