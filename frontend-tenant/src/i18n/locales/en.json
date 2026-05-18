@@ -32,18 +32,30 @@
     "settings": "Settings"
   },
   "auth": {
-    "welcome": "Welcome",
-    "subtitle": "Sign in to continue to the portal.",
+    "logoAlt": "Company logo",
+    "welcome": "Welcome to the SOC Console",
+    "subtitle": "Sign in to access your tenant security operations portal.",
+    "liveGuard": "SOC live monitoring enabled",
+    "securitySignal": "AI threat intelligence engine active",
     "tenantSlug": "Tenant Slug",
     "tenantSlugPlaceholder": "acme-corp",
     "submit": "Sign In",
     "errorEmpty": "Please fill in all fields.",
     "errorInvalid": "Please check your login credentials.",
-    "tagline": "Security Orchestration, Automation & Response.\nYour smart platform for instant threat response.",
+    "tagline": "Correlate distributed security events in real time with an AI engine.\nTrigger automated response playbooks the moment threats are detected.",
+    "aiPanel": {
+      "title": "AI Inference Status",
+      "threatScoreLabel": "Threat Score",
+      "threatScoreValue": "89 / 100",
+      "confidenceLabel": "Detection Confidence",
+      "confidenceValue": "96%",
+      "responseLabel": "Auto-Response Readiness",
+      "responseValue": "82%"
+    },
     "features": {
-      "realtime": "Real-time threat detection & automated response",
-      "isolation": "Tenant-isolated security data management",
-      "playbook": "Playbook-based automation workflows"
+      "realtime": "AI-powered real-time network behavior analytics and anomaly tracking",
+      "isolation": "Tenant-isolated protection for logs, policies, and sessions",
+      "playbook": "Detection-driven automated response playbook orchestration"
     }
   },
   "collectors": {

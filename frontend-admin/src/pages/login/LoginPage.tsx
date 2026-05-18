@@ -16,6 +16,9 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const loginTitle = t('auth.title');
+  const titlePrefix = loginTitle.slice(0, -1);
+  const titleLastChar = loginTitle.slice(-1);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -46,10 +49,16 @@ const LoginPage: React.FC = () => {
     <div className="layout-login">
       <div className="layout-login-card">
         <div className="layout-login-logo">
-          <i className="pi pi-shield" style={{ fontSize: '2.5rem', color: 'var(--primary-color)' }} />
-          <span>{t('auth.title')}</span>
+          <span className="layout-login-logo-icon">
+            <i className="pi pi-shield" />
+          </span>
+          <div className="layout-login-heading">
+            <span className="layout-login-title" data-text={loginTitle}>
+              <span>{titlePrefix}</span>
+              <span className="layout-login-title-last">{titleLastChar}</span>
+            </span>
+          </div>
         </div>
-
         <div className="layout-login-form" onKeyDown={handleKeyDown}>
           {error && <Message severity="error" text={error} className="w-full" />}
 

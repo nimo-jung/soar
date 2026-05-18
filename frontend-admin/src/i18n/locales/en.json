@@ -29,6 +29,7 @@
   },
   "auth": {
     "title": "SOAR Master Admin",
+    "badge": "Master Control",
     "emailPlaceholder": "admin@soar.io",
     "submit": "Sign In",
     "errorEmpty": "Please enter email and password.",
@@ -37,6 +38,42 @@
   "tenants": {
     "title": "Tenant Management",
     "createBtn": "Create Tenant",
+    "searchPlaceholder": "Search by slug, company name, or email",
+    "summary": {
+      "total": "Total Tenants",
+      "active": "Active",
+      "suspended": "Suspended",
+      "deleted": "Deleted"
+    },
+    "filters": {
+      "all": "All",
+      "deleted": "Deleted"
+    },
+    "toolbar": {
+      "clearSearch": "Clear search",
+      "refresh": "Refresh",
+      "fieldSettings": "Field Settings",
+      "fieldsSelected": "{{0}} fields selected"
+    },
+    "actions": {
+      "more": "More",
+      "settings": "Settings",
+      "delete": "Delete",
+      "restore": "Restore",
+      "deletedLocked": "Deleted tenant cannot change status"
+    },
+    "confirmStatus": {
+      "header": "Confirm Status Change",
+      "message": "Are you sure you want to {{action}} tenant {{name}}?"
+    },
+    "confirmDelete": {
+      "header": "Confirm Tenant Deletion",
+      "message": "Are you sure you want to mark tenant {{name}} as deleted?"
+    },
+    "confirmRestore": {
+      "header": "Confirm Tenant Restore",
+      "message": "Are you sure you want to restore tenant {{name}} to active status?"
+    },
     "dialog": {
       "title": "Create Tenant",
       "slug": "Slug (lowercase)",
@@ -49,6 +86,7 @@
       "slug": "Slug",
       "name": "Company Name",
       "contactEmail": "Contact Email",
+      "empty": "No tenants match your criteria.",
       "suspendBtn": "Suspend",
       "activateBtn": "Activate"
     }

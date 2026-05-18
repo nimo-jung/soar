@@ -32,18 +32,30 @@
     "settings": "설정"
   },
   "auth": {
-    "welcome": "환영합니다",
-    "subtitle": "포털에 계속하려면 로그인하세요.",
+    "logoAlt": "회사 로고",
+    "welcome": "SOC 콘솔에 오신 것을 환영합니다",
+    "subtitle": "테넌트 보안 운영 포털에 접속하려면 로그인하세요.",
+    "liveGuard": "SOC 실시간 모니터링 활성",
+    "securitySignal": "AI 위협 인텔리전스 엔진 활성",
     "tenantSlug": "테넌트 슬러그",
     "tenantSlugPlaceholder": "acme-corp",
     "submit": "로그인",
     "errorEmpty": "모든 필드를 입력하세요.",
     "errorInvalid": "로그인 정보를 확인하세요.",
-    "tagline": "Security Orchestration, Automation & Response.\n보안 위협에 즉각 대응하는 스마트 플랫폼.",
+    "tagline": "분산된 보안 이벤트를 AI 엔진으로 실시간 상관 분석합니다.\n위협 신호를 탐지하면 자동 대응 플레이북을 즉시 실행합니다.",
+    "aiPanel": {
+      "title": "AI 추론 상태",
+      "threatScoreLabel": "위협 점수",
+      "threatScoreValue": "89 / 100",
+      "confidenceLabel": "탐지 신뢰도",
+      "confidenceValue": "96%",
+      "responseLabel": "자동 대응 준비도",
+      "responseValue": "82%"
+    },
     "features": {
-      "realtime": "실시간 위협 탐지 및 자동 대응",
-      "isolation": "테넌트별 격리된 보안 데이터 관리",
-      "playbook": "플레이북 기반 자동화 워크플로우"
+      "realtime": "AI 기반 실시간 네트워크 행위 분석과 이상 징후 추적",
+      "isolation": "테넌트 격리 기반 로그·정책·세션 보호",
+      "playbook": "탐지 결과 기반 자동 대응 플레이북 오케스트레이션"
     }
   },
   "collectors": {
