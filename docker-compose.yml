@@ -17,7 +17,7 @@ services:
   mariadb:
     image: mariadb:11.4
     container_name: soar-mariadb
-    restart: unless-stopped
+    #restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MYSQL_DATABASE: soar_admin          # 관리용 DB (테넌트 메타데이터 저장)
@@ -40,7 +40,7 @@ services:
   redis:
     image: redis:7.4-alpine
     container_name: soar-redis
-    restart: unless-stopped
+    #restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     ports:
       - "${PORT_REDIS:-6379}:6379"
@@ -57,7 +57,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
     container_name: soar-clickhouse
-    restart: unless-stopped
+    #restart: unless-stopped
     environment:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
@@ -84,7 +84,7 @@ services:
   redpanda:
     image: redpandadata/redpanda:v24.2.18
     container_name: soar-redpanda
-    restart: unless-stopped
+    #restart: unless-stopped
     command:
       - redpanda
       - start
@@ -118,7 +118,7 @@ services:
   redpanda-console:
     image: redpandadata/console:v2.7.2
     container_name: soar-redpanda-console
-    restart: unless-stopped
+    #restart: unless-stopped
     entrypoint: /bin/sh
     command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml && /app/console'
     environment:
@@ -152,7 +152,7 @@ services:
       dockerfile: Dockerfile
       target: development          # 개발: hot-reload / 프로덕션: target: production
     container_name: soar-backend
-    restart: unless-stopped
+    #restart: unless-stopped
     env_file: .env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
@@ -200,7 +200,7 @@ services:
       context: ./go-engine
       dockerfile: Dockerfile
     container_name: soar-go-engine
-    restart: unless-stopped
+    #restart: unless-stopped
     environment:
       # Redis
       REDIS_ADDR: redis:6379
@@ -232,7 +232,7 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: soar-frontend-admin
-    restart: unless-stopped
+    #restart: unless-stopped
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
@@ -253,7 +253,7 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: soar-frontend-tenant
-    restart: unless-stopped
+    #restart: unless-stopped
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
