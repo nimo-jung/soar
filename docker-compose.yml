@@ -17,7 +17,6 @@ services:
   mariadb:
     image: mariadb:11.4
     container_name: soar-mariadb
-    #restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MYSQL_DATABASE: soar_admin          # 관리용 DB (테넌트 메타데이터 저장)
@@ -26,7 +25,7 @@ services:
     ports:
       - "${PORT_MARIADB:-3306}:3306"
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - /home1/soar/mariadb:/var/lib/mysql
       - ./infra/mariadb/init:/docker-entrypoint-initdb.d:ro  # 초기화 스크립트
     networks:
       - soar-network
@@ -40,12 +39,13 @@ services:
   redis:
     image: redis:7.4-alpine
     container_name: soar-redis
-    #restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     ports:
       - "${PORT_REDIS:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - /home1/soar/redis:/data
     networks:
       - soar-network
     healthcheck:
@@ -57,7 +57,6 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
     container_name: soar-clickhouse
-    #restart: unless-stopped
     environment:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
@@ -66,7 +65,7 @@ services:
       - "${PORT_CLICKHOUSE_HTTP:-8123}:8123"   # HTTP Interface  (NestJS, 브라우저 쿼리)
       - "${PORT_CLICKHOUSE_NATIVE:-9000}:9000" # Native TCP      (Go 엔진 고성능 적재)
     volumes:
-      - clickhouse_data:/var/lib/clickhouse
+      - /home1/soar/clickhouse:/var/lib/clickhouse
       - ./infra/clickhouse/config:/etc/clickhouse-server/config.d:ro
     ulimits:
       nofile:
@@ -84,7 +83,6 @@ services:
   redpanda:
     image: redpandadata/redpanda:v24.2.18
     container_name: soar-redpanda
-    #restart: unless-stopped
     command:
       - redpanda
       - start
@@ -105,7 +103,7 @@ services:
       - "${PORT_REDPANDA_SCHEMA:-18081}:18081"  # Schema Registry
       - "${PORT_REDPANDA_ADMIN:-9644}:9644"     # Admin API
     volumes:
-      - redpanda_data:/var/lib/redpanda/data
+      - /home1/soar/redpanda:/var/lib/redpanda/data
     networks:
       - soar-network
     healthcheck:
@@ -118,7 +116,6 @@ services:
   redpanda-console:
     image: redpandadata/console:v2.7.2
     container_name: soar-redpanda-console
-    #restart: unless-stopped
     entrypoint: /bin/sh
     command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml && /app/console'
     environment:
@@ -152,7 +149,6 @@ services:
       dockerfile: Dockerfile
       target: development          # 개발: hot-reload / 프로덕션: target: production
     container_name: soar-backend
-    #restart: unless-stopped
     env_file: .env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
@@ -200,7 +196,6 @@ services:
       context: ./go-engine
       dockerfile: Dockerfile
     container_name: soar-go-engine
-    #restart: unless-stopped
     environment:
       # Redis
       REDIS_ADDR: redis:6379
@@ -232,7 +227,6 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: soar-frontend-admin
-    #restart: unless-stopped
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
@@ -253,7 +247,6 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: soar-frontend-tenant
-    #restart: unless-stopped
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     ports:
@@ -267,12 +260,6 @@ services:
       - backend
 
 # ─────────────────────────────────────────────────────────────────────────────
-volumes:
-  mariadb_data:
-  redis_data:
-  clickhouse_data:
-  redpanda_data:
-
 networks:
   soar-network:
     driver: bridge
