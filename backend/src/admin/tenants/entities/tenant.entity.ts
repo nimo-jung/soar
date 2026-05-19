@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { TenantTier, TenantTierCode } from './tenant-tier.entity';
+import { TenantTier } from './tenant-tier.entity';
 
 export enum TenantStatus {
   ACTIVE = 'ACTIVE',
@@ -44,16 +44,11 @@ export class Tenant {
   ipCidr: string | null;
 
   @ManyToOne(() => TenantTier)
-  @JoinColumn({ name: 'tierCode', referencedColumnName: 'code' })
+  @JoinColumn({ name: 'tierId', referencedColumnName: 'id' })
   tier: TenantTier;
 
-  @Column({
-    type: 'enum',
-    enum: TenantTierCode,
-    default: TenantTierCode.LITE,
-    comment: '테넌트 등급 코드',
-  })
-  tierCode: TenantTierCode;
+  @Column({ name: 'tierId', type: 'int', comment: '테넌트 등급 ID' })
+  tierId: number;
 
   @CreateDateColumn({ comment: '생성 일시' })
   createdAt: Date;

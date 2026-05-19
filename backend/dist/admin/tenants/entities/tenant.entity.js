@@ -27,7 +27,7 @@ let Tenant = class Tenant {
     expiresAt;
     ipCidr;
     tier;
-    tierCode;
+    tierId;
     createdAt;
     updatedAt;
 };
@@ -67,18 +67,13 @@ __decorate([
 ], Tenant.prototype, "ipCidr", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => tenant_tier_entity_1.TenantTier),
-    (0, typeorm_1.JoinColumn)({ name: 'tierCode', referencedColumnName: 'code' }),
+    (0, typeorm_1.JoinColumn)({ name: 'tierId', referencedColumnName: 'id' }),
     __metadata("design:type", tenant_tier_entity_1.TenantTier)
 ], Tenant.prototype, "tier", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        type: 'enum',
-        enum: tenant_tier_entity_1.TenantTierCode,
-        default: tenant_tier_entity_1.TenantTierCode.LITE,
-        comment: '테넌트 등급 코드',
-    }),
-    __metadata("design:type", String)
-], Tenant.prototype, "tierCode", void 0);
+    (0, typeorm_1.Column)({ name: 'tierId', type: 'int', comment: '테넌트 등급 ID' }),
+    __metadata("design:type", Number)
+], Tenant.prototype, "tierId", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
     __metadata("design:type", Date)

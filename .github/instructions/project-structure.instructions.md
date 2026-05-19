@@ -21,7 +21,8 @@ backend/
     │   ├── quotas/              # EPS 제한·스토리지 할당·보관 주기
     │   ├── billing/             # 사용량 집계·빌링 리포트
     │   ├── monitoring/          # 전체 테넌트 로그 유입·시스템 부하 모니터링
-    │   └── threat-intel/        # 글로벌 TI 등록 및 RedPanda 전파
+    │   ├── threat-intel/        # 글로벌 TI 등록 및 RedPanda 전파
+    │   └── audit-logs/          # 감사로그 조회 (로그인/로그아웃, CUD 이벤트)
     │
     ├── tenant/                  # /api/* — TenantGuard + RolesGuard 적용
     │   ├── collectors/          # Collector 등록·API Key 발급
@@ -55,7 +56,8 @@ frontend-admin/
     │   ├── quotas/              # EPS·스토리지·보관 주기 설정
     │   ├── billing/             # 사용량 리포트·과금 데이터
     │   ├── monitoring/          # 전체 테넌트 통합 모니터링 대시보드
-    │   └── threat-intel/        # 글로벌 TI 등록·배포 현황
+    │   ├── threat-intel/        # 글로벌 TI 등록·배포 현황
+    │   └── audit-logs/          # 보안감사 > 감사로그 조회
     ├── components/              # Admin 전용 PrimeReact 컴포넌트
     ├── store/                   # Zustand 전역 상태
     └── api/                     # axios 인스턴스 (/admin/* 엔드포인트)

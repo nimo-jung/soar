@@ -17,11 +17,9 @@ import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
 
-type TierCode = 'LITE' | 'PREMIUM' | 'ENTERPRISE';
-
 interface TenantTier {
   id: number;
-  code: TierCode;
+  code: string;
   name: string;
   dailyLogQuotaGb: number;
   maxUsers: number;
@@ -37,7 +35,7 @@ interface Tenant {
   contactEmail: string;
   expiresAt: string | null;
   ipCidr: string | null;
-  tierCode: TierCode;
+  tierId: number;
   tier?: TenantTier;
   createdAt: string;
 }
@@ -47,7 +45,7 @@ type TenantVisibleField =
   | 'slug'
   | 'name'
   | 'status'
-  | 'tierCode'
+  | 'tier'
   | 'expiresAt'
   | 'ipCidr'
   | 'contactEmail'
@@ -58,7 +56,7 @@ const tenantFieldOrder: TenantVisibleField[] = [
   'slug',
   'name',
   'status',
-  'tierCode',
+  'tier',
   'expiresAt',
   'ipCidr',
   'contactEmail',
@@ -94,7 +92,7 @@ const TenantsPage: React.FC = () => {
     slug: '',
     name: '',
     contactEmail: '',
-    tierCode: 'LITE' as TierCode,
+    tierId: undefined as number | undefined,
     expiresAt: '',
     ipCidr: '',
   });
@@ -110,6 +108,9 @@ const TenantsPage: React.FC = () => {
       ]);
       setTenants(tenantRes.data);
       setTiers(tierRes.data);
+      if (!form.tierId && tierRes.data.length > 0) {
+        setForm((prev) => ({ ...prev, tierId: tierRes.data[0].id }));
+      }
     } finally {
       setLoading(false);
     }
@@ -130,11 +131,19 @@ const TenantsPage: React.FC = () => {
   const handleCreate = async () => {
     await api.post('/admin/tenants', {
       ...form,
+      tierId: form.tierId || undefined,
       expiresAt: form.expiresAt || undefined,
       ipCidr: form.ipCidr || undefined,
     });
     setShowCreate(false);
-    setForm({ slug: '', name: '', contactEmail: '', tierCode: 'LITE', expiresAt: '', ipCidr: '' });
+    setForm({
+      slug: '',
+      name: '',
+      contactEmail: '',
+      tierId: tiers[0]?.id,
+      expiresAt: '',
+      ipCidr: '',
+    });
     load();
   };
 
@@ -211,7 +220,7 @@ const TenantsPage: React.FC = () => {
         tenant.name,
         tenant.contactEmail,
         tenant.ipCidr ?? '',
-        tenant.tier?.name ?? tenant.tierCode,
+        tenant.tier?.name ?? String(tenant.tierId),
       ].some((value) =>
         value.toLowerCase().includes(keyword),
       );
@@ -242,7 +251,7 @@ const TenantsPage: React.FC = () => {
       { label: t('tenants.table.slug'), value: 'slug' as const },
       { label: t('tenants.table.name'), value: 'name' as const },
       { label: t('common.status'), value: 'status' as const },
-      { label: t('tenants.table.tier'), value: 'tierCode' as const },
+      { label: t('tenants.table.tier'), value: 'tier' as const },
       { label: t('tenants.table.expiresAt'), value: 'expiresAt' as const },
       { label: t('tenants.table.ipCidr'), value: 'ipCidr' as const },
       { label: t('tenants.table.contactEmail'), value: 'contactEmail' as const },
@@ -255,18 +264,9 @@ const TenantsPage: React.FC = () => {
     () =>
       tiers.map((tier) => ({
         label: `${tier.name} (${tier.dailyLogQuotaGb}GB / ${tier.maxUsers})`,
-        value: tier.code,
+        value: tier.id,
       })),
     [tiers],
-  );
-
-  const tierCodeOptions = useMemo(
-    () => [
-      { label: 'Lite', value: 'LITE' as const },
-      { label: t('tenants.tiers.premiumName'), value: 'PREMIUM' as const },
-      { label: t('tenants.tiers.enterpriseName'), value: 'ENTERPRISE' as const },
-    ],
-    [t],
   );
 
   const isFieldVisible = (field: TenantVisibleField) => visibleFields.includes(field);
@@ -503,12 +503,12 @@ const TenantsPage: React.FC = () => {
             )}
           />
         )}
-        {isFieldVisible('tierCode') && (
+        {isFieldVisible('tier') && (
           <Column
-            field="tierCode"
+            field="tierId"
             header={t('tenants.table.tier')}
             style={{ minWidth: '10rem' }}
-            body={(row: Tenant) => <span>{row.tier?.name ?? row.tierCode}</span>}
+            body={(row: Tenant) => <span>{row.tier?.name ?? '-'}</span>}
           />
         )}
         {isFieldVisible('expiresAt') && (
@@ -632,12 +632,12 @@ const TenantsPage: React.FC = () => {
           <div>
             <label className="block mb-1 text-sm">{t('tenants.dialog.tierCode')}</label>
             <SelectButton
-              value={form.tierCode}
-              options={tierOptions.length ? tierOptions : tierCodeOptions}
+              value={form.tierId}
+              options={tierOptions}
               optionLabel="label"
               optionValue="value"
               className="w-full"
-              onChange={(e) => setForm({ ...form, tierCode: e.value as TierCode })}
+              onChange={(e) => setForm({ ...form, tierId: Number(e.value) })}
             />
           </div>
           <div>

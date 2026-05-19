@@ -21,13 +21,41 @@ const update_tenant_dto_1 = require("./dto/update-tenant.dto");
 const create_tenant_tier_dto_1 = require("./dto/create-tenant-tier.dto");
 const update_tenant_tier_dto_1 = require("./dto/update-tenant-tier.dto");
 const master_guard_1 = require("../../common/guards/master.guard");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
+const audit_log_service_1 = require("../../common/audit/audit-log.service");
+const audit_log_entity_1 = require("../../common/audit/entities/audit-log.entity");
 let TenantsController = class TenantsController {
     tenantsService;
-    constructor(tenantsService) {
+    auditLogService;
+    constructor(tenantsService, auditLogService) {
         this.tenantsService = tenantsService;
+        this.auditLogService = auditLogService;
     }
-    create(dto) {
-        return this.tenantsService.create(dto);
+    buildAuditContext(user, req) {
+        return {
+            actorType: user.isMaster ? audit_log_entity_1.AuditActorType.MASTER : audit_log_entity_1.AuditActorType.TENANT,
+            actorId: user.sub,
+            actorEmail: user.email ?? null,
+            tenantSlug: user.tenantId ?? null,
+            ipAddress: req.ip ?? null,
+            userAgent: req.headers['user-agent'] ?? null,
+        };
+    }
+    async create(dto, user, req) {
+        const created = await this.tenantsService.create(dto);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_CREATE',
+            resourceType: 'TENANT',
+            resourceId: String(created.id),
+            message: `테넌트 ${created.name}(${created.slug}) 생성`,
+            metadata: {
+                name: created.name,
+                slug: created.slug,
+                tierId: created.tierId,
+            },
+        });
+        return created;
     }
     findAll() {
         return this.tenantsService.findAll();
@@ -35,20 +63,83 @@ let TenantsController = class TenantsController {
     getTiers() {
         return this.tenantsService.getTiers();
     }
-    createTier(dto) {
-        return this.tenantsService.createTier(dto);
+    async createTier(dto, user, req) {
+        const created = await this.tenantsService.createTier(dto);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_TIER_CREATE',
+            resourceType: 'TENANT_TIER',
+            resourceId: String(created.id),
+            message: `등급 ${created.name}(${created.code}) 생성`,
+            metadata: {
+                code: created.code,
+                name: created.name,
+                dailyLogQuotaGb: created.dailyLogQuotaGb,
+                maxUsers: created.maxUsers,
+            },
+        });
+        return created;
     }
-    updateTier(id, dto) {
-        return this.tenantsService.updateTier(id, dto);
+    async updateTier(id, dto, user, req) {
+        const updated = await this.tenantsService.updateTier(id, dto);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_TIER_UPDATE',
+            resourceType: 'TENANT_TIER',
+            resourceId: String(updated.id),
+            message: `등급 ${updated.name}(${updated.code}) 수정`,
+            metadata: {
+                changedFields: Object.keys(dto),
+            },
+        });
+        return updated;
+    }
+    checkTierDeletion(id) {
+        return this.tenantsService.getTierDeletionStatus(id);
+    }
+    async removeTier(id, user, req) {
+        const deletedTier = await this.tenantsService.deleteTier(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_TIER_DELETE',
+            resourceType: 'TENANT_TIER',
+            resourceId: String(deletedTier.id),
+            message: `등급 ${deletedTier.name}(${deletedTier.code}) 삭제`,
+            metadata: {
+                code: deletedTier.code,
+                name: deletedTier.name,
+            },
+        });
     }
     findOne(id) {
         return this.tenantsService.findOne(id);
     }
-    update(id, dto) {
-        return this.tenantsService.update(id, dto);
+    async update(id, dto, user, req) {
+        const updated = await this.tenantsService.update(id, dto);
+        const isDeleteAction = dto.status === 'DELETED';
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: isDeleteAction ? 'TENANT_DELETE' : 'TENANT_UPDATE',
+            resourceType: 'TENANT',
+            resourceId: String(updated.id),
+            message: isDeleteAction
+                ? `테넌트 ${updated.name}(${updated.slug}) 삭제(상태 전환)`
+                : `테넌트 ${updated.name}(${updated.slug}) 수정`,
+            metadata: {
+                changedFields: Object.keys(dto),
+            },
+        });
+        return updated;
     }
-    remove(id) {
-        return this.tenantsService.softDelete(id);
+    async remove(id, user, req) {
+        await this.tenantsService.softDelete(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_DELETE',
+            resourceType: 'TENANT',
+            resourceId: String(id),
+            message: `테넌트 ID ${id} 삭제(소프트)`,
+        });
     }
     getSettings(id) {
         return this.tenantsService.getSettings(id);
@@ -59,9 +150,11 @@ __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 생성 및 전용 DB 프로비저닝' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_tenant_dto_1.CreateTenantDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [create_tenant_dto_1.CreateTenantDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], TenantsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -81,19 +174,42 @@ __decorate([
     (0, common_1.Post)('tiers'),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 생성' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_tenant_tier_dto_1.CreateTenantTierDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [create_tenant_tier_dto_1.CreateTenantTierDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], TenantsController.prototype, "createTier", null);
 __decorate([
     (0, common_1.Patch)('tiers/:id'),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 수정' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_tenant_tier_dto_1.UpdateTenantTierDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Number, update_tenant_tier_dto_1.UpdateTenantTierDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], TenantsController.prototype, "updateTier", null);
+__decorate([
+    (0, common_1.Get)('tiers/:id/deletion-check'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 삭제 가능 여부 확인' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "checkTierDeletion", null);
+__decorate([
+    (0, common_1.Delete)('tiers/:id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 삭제' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TenantsController.prototype, "removeTier", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 상세 조회' }),
@@ -107,18 +223,22 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: '테넌트 정보 수정 (상태 변경 포함)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_tenant_dto_1.UpdateTenantDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Number, update_tenant_dto_1.UpdateTenantDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], TenantsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 소프트 삭제 (상태 → DELETED)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], TenantsController.prototype, "remove", null);
 __decorate([
     (0, common_1.Get)(':id/settings'),
@@ -133,6 +253,7 @@ exports.TenantsController = TenantsController = __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(master_guard_1.MasterGuard),
     (0, common_1.Controller)('admin/tenants'),
-    __metadata("design:paramtypes", [tenants_service_1.TenantsService])
+    __metadata("design:paramtypes", [tenants_service_1.TenantsService,
+        audit_log_service_1.AuditLogService])
 ], TenantsController);
 //# sourceMappingURL=tenants.controller.js.map

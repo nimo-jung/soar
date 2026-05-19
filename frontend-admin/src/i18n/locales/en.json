@@ -4,7 +4,7 @@
     "password": "Password",
     "login": "Login",
     "logout": "Logout",
-    "actions": "Actions",
+    "actions": "Settings",
     "status": "Status",
     "createdAt": "Created At",
     "create": "Create",
@@ -22,11 +22,14 @@
     "noDataFound": "No data found."
   },
   "nav": {
+    "operations": "Operations",
     "tenants": "Tenant Management",
     "tiers": "Tier Management",
     "threatIntel": "Threat Intelligence",
     "billing": "Billing",
     "monitoring": "Monitoring",
+    "securityAudit": "Security Audit",
+    "auditLogs": "Audit Logs",
     "masterAdmin": "Master Admin"
   },
   "auth": {
@@ -40,7 +43,7 @@
   "tenants": {
     "title": "Tenant Management",
     "createBtn": "Create Tenant",
-    "searchPlaceholder": "Search by company code, company name, or email",
+    "searchPlaceholder": "company code, company name, email",
     "summary": {
       "total": "Total Tenants",
       "active": "Active",
@@ -118,13 +121,43 @@
         "maxUsersRequired": "User limit must be at least 1.",
         "descriptionRequired": "Description is required."
       },
+      "delete": {
+        "confirmTitle": "Confirm Tier Deletion",
+        "confirmAccept": "Delete",
+        "confirmCode": "Tier Code: {{code}}",
+        "confirmName": "Tier Name: {{name}}",
+        "blockedRuleMessage": "Deletion rule: a tier code currently used by tenants cannot be deleted.",
+        "inUseReason": "This tier is currently used by {{count}} tenant(s), so it cannot be deleted."
+      },
       "result": {
         "successTitle": "Completed",
         "errorTitle": "Failed",
         "saveSuccess": "Saved successfully.",
         "saveFailed": "An error occurred while saving.",
+        "deleteSuccess": "Tier deleted successfully.",
+        "deleteFailed": "An error occurred while deleting the tier.",
         "ok": "OK"
       }
+    }
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "subtitle": "View login/logout and admin CUD events.",
+    "refresh": "Refresh",
+    "filters": {
+      "allActorTypes": "All actors",
+      "actionPlaceholder": "Search action code"
+    },
+    "table": {
+      "createdAt": "Created At",
+      "actorType": "Actor Type",
+      "actor": "Actor",
+      "action": "Action",
+      "resource": "Resource",
+      "tenant": "Tenant",
+      "message": "Message",
+      "ipAddress": "IP",
+      "empty": "No audit logs found."
     }
   },
   "threatIntel": {

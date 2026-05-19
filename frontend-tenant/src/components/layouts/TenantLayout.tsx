@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import LanguageSwitcher from '../LanguageSwitcher';
+import api from '../../api';
 
 /* ── Verona grouped nav model ─────────────────────────────────── */
 const navModel = [
@@ -93,6 +94,17 @@ const TenantLayout: React.FC = () => {
     .filter(Boolean)
     .join(' ');
 
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // 로그아웃 감사로그 실패와 관계없이 클라이언트 세션은 정리한다.
+    } finally {
+      logout();
+      navigate('/login');
+    }
+  };
+
   return (
     <div className={wrapperClass}>
       {/* ════════════════ SIDEBAR ════════════════ */}
@@ -143,7 +155,7 @@ const TenantLayout: React.FC = () => {
               </div>
             </div>
           )}
-          <button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>
+          <button className="logout-btn" onClick={() => { void handleLogout(); }}>
             <i className="pi pi-sign-out" />
             <span>{t('common.logout')}</span>
           </button>

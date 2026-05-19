@@ -69,60 +69,89 @@ body {
 .layout-menu {
     list-style: none;
     margin: 0;
-    padding: 0.25rem 1rem;
+    padding: 0.45rem 1rem;
     flex: 1;
 }
 
-.layout-menu .layout-menu-category {
-    font-size: 0.7rem;
+.layout-menu .layout-menu-group {
+    margin-bottom: 0.65rem;
+}
+
+.layout-menu .layout-menu-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.62rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    padding: 0.6rem 0.75rem 0.4rem;
+    font-size: 0.79rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08rem;
+    letter-spacing: 0.06rem;
     color: var(--text-color-secondary);
-    padding: 1rem 0.75rem 0.25rem;
+}
+
+.layout-menu .layout-menu-group-header:hover {
+    color: var(--text-color);
+}
+
+.layout-menu .layout-menu-group-header .layout-menuitem-icon {
+    font-size: 0.88rem;
+    color: var(--text-color-secondary);
+}
+
+.layout-menu .layout-menu-group-toggle {
+    margin-left: auto;
+    font-size: 0.68rem;
+    color: var(--text-color-secondary);
+    transition: transform 0.15s ease;
+}
+
+.layout-menu .layout-menu-group.menu-group-expanded .layout-menu-group-toggle {
+    transform: rotate(180deg);
+}
+
+.layout-menu .layout-menu-submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+}
+
+.layout-menu .layout-menu-group.menu-group-expanded .layout-menu-submenu {
+    max-height: 20rem;
 }
 
 .layout-menu li {
     list-style: none;
 }
 
-.layout-menu li > a {
+.layout-menu .layout-menu-submenu li > a {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.7rem 0.75rem;
-    font-size: 0.875rem;
+    gap: 0.5rem;
+    padding: 0.62rem 0.75rem 0.62rem 1.95rem;
+    font-size: 0.84rem;
     border-radius: 6px;
     cursor: pointer;
     color: var(--text-color);
     text-decoration: none;
     transition: background-color 0.15s ease, color 0.15s ease;
-    margin-bottom: 2px;
-    white-space: nowrap;
+    margin-bottom: 1px;
 }
 
-.layout-menu li > a .layout-menuitem-icon {
-    font-size: 1rem;
-    color: var(--text-color-secondary);
-    transition: color 0.15s ease;
-    flex-shrink: 0;
-}
-
-.layout-menu li > a:hover {
+.layout-menu .layout-menu-submenu li > a:hover {
     background-color: var(--surface-hover);
     color: var(--primary-color);
 }
 
-.layout-menu li > a:hover .layout-menuitem-icon {
-    color: var(--primary-color);
-}
-
-.layout-menu li > a.active-route {
+.layout-menu .layout-menu-submenu li > a.active-route {
     background-color: var(--primary-color);
-    color: var(--primary-color-text);
-}
-
-.layout-menu li > a.active-route .layout-menuitem-icon {
     color: var(--primary-color-text);
 }
 
@@ -595,8 +624,12 @@ body {
 .admin-tenants-table .p-datatable-tbody > tr > td {
     border-width: 0 0 1px;
     border-color: color-mix(in srgb, var(--surface-border) 80%, transparent 20%);
-    padding-top: 0.82rem;
-    padding-bottom: 0.82rem;
+    padding-top: 0.0rem;
+    padding-bottom: 0.0rem;
+}
+
+.admin-tenants-table .p-datatable-tbody > tr {
+    height: 2.6rem;
 }
 
 .admin-tenants-table.p-datatable-sm .p-datatable-thead > tr > th {
@@ -672,12 +705,12 @@ body {
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--surface-border) 74%, transparent 26%);
     background: color-mix(in srgb, var(--surface-ground) 74%, transparent 26%);
-    padding: 0.14rem 0.2rem;
+    padding: 0.08rem 0.14rem;
 }
 
 .tenant-action-stack .p-button {
-    width: 1.9rem;
-    height: 1.9rem;
+    width: 1.68rem;
+    height: 1.68rem;
 }
 
 .tenant-action-stack .p-button.p-button-text.p-button-warning {
@@ -686,6 +719,18 @@ body {
 
 .tenant-action-stack .p-button.p-button-text.p-button-success {
     color: color-mix(in srgb, var(--green-300) 88%, #ffffff 12%);
+}
+
+.tier-action-stack {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.04rem;
+    padding: 0;
+}
+
+.tier-action-stack .p-button {
+    width: 1.42rem;
+    height: 1.42rem;
 }
 
 .tenant-row-menu .p-menu-separator {
@@ -741,9 +786,9 @@ body {
 }
 
 .tenant-status-tag.p-tag {
-    min-width: 5.2rem;
+    min-width: 4.5rem;
     justify-content: center;
-    padding: 0.17rem 0.58rem;
+    padding: 0.1rem 0.48rem;
 }
 
 .tenant-status-active {
@@ -762,6 +807,12 @@ body {
     background: color-mix(in srgb, var(--red-500) 20%, transparent 80%);
     color: color-mix(in srgb, var(--red-200) 90%, #ffffff 10%);
     border-color: color-mix(in srgb, var(--red-400) 36%, transparent 64%);
+
+    .tenant-status-inactive {
+        background: color-mix(in srgb, var(--surface-500) 26%, transparent 74%);
+        color: color-mix(in srgb, var(--surface-200) 92%, #ffffff 8%);
+        border-color: color-mix(in srgb, var(--surface-300) 38%, transparent 62%);
+    }
 }
 
 @media (max-width: 980px) {

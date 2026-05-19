@@ -21,7 +21,7 @@ const CommonDataTable: React.FC<CommonDataTableProps> = ({
       className={mergedClassName}
       rowHover={rowHover ?? true}
       stripedRows={stripedRows ?? true}
-      size={size ?? 'small'}
+      size={size ?? 'normal'}
       emptyMessage={emptyMessage ?? t('common.noDataFound')}
     />
   );

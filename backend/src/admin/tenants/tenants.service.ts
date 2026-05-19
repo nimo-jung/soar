@@ -3,11 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Tenant, TenantStatus } from './entities/tenant.entity';
 import { TenantSettings } from './entities/tenant-settings.entity';
-import { TenantTier, TenantTierCode } from './entities/tenant-tier.entity';
+import { TenantTier } from './entities/tenant-tier.entity';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
+
+export interface TierDeletionStatus {
+  canDelete: boolean;
+  tier: TenantTier;
+  usageCount: number;
+  reason: string | null;
+}
 
 @Injectable()
 export class TenantsService {
@@ -21,20 +28,23 @@ export class TenantsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  private async findTierForTenantByCode(code: TenantTierCode): Promise<TenantTier | null> {
+  private async findTierForTenantById(id: number): Promise<TenantTier | null> {
+    return this.tierRepo.findOne({ where: { id } });
+  }
+
+  private async findDefaultTierForTenant(): Promise<TenantTier | null> {
     const activeTier = await this.tierRepo
       .createQueryBuilder('tier')
-      .where('tier.code = :code', { code })
-      .andWhere('tier.is_active = :isActive', { isActive: true })
+      .where('tier.is_active = :isActive', { isActive: true })
       .orderBy('tier.id', 'ASC')
       .getOne();
+
     if (activeTier) {
       return activeTier;
     }
 
     return this.tierRepo
       .createQueryBuilder('tier')
-      .where('tier.code = :code', { code })
       .orderBy('tier.id', 'ASC')
       .getOne();
   }
@@ -50,17 +60,18 @@ export class TenantsService {
     await queryRunner.startTransaction();
 
     try {
-      const tierCode = dto.tierCode ?? TenantTierCode.LITE;
-      const tier = await this.findTierForTenantByCode(tierCode);
+      const tier = dto.tierId
+        ? await this.findTierForTenantById(dto.tierId)
+        : await this.findDefaultTierForTenant();
       if (!tier) {
-        throw new NotFoundException(`등급 코드 ${tierCode}를 찾을 수 없습니다.`);
+        throw new NotFoundException(dto.tierId ? `등급 ID ${dto.tierId}를 찾을 수 없습니다.` : '사용 가능한 등급이 없습니다.');
       }
 
       const tenant = this.tenantRepo.create({
         slug: dto.slug,
         name: dto.name,
         contactEmail: dto.contactEmail,
-        tierCode,
+        tierId: tier.id,
         ipCidr: dto.ipCidr ?? null,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
       });
@@ -102,10 +113,10 @@ export class TenantsService {
   async update(id: number, dto: UpdateTenantDto): Promise<Tenant> {
     const tenant = await this.findOne(id);
 
-    if (dto.tierCode) {
-      const tier = await this.findTierForTenantByCode(dto.tierCode);
+    if (dto.tierId) {
+      const tier = await this.findTierForTenantById(dto.tierId);
       if (!tier) {
-        throw new NotFoundException(`등급 코드 ${dto.tierCode}를 찾을 수 없습니다.`);
+        throw new NotFoundException(`등급 ID ${dto.tierId}를 찾을 수 없습니다.`);
       }
       const settings = await this.settingsRepo.findOne({ where: { tenantId: id } });
       if (settings) {
@@ -215,7 +226,7 @@ export class TenantsService {
     const savedTier = await this.tierRepo.save(tier);
 
     if (dto.dailyLogQuotaGb) {
-      const tenants = await this.tenantRepo.find({ where: { tierCode: tier.code } });
+      const tenants = await this.tenantRepo.find({ where: { tierId: tier.id } });
       if (tenants.length > 0) {
         const tenantIds = tenants.map((tenant) => tenant.id);
         const settings = await this.settingsRepo
@@ -230,5 +241,39 @@ export class TenantsService {
     }
 
     return savedTier;
+  }
+
+  async getTierDeletionStatus(id: number): Promise<TierDeletionStatus> {
+    const tier = await this.tierRepo.findOne({ where: { id } });
+    if (!tier) {
+      throw new NotFoundException(`등급 ID ${id}를 찾을 수 없습니다.`);
+    }
+
+    const usageCount = await this.tenantRepo.count({ where: { tierId: tier.id } });
+    if (usageCount > 0) {
+      return {
+        canDelete: false,
+        tier,
+        usageCount,
+        reason: `해당 등급은 현재 ${usageCount}개 테넌트에서 사용 중이라 삭제할 수 없습니다.`,
+      };
+    }
+
+    return {
+      canDelete: true,
+      tier,
+      usageCount: 0,
+      reason: null,
+    };
+  }
+
+  async deleteTier(id: number): Promise<TenantTier> {
+    const deletionStatus = await this.getTierDeletionStatus(id);
+    if (!deletionStatus.canDelete) {
+      throw new ConflictException(deletionStatus.reason ?? '해당 등급은 삭제할 수 없습니다.');
+    }
+
+    await this.tierRepo.remove(deletionStatus.tier);
+    return deletionStatus.tier;
   }
 }

@@ -4,7 +4,7 @@
     "password": "비밀번호",
     "login": "로그인",
     "logout": "로그아웃",
-    "actions": "액션",
+    "actions": "설정",
     "status": "상태",
     "createdAt": "생성일",
     "create": "생성",
@@ -22,11 +22,14 @@
     "noDataFound": "조회된 데이터가 없습니다."
   },
   "nav": {
+    "operations": "운영 관리",
     "tenants": "테넌트 관리",
     "tiers": "등급 관리",
     "threatIntel": "위협 인텔리전스",
     "billing": "빌링",
     "monitoring": "모니터링",
+    "securityAudit": "보안감사",
+    "auditLogs": "감사로그",
     "masterAdmin": "Master Admin"
   },
   "auth": {
@@ -40,7 +43,7 @@
   "tenants": {
     "title": "테넌트 관리",
     "createBtn": "테넌트 생성",
-    "searchPlaceholder": "고객사 코드, 고객사명, 이메일로 검색",
+    "searchPlaceholder": "고객사 코드, 고객사명, 이메일",
     "summary": {
       "total": "전체 테넌트",
       "active": "활성",
@@ -118,13 +121,43 @@
         "maxUsersRequired": "사용자 수는 1 이상으로 입력하세요.",
         "descriptionRequired": "설명은 필수입니다."
       },
+      "delete": {
+        "confirmTitle": "등급 삭제 확인",
+        "confirmAccept": "삭제",
+        "confirmCode": "등급 코드: {{code}}",
+        "confirmName": "등급 이름: {{name}}",
+        "blockedRuleMessage": "삭제 불가 조건: 테넌트에서 사용 중인 등급 코드는 삭제할 수 없습니다.",
+        "inUseReason": "해당 등급은 현재 {{count}}개 테넌트에서 사용 중이라 삭제할 수 없습니다."
+      },
       "result": {
         "successTitle": "처리 완료",
         "errorTitle": "처리 실패",
         "saveSuccess": "정상적으로 저장되었습니다.",
         "saveFailed": "저장 중 오류가 발생했습니다.",
+        "deleteSuccess": "등급이 삭제되었습니다.",
+        "deleteFailed": "등급 삭제 중 오류가 발생했습니다.",
         "ok": "확인"
       }
+    }
+  },
+  "auditLogs": {
+    "title": "감사로그",
+    "subtitle": "로그인/로그아웃 및 관리자 CUD 이벤트를 조회합니다.",
+    "refresh": "새로고침",
+    "filters": {
+      "allActorTypes": "전체 행위자",
+      "actionPlaceholder": "행위 코드(action) 검색"
+    },
+    "table": {
+      "createdAt": "발생 시각",
+      "actorType": "행위자 유형",
+      "actor": "행위자",
+      "action": "행위",
+      "resource": "대상",
+      "tenant": "테넌트",
+      "message": "메시지",
+      "ipAddress": "IP",
+      "empty": "조회된 감사로그가 없습니다."
     }
   },
   "threatIntel": {

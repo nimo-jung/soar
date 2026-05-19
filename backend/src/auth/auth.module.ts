@@ -7,10 +7,12 @@ import { AuthService } from './auth.service';
 import { MasterUser } from '../admin/master-users/entities/master-user.entity';
 import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
+import { AuditLog } from '../common/audit/entities/audit-log.entity';
+import { AuditLogService } from '../common/audit/audit-log.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MasterUser, Tenant, TenantSettings]),
+    TypeOrmModule.forFeature([MasterUser, Tenant, TenantSettings, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),
@@ -20,6 +22,6 @@ import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, AuditLogService],
 })
 export class AuthModule {}

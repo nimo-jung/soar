@@ -1,7 +1,6 @@
-import { IsEnum, IsOptional, IsEmail, IsDateString, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsEmail, IsDateString, IsString, IsInt, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TenantStatus } from '../entities/tenant.entity';
-import { TenantTierCode } from '../entities/tenant-tier.entity';
 
 export class UpdateTenantDto {
   @ApiPropertyOptional({ description: '고객사명' })
@@ -18,10 +17,11 @@ export class UpdateTenantDto {
   @IsOptional()
   contactEmail?: string;
 
-  @ApiPropertyOptional({ enum: TenantTierCode, description: '테넌트 등급 코드' })
-  @IsEnum(TenantTierCode)
+  @ApiPropertyOptional({ description: '테넌트 등급 ID' })
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  tierCode?: TenantTierCode;
+  tierId?: number;
 
   @ApiPropertyOptional({ description: '사용 기한(ISO-8601)' })
   @IsDateString()

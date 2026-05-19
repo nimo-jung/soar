@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # SOAR DB 마이그레이션 실행 스크립트
-# 사용법: ./scripts/migrate.sh [run|revert|generate <name>] [dev|prod]
+# 사용법: ./scripts/migrate.sh [run|revert|generate <name>|reset [db|tables] [--yes]] [dev|prod]
 # =============================================================================
 set -euo pipefail
 
@@ -35,8 +35,77 @@ print_migrate_hint() {
     generate)
       echo "  적용 실행     : ./scripts/migrate.sh run $MODE"
       ;;
+    reset)
+      echo "  기본 실행     : ./scripts/migrate.sh run $MODE"
+      echo "  상태 확인     : ./scripts/status.sh"
+      echo "  스모크 테스트 : ./scripts/smoke.sh $MODE"
+      ;;
   esac
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
+confirm_destructive() {
+  local message="$1"
+  local force_flag="${2:-}"
+
+  if [[ "$force_flag" == "--yes" || "${SOAR_MIGRATE_FORCE:-0}" == "1" ]]; then
+    return 0
+  fi
+
+  if [[ ! -t 0 ]]; then
+    error "파괴적 작업입니다. --yes 또는 SOAR_MIGRATE_FORCE=1 옵션이 필요합니다."
+    return 1
+  fi
+
+  echo ""
+  warn "$message"
+  read -r -p "계속하시겠습니까? [y/N]: " answer
+  if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+    info "요청에 의해 작업을 취소했습니다."
+    return 1
+  fi
+}
+
+reset_admin_database() {
+  info "soar_admin DB DROP/CREATE 수행 중..."
+  node <<'NODE'
+const mysql = require('mysql2/promise');
+
+const host = process.env.DB_HOST || 'localhost';
+const port = Number(process.env.DB_PORT || '3306');
+const user = process.env.DB_USER || 'soar';
+const password = process.env.DB_PASSWORD || 'soarpassword';
+const database = process.env.DB_NAME || 'soar_admin';
+
+if (!/^[A-Za-z0-9_]+$/.test(database)) {
+  throw new Error(`Unsafe DB name: ${database}`);
+}
+
+async function main() {
+  const conn = await mysql.createConnection({ host, port, user, password });
+  await conn.query(`DROP DATABASE IF EXISTS \`${database}\``);
+  await conn.query(`CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  await conn.end();
+  console.log(`[Reset] Database recreated: ${database}`);
+}
+
+main().catch((err) => {
+  console.error('[Reset] Failed to recreate database:', err.message);
+  process.exit(1);
+});
+NODE
+}
+
+reset_admin_tables() {
+  info "soar_admin 테이블 스키마 DROP 수행 중..."
+  npx typeorm-ts-node-commonjs -d src/database/admin-data-source.ts schema:drop
+}
+
+run_admin_migrate_and_seed() {
+  info "soar_admin 마이그레이션 실행..."
+  npm run migration:run:admin
+  info "Admin Seed 실행..."
+  npm run setup
 }
 
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -85,8 +154,30 @@ case "$CMD" in
     success "생성 완료: src/database/migrations/admin/"
     print_migrate_hint generate
     ;;
+  reset)
+    RESET_KIND="${1:-db}"
+    FORCE_FLAG="${2:-}"
+
+    if [[ "$RESET_KIND" != "db" && "$RESET_KIND" != "tables" ]]; then
+      error "reset 옵션은 db 또는 tables만 지원합니다."
+      echo "사용법: $0 reset [db|tables] [--yes] [dev|prod]"
+      exit 1
+    fi
+
+    if [[ "$RESET_KIND" == "db" ]]; then
+      confirm_destructive "DB를 삭제 후 재생성합니다: soar_admin" "$FORCE_FLAG" || exit 1
+      reset_admin_database
+    else
+      confirm_destructive "soar_admin의 모든 테이블을 삭제합니다." "$FORCE_FLAG" || exit 1
+      reset_admin_tables
+    fi
+
+    run_admin_migrate_and_seed
+    success "리셋 완료 ($RESET_KIND)"
+    print_migrate_hint reset
+    ;;
   *)
-    echo "사용법: $0 [run|revert|generate <name>] [dev|prod]"
+    echo "사용법: $0 [run|revert|generate <name>|reset [db|tables] [--yes]] [dev|prod]"
     exit 1
     ;;
 esac

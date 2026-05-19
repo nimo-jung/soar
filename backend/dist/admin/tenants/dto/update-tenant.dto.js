@@ -13,12 +13,11 @@ exports.UpdateTenantDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const tenant_entity_1 = require("../entities/tenant.entity");
-const tenant_tier_entity_1 = require("../entities/tenant-tier.entity");
 class UpdateTenantDto {
     name;
     status;
     contactEmail;
-    tierCode;
+    tierId;
     expiresAt;
     ipCidr;
 }
@@ -41,11 +40,12 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateTenantDto.prototype, "contactEmail", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ enum: tenant_tier_entity_1.TenantTierCode, description: '테넌트 등급 코드' }),
-    (0, class_validator_1.IsEnum)(tenant_tier_entity_1.TenantTierCode),
+    (0, swagger_1.ApiPropertyOptional)({ description: '테넌트 등급 ID' }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], UpdateTenantDto.prototype, "tierCode", void 0);
+    __metadata("design:type", Number)
+], UpdateTenantDto.prototype, "tierId", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601)' }),
     (0, class_validator_1.IsDateString)(),

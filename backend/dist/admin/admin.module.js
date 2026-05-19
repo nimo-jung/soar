@@ -10,12 +10,13 @@ exports.AdminModule = void 0;
 const common_1 = require("@nestjs/common");
 const tenants_module_1 = require("./tenants/tenants.module");
 const threat_intel_module_1 = require("./threat-intel/threat-intel.module");
+const audit_logs_module_1 = require("./audit-logs/audit-logs.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [tenants_module_1.TenantsModule, threat_intel_module_1.ThreatIntelModule],
+        imports: [tenants_module_1.TenantsModule, threat_intel_module_1.ThreatIntelModule, audit_logs_module_1.AuditLogsModule],
         exports: [tenants_module_1.TenantsModule],
     })
 ], AdminModule);

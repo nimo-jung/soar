@@ -108,6 +108,8 @@ SOAR_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 ./scripts/migrate.sh run                       # 마이그레이션 실행
 ./scripts/migrate.sh revert                    # 마지막 마이그레이션 롤백
 ./scripts/migrate.sh generate CreateUserTable  # 마이그레이션 파일 생성
+./scripts/migrate.sh reset db --yes            # soar_admin DB 재생성 + 마이그레이션 + Seed
+./scripts/migrate.sh reset tables --yes        # soar_admin 테이블 삭제 + 마이그레이션 + Seed
 ```
 
 ### 6. 상태 확인

@@ -1,19 +1,37 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
 import LanguageSwitcher from '../LanguageSwitcher';
+import api from '../../api';
 
-const navItems = [
-  { labelKey: 'nav.tenants', path: '/tenants', icon: 'pi pi-building' },
-  { labelKey: 'nav.tiers', path: '/tiers', icon: 'pi pi-id-card' },
-  { labelKey: 'nav.threatIntel', path: '/threat-intel', icon: 'pi pi-shield' },
-  { labelKey: 'nav.billing', path: '/billing', icon: 'pi pi-chart-bar' },
-  { labelKey: 'nav.monitoring', path: '/monitoring', icon: 'pi pi-desktop' },
+const navSections = [
+  {
+    sectionLabelKey: 'nav.operations',
+    sectionIcon: 'pi pi-briefcase',
+    items: [
+      { labelKey: 'nav.tenants', path: '/tenants', icon: 'pi pi-building' },
+      { labelKey: 'nav.tiers', path: '/tiers', icon: 'pi pi-id-card' },
+      { labelKey: 'nav.threatIntel', path: '/threat-intel', icon: 'pi pi-shield' },
+      { labelKey: 'nav.billing', path: '/billing', icon: 'pi pi-chart-bar' },
+      { labelKey: 'nav.monitoring', path: '/monitoring', icon: 'pi pi-desktop' },
+    ],
+  },
+  {
+    sectionLabelKey: 'nav.securityAudit',
+    sectionIcon: 'pi pi-bookmark',
+    items: [
+      { labelKey: 'nav.auditLogs', path: '/audit-logs', icon: 'pi pi-book' },
+    ],
+  },
 ];
 
 function getBreadcrumbItem(pathname: string) {
-  return navItems.find((item) => pathname.startsWith(item.path));
+  return navSections.flatMap((section) => section.items).find((item) => pathname.startsWith(item.path));
+}
+
+function getSectionLabelKeyByPath(pathname: string) {
+  return navSections.find((section) => section.items.some((item) => pathname.startsWith(item.path)))?.sectionLabelKey;
 }
 
 const AdminLayout: React.FC = () => {
@@ -23,8 +41,30 @@ const AdminLayout: React.FC = () => {
   const { t } = useTranslation();
   const [staticInactive, setStaticInactive] = useState(false);
   const [mobileActive, setMobileActive] = useState(false);
+  const [expandedSectionKeys, setExpandedSectionKeys] = useState<string[]>(() => {
+    const initialSectionKey = getSectionLabelKeyByPath(location.pathname);
+    return initialSectionKey ? [initialSectionKey] : [];
+  });
 
   const breadcrumbItem = useMemo(() => getBreadcrumbItem(location.pathname), [location.pathname]);
+  const activeSectionKey = useMemo(() => getSectionLabelKeyByPath(location.pathname), [location.pathname]);
+
+  useEffect(() => {
+    if (activeSectionKey) {
+      setExpandedSectionKeys((prev) => (prev.includes(activeSectionKey) ? prev : [...prev, activeSectionKey]));
+    }
+  }, [activeSectionKey]);
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // 로그아웃 감사로그 실패와 관계없이 클라이언트 세션은 정리한다.
+    } finally {
+      logout();
+      navigate('/login');
+    }
+  };
 
   const toggleMenu = () => {
     if (window.innerWidth < 992) {
@@ -53,22 +93,46 @@ const AdminLayout: React.FC = () => {
         </div>
 
         <ul className="layout-menu">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) => (isActive ? 'active-route' : '')}
-                onClick={() => setMobileActive(false)}
+          {navSections.map((section, index) => (
+            <li
+              className={`layout-menu-group ${expandedSectionKeys.includes(section.sectionLabelKey) ? 'menu-group-expanded' : ''}`}
+              key={`${section.sectionLabelKey}-${index}`}
+            >
+              <button
+                type="button"
+                className="layout-menu-group-header"
+                aria-expanded={expandedSectionKeys.includes(section.sectionLabelKey)}
+                onClick={() => {
+                  setExpandedSectionKeys((prev) => (
+                    prev.includes(section.sectionLabelKey)
+                      ? prev.filter((key) => key !== section.sectionLabelKey)
+                      : [...prev, section.sectionLabelKey]
+                  ));
+                }}
               >
-                <i className={`layout-menuitem-icon ${item.icon}`} />
-                <span>{t(item.labelKey)}</span>
-              </NavLink>
+                <i className={`layout-menuitem-icon ${section.sectionIcon}`} />
+                <span>{t(section.sectionLabelKey)}</span>
+                <i className="pi pi-chevron-down layout-menu-group-toggle" />
+              </button>
+              <ul className="layout-menu-submenu" aria-hidden={!expandedSectionKeys.includes(section.sectionLabelKey)}>
+                {section.items.map((item) => (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) => (isActive ? 'active-route' : '')}
+                      onClick={() => setMobileActive(false)}
+                    >
+                      <span>{t(item.labelKey)}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
 
         <div className="layout-sidebar-footer">
-          <button onClick={() => { logout(); navigate('/login'); }}>
+          <button onClick={() => { void handleLogout(); }}>
             <i className="pi pi-sign-out" />
             <span>{t('common.logout')}</span>
           </button>

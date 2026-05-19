@@ -12,12 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTenantDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
-const tenant_tier_entity_1 = require("../entities/tenant-tier.entity");
 class CreateTenantDto {
     slug;
     name;
     contactEmail;
-    tierCode;
+    tierId;
     expiresAt;
     ipCidr;
 }
@@ -41,14 +40,14 @@ __decorate([
 ], CreateTenantDto.prototype, "contactEmail", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        enum: tenant_tier_entity_1.TenantTierCode,
-        description: '테넌트 등급 코드 (기본값: LITE)',
-        default: tenant_tier_entity_1.TenantTierCode.LITE,
+        description: '테넌트 등급 ID (미지정 시 첫 활성 등급)',
+        example: 1,
     }),
-    (0, class_validator_1.IsEnum)(tenant_tier_entity_1.TenantTierCode),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateTenantDto.prototype, "tierCode", void 0);
+    __metadata("design:type", Number)
+], CreateTenantDto.prototype, "tierId", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' }),
     (0, class_validator_1.IsDateString)(),

@@ -7,6 +7,7 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
 import { SelectButton } from 'primereact/selectbutton';
 import { Tag } from 'primereact/tag';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
@@ -21,6 +22,12 @@ interface TenantTier {
   maxUsers: number;
   description: string | null;
   isActive: boolean;
+}
+
+interface TierDeletionCheckResponse {
+  canDelete: boolean;
+  usageCount: number;
+  reason: string | null;
 }
 
 type TierFormErrors = {
@@ -38,6 +45,8 @@ const TenantTiersPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [editingTier, setEditingTier] = useState<TenantTier | null>(null);
+  const [checkingDeleteTierId, setCheckingDeleteTierId] = useState<number | null>(null);
+  const [deletingTierId, setDeletingTierId] = useState<number | null>(null);
   const [formErrors, setFormErrors] = useState<TierFormErrors>({});
   const [resultDialog, setResultDialog] = useState({
     visible: false,
@@ -171,8 +180,62 @@ const TenantTiersPage: React.FC = () => {
     }
   };
 
+  const handleDeleteTier = async (tier: TenantTier) => {
+    setCheckingDeleteTierId(tier.id);
+    try {
+      const checkRes = await api.get<TierDeletionCheckResponse>(`/admin/tenants/tiers/${tier.id}/deletion-check`);
+      if (!checkRes.data.canDelete) {
+        showResultDialog(
+          false,
+          checkRes.data.reason || t('tenants.tiers.delete.inUseReason', { count: checkRes.data.usageCount }),
+        );
+        return;
+      }
+
+      confirmDialog({
+        header: t('tenants.tiers.delete.confirmTitle'),
+        icon: 'pi pi-exclamation-triangle',
+        acceptClassName: 'p-button-danger',
+        acceptLabel: t('tenants.tiers.delete.confirmAccept'),
+        rejectLabel: t('common.cancel'),
+        message: (
+          <div className="flex flex-column gap-2">
+            <div>{t('tenants.tiers.delete.confirmCode', { code: tier.code })}</div>
+            <div>{t('tenants.tiers.delete.confirmName', { name: tier.name })}</div>
+            <div className="text-sm text-color-secondary">{t('tenants.tiers.delete.blockedRuleMessage')}</div>
+          </div>
+        ),
+        accept: async () => {
+          setDeletingTierId(tier.id);
+          try {
+            await api.delete(`/admin/tenants/tiers/${tier.id}`);
+            await load();
+            showResultDialog(true, t('tenants.tiers.result.deleteSuccess'));
+          } catch (error: any) {
+            const responseMessage = error?.response?.data?.message;
+            const message = Array.isArray(responseMessage)
+              ? responseMessage.join(', ')
+              : responseMessage || t('tenants.tiers.result.deleteFailed');
+            showResultDialog(false, String(message));
+          } finally {
+            setDeletingTierId(null);
+          }
+        },
+      });
+    } catch (error: any) {
+      const responseMessage = error?.response?.data?.message;
+      const message = Array.isArray(responseMessage)
+        ? responseMessage.join(', ')
+        : responseMessage || t('tenants.tiers.result.deleteFailed');
+      showResultDialog(false, String(message));
+    } finally {
+      setCheckingDeleteTierId(null);
+    }
+  };
+
   return (
     <div className="tenants-page">
+      <ConfirmDialog />
       <div className="page-header">
         <div></div>
         <Button
@@ -205,23 +268,41 @@ const TenantTiersPage: React.FC = () => {
             body={(row: TenantTier) => (
               <Tag
                 value={row.isActive ? t('common.active') : t('common.inactive')}
-                severity={row.isActive ? 'success' : 'secondary'}
+                rounded
+                className={`tenant-status-tag ${row.isActive ? 'tenant-status-active' : 'tenant-status-inactive'}`}
               />
             )}
           />
           <Column
             header={t('common.actions')}
-            style={{ width: '7rem' }}
+            style={{ width: '5.2rem' }}
+            bodyClassName="text-center"
+            headerClassName="text-center"
             body={(row: TenantTier) => (
-              <Button
-                type="button"
-                icon="pi pi-pencil"
-                text
-                rounded
-                size="small"
-                aria-label={t('common.save')}
-                onClick={() => openEditDialog(row)}
-              />
+              <div className="tier-action-stack">
+                <Button
+                  type="button"
+                  icon="pi pi-pencil"
+                  text
+                  rounded
+                  size="small"
+                  aria-label={t('tenants.tiers.editDialogTitle')}
+                  onClick={() => openEditDialog(row)}
+                />
+                <Button
+                  type="button"
+                  icon="pi pi-trash"
+                  text
+                  rounded
+                  size="small"
+                  severity="danger"
+                  aria-label={t('tenants.actions.delete')}
+                  loading={checkingDeleteTierId === row.id || deletingTierId === row.id}
+                  onClick={() => {
+                    void handleDeleteTier(row);
+                  }}
+                />
+              </div>
             )}
           />
         </CommonDataTable>

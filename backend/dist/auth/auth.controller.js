@@ -23,11 +23,20 @@ let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
-    masterLogin(dto) {
-        return this.authService.loginAsMaster(dto);
+    getRequestContext(req) {
+        return {
+            ipAddress: req.ip ?? null,
+            userAgent: req.headers['user-agent'] ?? null,
+        };
     }
-    tenantLogin(dto) {
-        return this.authService.loginAsTenant(dto);
+    masterLogin(dto, req) {
+        return this.authService.loginAsMaster(dto, this.getRequestContext(req));
+    }
+    tenantLogin(dto, req) {
+        return this.authService.loginAsTenant(dto, this.getRequestContext(req));
+    }
+    logout(authorization, req) {
+        return this.authService.logout(authorization, this.getRequestContext(req));
     }
 };
 exports.AuthController = AuthController;
@@ -36,8 +45,9 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: '마스터 관리자 로그인' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "masterLogin", null);
 __decorate([
@@ -45,10 +55,21 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 사용자 로그인 (brandingConfig 포함 응답)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [tenant_login_dto_1.TenantLoginDto]),
+    __metadata("design:paramtypes", [tenant_login_dto_1.TenantLoginDto, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "tenantLogin", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '로그아웃 감사로그 기록' }),
+    __param(0, (0, common_1.Headers)('authorization')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),

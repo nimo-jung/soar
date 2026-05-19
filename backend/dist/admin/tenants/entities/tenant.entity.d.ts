@@ -1,4 +1,4 @@
-import { TenantTier, TenantTierCode } from './tenant-tier.entity';
+import { TenantTier } from './tenant-tier.entity';
 export declare enum TenantStatus {
     ACTIVE = "ACTIVE",
     SUSPENDED = "SUSPENDED",
@@ -13,7 +13,7 @@ export declare class Tenant {
     expiresAt: Date | null;
     ipCidr: string | null;
     tier: TenantTier;
-    tierCode: TenantTierCode;
+    tierId: number;
     createdAt: Date;
     updatedAt: Date;
 }

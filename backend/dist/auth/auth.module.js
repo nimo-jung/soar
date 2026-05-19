@@ -16,13 +16,15 @@ const auth_service_1 = require("./auth.service");
 const master_user_entity_1 = require("../admin/master-users/entities/master-user.entity");
 const tenant_entity_1 = require("../admin/tenants/entities/tenant.entity");
 const tenant_settings_entity_1 = require("../admin/tenants/entities/tenant-settings.entity");
+const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
+const audit_log_service_1 = require("../common/audit/audit-log.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([master_user_entity_1.MasterUser, tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings]),
+            typeorm_1.TypeOrmModule.forFeature([master_user_entity_1.MasterUser, tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, audit_log_entity_1.AuditLog]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),
@@ -32,7 +34,7 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService],
+        providers: [auth_service_1.AuthService, audit_log_service_1.AuditLogService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

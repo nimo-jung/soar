@@ -30,11 +30,13 @@ let TenantsService = class TenantsService {
         this.tierRepo = tierRepo;
         this.dataSource = dataSource;
     }
-    async findTierForTenantByCode(code) {
+    async findTierForTenantById(id) {
+        return this.tierRepo.findOne({ where: { id } });
+    }
+    async findDefaultTierForTenant() {
         const activeTier = await this.tierRepo
             .createQueryBuilder('tier')
-            .where('tier.code = :code', { code })
-            .andWhere('tier.is_active = :isActive', { isActive: true })
+            .where('tier.is_active = :isActive', { isActive: true })
             .orderBy('tier.id', 'ASC')
             .getOne();
         if (activeTier) {
@@ -42,7 +44,6 @@ let TenantsService = class TenantsService {
         }
         return this.tierRepo
             .createQueryBuilder('tier')
-            .where('tier.code = :code', { code })
             .orderBy('tier.id', 'ASC')
             .getOne();
     }
@@ -55,16 +56,17 @@ let TenantsService = class TenantsService {
         await queryRunner.connect();
         await queryRunner.startTransaction();
         try {
-            const tierCode = dto.tierCode ?? tenant_tier_entity_1.TenantTierCode.LITE;
-            const tier = await this.findTierForTenantByCode(tierCode);
+            const tier = dto.tierId
+                ? await this.findTierForTenantById(dto.tierId)
+                : await this.findDefaultTierForTenant();
             if (!tier) {
-                throw new common_1.NotFoundException(`등급 코드 ${tierCode}를 찾을 수 없습니다.`);
+                throw new common_1.NotFoundException(dto.tierId ? `등급 ID ${dto.tierId}를 찾을 수 없습니다.` : '사용 가능한 등급이 없습니다.');
             }
             const tenant = this.tenantRepo.create({
                 slug: dto.slug,
                 name: dto.name,
                 contactEmail: dto.contactEmail,
-                tierCode,
+                tierId: tier.id,
                 ipCidr: dto.ipCidr ?? null,
                 expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
             });
@@ -99,10 +101,10 @@ let TenantsService = class TenantsService {
     }
     async update(id, dto) {
         const tenant = await this.findOne(id);
-        if (dto.tierCode) {
-            const tier = await this.findTierForTenantByCode(dto.tierCode);
+        if (dto.tierId) {
+            const tier = await this.findTierForTenantById(dto.tierId);
             if (!tier) {
-                throw new common_1.NotFoundException(`등급 코드 ${dto.tierCode}를 찾을 수 없습니다.`);
+                throw new common_1.NotFoundException(`등급 ID ${dto.tierId}를 찾을 수 없습니다.`);
             }
             const settings = await this.settingsRepo.findOne({ where: { tenantId: id } });
             if (settings) {
@@ -187,7 +189,7 @@ let TenantsService = class TenantsService {
         Object.assign(tier, normalizedDto);
         const savedTier = await this.tierRepo.save(tier);
         if (dto.dailyLogQuotaGb) {
-            const tenants = await this.tenantRepo.find({ where: { tierCode: tier.code } });
+            const tenants = await this.tenantRepo.find({ where: { tierId: tier.id } });
             if (tenants.length > 0) {
                 const tenantIds = tenants.map((tenant) => tenant.id);
                 const settings = await this.settingsRepo
@@ -201,6 +203,35 @@ let TenantsService = class TenantsService {
             }
         }
         return savedTier;
+    }
+    async getTierDeletionStatus(id) {
+        const tier = await this.tierRepo.findOne({ where: { id } });
+        if (!tier) {
+            throw new common_1.NotFoundException(`등급 ID ${id}를 찾을 수 없습니다.`);
+        }
+        const usageCount = await this.tenantRepo.count({ where: { tierId: tier.id } });
+        if (usageCount > 0) {
+            return {
+                canDelete: false,
+                tier,
+                usageCount,
+                reason: `해당 등급은 현재 ${usageCount}개 테넌트에서 사용 중이라 삭제할 수 없습니다.`,
+            };
+        }
+        return {
+            canDelete: true,
+            tier,
+            usageCount: 0,
+            reason: null,
+        };
+    }
+    async deleteTier(id) {
+        const deletionStatus = await this.getTierDeletionStatus(id);
+        if (!deletionStatus.canDelete) {
+            throw new common_1.ConflictException(deletionStatus.reason ?? '해당 등급은 삭제할 수 없습니다.');
+        }
+        await this.tierRepo.remove(deletionStatus.tier);
+        return deletionStatus.tier;
     }
 };
 exports.TenantsService = TenantsService;
