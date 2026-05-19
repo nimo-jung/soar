@@ -38,6 +38,9 @@ let AuthController = class AuthController {
     logout(authorization, req) {
         return this.authService.logout(authorization, this.getRequestContext(req));
     }
+    beaconLogout(token, req) {
+        return this.authService.logoutByToken(token, this.getRequestContext(req));
+    }
     extendSession(authorization) {
         return this.authService.extendSession(authorization);
     }
@@ -73,6 +76,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, common_1.Post)('logout/beacon'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '브라우저 종료 시 로그아웃(beacon)' }),
+    __param(0, (0, common_1.Body)('token')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "beaconLogout", null);
 __decorate([
     (0, common_1.Post)('session/extend'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

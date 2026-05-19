@@ -51,6 +51,7 @@ function initials(tenantId?: string): string {
 const TenantLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const token = useAuthStore((s) => s.accessToken);
   const logout = useAuthStore((s) => s.logout);
   const branding = useBrandingStore((s) => s.branding);
   const user = useAuthStore((s) => s.user);
@@ -73,6 +74,35 @@ const TenantLayout: React.FC = () => {
       root.style.removeProperty('--brand-gradient-to');
     }
   }, [branding.primaryColor]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        return;
+      }
+
+      const payload = JSON.stringify({ token: useAuthStore.getState().accessToken });
+
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/auth/logout/beacon', new Blob([payload], { type: 'application/json' }));
+        return;
+      }
+
+      void fetch('/auth/logout/beacon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      });
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+    return () => window.removeEventListener('pagehide', handlePageHide);
+  }, [token]);
 
   const toggleMenu = () => {
     if (window.innerWidth < 992) {

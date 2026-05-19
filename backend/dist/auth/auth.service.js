@@ -449,13 +449,24 @@ let AuthService = class AuthService {
         if (!authHeader?.startsWith('Bearer ')) {
             throw new common_1.UnauthorizedException('인증 토큰이 필요합니다.');
         }
-        const token = authHeader.slice(7);
+        return this.revokeSessionByToken(authHeader.slice(7), context, true);
+    }
+    async logoutByToken(token, context) {
+        if (!token) {
+            return { success: true };
+        }
+        return this.revokeSessionByToken(token, context, false);
+    }
+    async revokeSessionByToken(token, context, strict) {
         let payload;
         try {
             payload = this.jwtService.verify(token, { ignoreExpiration: true });
         }
         catch {
-            throw new common_1.UnauthorizedException('유효하지 않은 토큰입니다.');
+            if (strict) {
+                throw new common_1.UnauthorizedException('유효하지 않은 토큰입니다.');
+            }
+            return { success: true };
         }
         if (payload.jti) {
             await this.sessionRepo

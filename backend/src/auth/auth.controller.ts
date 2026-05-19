@@ -41,6 +41,16 @@ export class AuthController {
     return this.authService.logout(authorization, this.getRequestContext(req));
   }
 
+  @Post('logout/beacon')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '브라우저 종료 시 로그아웃(beacon)' })
+  beaconLogout(
+    @Body('token') token: string | undefined,
+    @Req() req: Request,
+  ) {
+    return this.authService.logoutByToken(token, this.getRequestContext(req));
+  }
+
   @Post('session/extend')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '세션 만료 시간 연장' })

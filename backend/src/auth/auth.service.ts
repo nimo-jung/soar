@@ -53,6 +53,16 @@ interface ScopeIdentity {
   accountId: string;
 }
 
+interface LogoutTokenPayload {
+  sub: number;
+  email?: string;
+  role: string;
+  isMaster: boolean;
+  tenantId?: string;
+  tenantSlug?: string;
+  jti?: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -539,13 +549,32 @@ export class AuthService {
       throw new UnauthorizedException('인증 토큰이 필요합니다.');
     }
 
-    const token = authHeader.slice(7);
-    let payload: SessionTokenPayload;
+    return this.revokeSessionByToken(authHeader.slice(7), context, true);
+  }
+
+  async logoutByToken(token: string | undefined, context: AuthAuditContext): Promise<{ success: true }> {
+    if (!token) {
+      return { success: true };
+    }
+
+    return this.revokeSessionByToken(token, context, false);
+  }
+
+  private async revokeSessionByToken(
+    token: string,
+    context: AuthAuditContext,
+    strict: boolean,
+  ): Promise<{ success: true }> {
+    let payload: LogoutTokenPayload;
 
     try {
       payload = this.jwtService.verify(token, { ignoreExpiration: true });
     } catch {
-      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+      if (strict) {
+        throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+      }
+
+      return { success: true };
     }
 
     if (payload.jti) {

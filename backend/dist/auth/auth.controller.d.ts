@@ -20,6 +20,9 @@ export declare class AuthController {
     logout(authorization: string | undefined, req: Request): Promise<{
         success: true;
     }>;
+    beaconLogout(token: string | undefined, req: Request): Promise<{
+        success: true;
+    }>;
     extendSession(authorization: string | undefined): Promise<{
         accessToken: string;
         sessionExpiresAt: string | null;

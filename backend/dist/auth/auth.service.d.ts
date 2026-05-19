@@ -59,5 +59,9 @@ export declare class AuthService {
     logout(authHeader: string | undefined, context: AuthAuditContext): Promise<{
         success: true;
     }>;
+    logoutByToken(token: string | undefined, context: AuthAuditContext): Promise<{
+        success: true;
+    }>;
+    private revokeSessionByToken;
 }
 export {};
