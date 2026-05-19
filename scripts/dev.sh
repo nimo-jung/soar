@@ -2,17 +2,20 @@
 # =============================================================================
 # SOAR 개발 서버 일괄 기동 스크립트 (dev mode)
 # 사용법: ./scripts/dev.sh [service]
-#   ./scripts/dev.sh          → 인프라 + 백엔드 + 프론트엔드 전체 기동
+#   기본 동작: dev 컨테이너(profile=dev) 기반 기동
+#   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev
 #   ./scripts/dev.sh infra    → 인프라만 (MariaDB, Redis, ClickHouse, RedPanda)
-#   ./scripts/dev.sh backend  → 백엔드만
-#   ./scripts/dev.sh admin    → Frontend Admin만
-#   ./scripts/dev.sh tenant   → Frontend Tenant만
-#   ./scripts/dev.sh engine   → Go Engine만
+#   ./scripts/dev.sh backend  → backend-dev만
+#   ./scripts/dev.sh admin    → frontend-admin-dev만
+#   ./scripts/dev.sh tenant   → frontend-tenant-dev만
+#   ./scripts/dev.sh engine   → go-engine-dev만
+#   로컬 실행 강제: SOAR_DEV_RUNTIME=local ./scripts/dev.sh [service]
 # =============================================================================
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="${SOAR_ENV_FILE:-$REPO_ROOT/.env.dev}"
+DEV_RUNTIME="${SOAR_DEV_RUNTIME:-docker}"
 
 # ── 색상 출력 헬퍼 ───────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -21,6 +24,38 @@ info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
+
+print_dev_stop_hint() {
+  local scope="$1"
+
+  echo ""
+  echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+  echo -e "${BOLD} DEV 종료 안내${RESET}"
+  case "$scope" in
+    all)
+      echo -e "  전체 종료    → ./scripts/stop.sh"
+      ;;
+    infra)
+      echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      ;;
+    backend)
+      echo -e "  Backend 종료 → ./scripts/stop.sh backend"
+      echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      ;;
+    admin)
+      echo -e "  Admin 종료   → ./scripts/stop.sh admin"
+      ;;
+    tenant)
+      echo -e "  Tenant 종료  → ./scripts/stop.sh tenant"
+      ;;
+    engine)
+      echo -e "  Engine 종료  → ./scripts/stop.sh engine"
+      echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      ;;
+  esac
+  echo -e "  상태 확인    → ./scripts/status.sh"
+  echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+}
 
 # ── .env.dev 확인 ────────────────────────────────────────────────────────────
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -46,6 +81,13 @@ start_bg_with_log() {
   "$@" >"$log_file" 2>&1 &
   save_pid "$name"
   success "$name 로그: $log_file"
+}
+
+start_dev_containers() {
+  local services=("$@")
+  info "Dev 컨테이너 기동 중 (${services[*]})..."
+  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile dev --env-file "$ENV_FILE" up -d "${services[@]}"
+  success "Dev 컨테이너 기동 완료"
 }
 
 # ── 데이터 마운트 사전 점검(권한/쓰기 가능 여부) ─────────────────────────────
@@ -339,19 +381,67 @@ start_engine() {
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 SERVICE="${1:-all}"
 
+if [[ "$DEV_RUNTIME" != "docker" && "$DEV_RUNTIME" != "local" ]]; then
+  error "SOAR_DEV_RUNTIME 값이 올바르지 않습니다: $DEV_RUNTIME (허용: docker|local)"
+  exit 1
+fi
+
+info "DEV runtime: $DEV_RUNTIME"
+
 case "$SERVICE" in
-  infra)   start_infra ;;
-  backend) start_infra; start_backend ;;
-  admin)   start_admin ;;
-  tenant)  start_tenant ;;
-  engine)  start_infra; start_engine ;;
-  all)
+  infra)
     start_infra
-    sleep 3
-    start_backend
-    start_admin
-    start_tenant
-    start_engine
+    print_dev_stop_hint infra
+    ;;
+  backend)
+    if [[ "$DEV_RUNTIME" == "docker" ]]; then
+      start_infra
+      start_dev_containers backend-dev
+    else
+      start_infra
+      start_backend
+    fi
+    print_dev_stop_hint backend
+    ;;
+  admin)
+    if [[ "$DEV_RUNTIME" == "docker" ]]; then
+      start_dev_containers frontend-admin-dev
+    else
+      start_admin
+    fi
+    print_dev_stop_hint admin
+    ;;
+  tenant)
+    if [[ "$DEV_RUNTIME" == "docker" ]]; then
+      start_dev_containers frontend-tenant-dev
+    else
+      start_tenant
+    fi
+    print_dev_stop_hint tenant
+    ;;
+  engine)
+    if [[ "$DEV_RUNTIME" == "docker" ]]; then
+      start_infra
+      start_dev_containers go-engine-dev
+    else
+      start_infra
+      start_engine
+    fi
+    print_dev_stop_hint engine
+    ;;
+  all)
+    if [[ "$DEV_RUNTIME" == "docker" ]]; then
+      start_infra
+      sleep 3
+      start_dev_containers backend-dev frontend-admin-dev frontend-tenant-dev go-engine-dev
+    else
+      start_infra
+      sleep 3
+      start_backend
+      start_admin
+      start_tenant
+      start_engine
+    fi
     echo ""
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo -e "${BOLD} SOAR 개발 서버 기동 완료${RESET}"
@@ -363,7 +453,7 @@ case "$SERVICE" in
     echo -e "  RedPanda   → http://localhost:${PORT_REDPANDA_CONSOLE:-8080}"
     echo -e "  Logs       → $LOG_DIR/*.log"
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${YELLOW}종료: ./scripts/stop.sh${RESET}"
+    print_dev_stop_hint all
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"

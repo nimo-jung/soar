@@ -16,13 +16,14 @@ const tenants_service_1 = require("./tenants.service");
 const tenant_entity_1 = require("./entities/tenant.entity");
 const tenant_settings_entity_1 = require("./entities/tenant-settings.entity");
 const usage_snapshot_entity_1 = require("./entities/usage-snapshot.entity");
+const tenant_tier_entity_1 = require("./entities/tenant-tier.entity");
 let TenantsModule = class TenantsModule {
 };
 exports.TenantsModule = TenantsModule;
 exports.TenantsModule = TenantsModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, usage_snapshot_entity_1.UsageSnapshot]),
+            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, usage_snapshot_entity_1.UsageSnapshot, tenant_tier_entity_1.TenantTier]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),

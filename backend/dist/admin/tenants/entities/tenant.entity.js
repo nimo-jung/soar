@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Tenant = exports.TenantStatus = void 0;
 const typeorm_1 = require("typeorm");
+const tenant_tier_entity_1 = require("./tenant-tier.entity");
 var TenantStatus;
 (function (TenantStatus) {
     TenantStatus["ACTIVE"] = "ACTIVE";
@@ -23,6 +24,10 @@ let Tenant = class Tenant {
     name;
     status;
     contactEmail;
+    expiresAt;
+    ipCidr;
+    tier;
+    tierCode;
     createdAt;
     updatedAt;
 };
@@ -52,6 +57,28 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true, comment: '담당자 이메일' }),
     __metadata("design:type", String)
 ], Tenant.prototype, "contactEmail", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true, comment: '사용 기한(만료 일시)' }),
+    __metadata("design:type", Object)
+], Tenant.prototype, "expiresAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true, comment: '허용 IP 대역(CIDR 또는 콤마 구분 목록)' }),
+    __metadata("design:type", Object)
+], Tenant.prototype, "ipCidr", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => tenant_tier_entity_1.TenantTier),
+    (0, typeorm_1.JoinColumn)({ name: 'tierCode', referencedColumnName: 'code' }),
+    __metadata("design:type", tenant_tier_entity_1.TenantTier)
+], Tenant.prototype, "tier", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: tenant_tier_entity_1.TenantTierCode,
+        default: tenant_tier_entity_1.TenantTierCode.LITE,
+        comment: '테넌트 등급 코드',
+    }),
+    __metadata("design:type", String)
+], Tenant.prototype, "tierCode", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
     __metadata("design:type", Date)

@@ -14,6 +14,31 @@ info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 
+print_migrate_hint() {
+  local action="$1"
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo " 마이그레이션 실행 안내"
+  echo "  모드         : $MODE"
+  echo "  환경파일     : $ENV_FILE"
+
+  case "$action" in
+    run)
+      echo "  상태 확인     : ./scripts/status.sh"
+      echo "  스모크 테스트 : ./scripts/smoke.sh $MODE"
+      echo "  롤백 실행     : ./scripts/migrate.sh revert $MODE"
+      ;;
+    revert)
+      echo "  재적용 실행   : ./scripts/migrate.sh run $MODE"
+      ;;
+    generate)
+      echo "  적용 실행     : ./scripts/migrate.sh run $MODE"
+      ;;
+  esac
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
 if [[ ! -f "$ENV_FILE" ]]; then
   error "환경변수 파일이 없습니다: $ENV_FILE"
   exit 1
@@ -38,22 +63,27 @@ if [[ "${!#:-}" == "dev" || "${!#:-}" == "prod" ]]; then
   set -- "${@:1:$(($#-1))}"
 fi
 
+info "마이그레이션 모드: $MODE (env: $ENV_FILE)"
+
 case "$CMD" in
   run)
     info "soar_admin 마이그레이션 실행..."
     npm run migration:run:admin
     success "마이그레이션 완료"
+    print_migrate_hint run
     ;;
   revert)
     info "soar_admin 마이그레이션 롤백..."
     npm run migration:revert:admin
     success "롤백 완료"
+    print_migrate_hint revert
     ;;
   generate)
     NAME="${1:-unnamed}"
     info "마이그레이션 파일 생성: $NAME"
     npm run "migration:generate:admin" --name="$NAME"
     success "생성 완료: src/database/migrations/admin/"
+    print_migrate_hint generate
     ;;
   *)
     echo "사용법: $0 [run|revert|generate <name>] [dev|prod]"

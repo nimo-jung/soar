@@ -18,10 +18,12 @@
     "suspend": "정지",
     "loading": "로딩 중...",
     "name": "이름",
-    "description": "설명"
+    "description": "설명",
+    "noDataFound": "조회된 데이터가 없습니다."
   },
   "nav": {
     "tenants": "테넌트 관리",
+    "tiers": "등급 관리",
     "threatIntel": "위협 인텔리전스",
     "billing": "빌링",
     "monitoring": "모니터링",
@@ -38,7 +40,7 @@
   "tenants": {
     "title": "테넌트 관리",
     "createBtn": "테넌트 생성",
-    "searchPlaceholder": "슬러그, 고객사명, 이메일로 검색",
+    "searchPlaceholder": "고객사 코드, 고객사명, 이메일로 검색",
     "summary": {
       "total": "전체 테넌트",
       "active": "활성",
@@ -47,7 +49,7 @@
     },
     "filters": {
       "all": "전체",
-      "deleted": "삭제됨"
+      "deleted": "삭제"
     },
     "toolbar": {
       "clearSearch": "검색어 지우기",
@@ -76,19 +78,53 @@
     },
     "dialog": {
       "title": "테넌트 생성",
-      "slug": "슬러그 (영문 소문자)",
+      "slug": "고객사 코드 (영문 소문자)",
       "slugPlaceholder": "acme-corp",
       "companyName": "고객사명",
-      "contactEmail": "담당자 이메일"
+      "contactEmail": "담당자 이메일",
+      "tierCode": "등급",
+      "expiresAt": "사용기한",
+      "ipCidr": "IP 대역"
     },
     "table": {
       "id": "ID",
-      "slug": "슬러그",
+      "slug": "고객사 코드",
       "name": "고객사명",
+      "tier": "등급",
+      "expiresAt": "사용기한",
+      "ipCidr": "IP 대역",
       "contactEmail": "담당자 이메일",
       "empty": "조건에 맞는 테넌트가 없습니다.",
       "suspendBtn": "정지",
       "activateBtn": "활성화"
+    },
+    "tiers": {
+      "title": "등급 관리",
+      "createBtn": "등급 추가",
+      "createDialogTitle": "등급 추가",
+      "editDialogTitle": "등급 수정",
+      "code": "등급 코드",
+      "name": "등급명",
+      "dailyLogQuotaGb": "일일 로그 용량(GB)",
+      "maxUsers": "사용자 수",
+      "description": "설명",
+      "empty": "등록된 등급이 없습니다.",
+      "premiumName": "프리미엄",
+      "enterpriseName": "엔터프라이즈",
+      "validation": {
+        "codeRequired": "등급 코드는 필수입니다.",
+        "nameRequired": "등급명은 필수입니다.",
+        "dailyLogQuotaGbRequired": "일일 로그 용량은 1 이상으로 입력하세요.",
+        "maxUsersRequired": "사용자 수는 1 이상으로 입력하세요.",
+        "descriptionRequired": "설명은 필수입니다."
+      },
+      "result": {
+        "successTitle": "처리 완료",
+        "errorTitle": "처리 실패",
+        "saveSuccess": "정상적으로 저장되었습니다.",
+        "saveFailed": "저장 중 오류가 발생했습니다.",
+        "ok": "확인"
+      }
     }
   },
   "threatIntel": {

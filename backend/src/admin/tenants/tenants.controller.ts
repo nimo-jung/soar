@@ -15,6 +15,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
+import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
 import { MasterGuard } from '../../common/guards/master.guard';
 
 @ApiTags('Admin - Tenants')
@@ -34,6 +36,24 @@ export class TenantsController {
   @ApiOperation({ summary: '전체 테넌트 목록 조회' })
   findAll() {
     return this.tenantsService.findAll();
+  }
+
+  @Get('tiers')
+  @ApiOperation({ summary: '테넌트 등급(티어) 목록 조회' })
+  getTiers() {
+    return this.tenantsService.getTiers();
+  }
+
+  @Post('tiers')
+  @ApiOperation({ summary: '테넌트 등급(티어) 생성' })
+  createTier(@Body() dto: CreateTenantTierDto) {
+    return this.tenantsService.createTier(dto);
+  }
+
+  @Patch('tiers/:id')
+  @ApiOperation({ summary: '테넌트 등급(티어) 수정' })
+  updateTier(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTenantTierDto) {
+    return this.tenantsService.updateTier(id, dto);
   }
 
   @Get(':id')

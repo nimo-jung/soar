@@ -18,10 +18,12 @@
     "suspend": "Suspend",
     "loading": "Loading...",
     "name": "Name",
-    "description": "Description"
+    "description": "Description",
+    "noDataFound": "No data found."
   },
   "nav": {
     "tenants": "Tenant Management",
+    "tiers": "Tier Management",
     "threatIntel": "Threat Intelligence",
     "billing": "Billing",
     "monitoring": "Monitoring",
@@ -38,7 +40,7 @@
   "tenants": {
     "title": "Tenant Management",
     "createBtn": "Create Tenant",
-    "searchPlaceholder": "Search by slug, company name, or email",
+    "searchPlaceholder": "Search by company code, company name, or email",
     "summary": {
       "total": "Total Tenants",
       "active": "Active",
@@ -76,19 +78,53 @@
     },
     "dialog": {
       "title": "Create Tenant",
-      "slug": "Slug (lowercase)",
+      "slug": "Company Code (lowercase)",
       "slugPlaceholder": "acme-corp",
       "companyName": "Company Name",
-      "contactEmail": "Contact Email"
+      "contactEmail": "Contact Email",
+      "tierCode": "Tier",
+      "expiresAt": "Expiration",
+      "ipCidr": "IP Range"
     },
     "table": {
       "id": "ID",
-      "slug": "Slug",
+      "slug": "Company Code",
       "name": "Company Name",
+      "tier": "Tier",
+      "expiresAt": "Expiration",
+      "ipCidr": "IP Range",
       "contactEmail": "Contact Email",
       "empty": "No tenants match your criteria.",
       "suspendBtn": "Suspend",
       "activateBtn": "Activate"
+    },
+    "tiers": {
+      "title": "Tier Management",
+      "createBtn": "Add Tier",
+      "createDialogTitle": "Add Tier",
+      "editDialogTitle": "Edit Tier",
+      "code": "Tier Code",
+      "name": "Tier Name",
+      "dailyLogQuotaGb": "Daily Log Quota (GB)",
+      "maxUsers": "Users",
+      "description": "Description",
+      "empty": "No tiers available.",
+      "premiumName": "Premium",
+      "enterpriseName": "Enterprise",
+      "validation": {
+        "codeRequired": "Tier code is required.",
+        "nameRequired": "Tier name is required.",
+        "dailyLogQuotaGbRequired": "Daily log quota must be at least 1.",
+        "maxUsersRequired": "User limit must be at least 1.",
+        "descriptionRequired": "Description is required."
+      },
+      "result": {
+        "successTitle": "Completed",
+        "errorTitle": "Failed",
+        "saveSuccess": "Saved successfully.",
+        "saveFailed": "An error occurred while saving.",
+        "ok": "OK"
+      }
     }
   },
   "threatIntel": {

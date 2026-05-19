@@ -176,6 +176,13 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+.layout-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
 .layout-menu-button {
     display: inline-flex;
     justify-content: center;
@@ -195,6 +202,43 @@ body {
 .layout-menu-button:hover {
     background-color: var(--surface-hover);
     color: var(--text-color);
+}
+
+.layout-topbar-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    color: var(--text-color-secondary);
+}
+
+.layout-topbar-breadcrumb .breadcrumb-home {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    opacity: 0.95;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-separator {
+    font-size: 0.62rem;
+    opacity: 0.68;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-menu-icon {
+    font-size: 0.78rem;
+    color: var(--text-color-secondary);
+    opacity: 0.95;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-current {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .layout-topbar-actions {
@@ -584,6 +628,27 @@ body {
     background: transparent;
     padding-top: 0.72rem;
     padding-bottom: 0.72rem;
+}
+
+.common-data-table .p-datatable-tbody > tr.p-datatable-emptymessage > td {
+    text-align: center;
+    vertical-align: middle;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.tiers-dialog .tiers-code-select {
+    width: auto;
+    display: inline-flex;
+}
+
+.tiers-dialog .tiers-code-select .tenant-filter-pill {
+    min-width: 4rem;
+}
+
+.tiers-dialog .tiers-switch-sm {
+    transform: scale(0.86);
+    transform-origin: left center;
 }
 
 .tenant-slug-tag.p-tag {

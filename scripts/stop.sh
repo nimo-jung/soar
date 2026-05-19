@@ -2,26 +2,66 @@
 # =============================================================================
 # SOAR 전체 프로세스 종료 스크립트
 # 사용법: ./scripts/stop.sh [service]
-#   ./scripts/stop.sh          → 모든 서비스 종료
+#   ./scripts/stop.sh          → 로컬 프로세스 + dev/prod/infra 전체 종료
 #   ./scripts/stop.sh backend  → 백엔드만 종료
-#   ./scripts/stop.sh docker   → Docker Compose 전체 종료
-#   ./scripts/stop.sh dev      → Docker Compose dev 프로파일만 종료
-#   ./scripts/stop.sh prod     → Docker Compose prod 프로파일만 종료
+#   ./scripts/stop.sh docker   → Docker Compose 전체 종료(컨테이너 전부)
+#   ./scripts/stop.sh dev      → dev 관련 로컬 프로세스 + dev 컨테이너 종료
+#   ./scripts/stop.sh prod     → prod 관련 로컬 프로세스 + prod 컨테이너 종료
 #   ./scripts/stop.sh infra    → 인프라 컨테이너만 종료
 # =============================================================================
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PID_DIR="$REPO_ROOT/.pids"
+COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
+ENV_DEV_FILE="$REPO_ROOT/.env.dev"
+ENV_PROD_FILE="$REPO_ROOT/.env.prod"
+
+[[ -f "$ENV_DEV_FILE" ]] && { set -a; source "$ENV_DEV_FILE"; set +a; }
+[[ -f "$ENV_PROD_FILE" ]] && { set -a; source "$ENV_PROD_FILE"; set +a; }
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 
+find_pid_by_port() {
+  local port="$1"
+  ss -ltnp "( sport = :$port )" 2>/dev/null \
+    | awk -F'pid=' 'NR > 1 && /pid=/ { split($2, a, ","); print a[1]; exit }'
+}
+
+port_for_service() {
+  local name="$1"
+  case "$name" in
+    backend) echo "${PORT_BACKEND:-3000}" ;;
+    frontend-admin) echo "${PORT_FRONTEND_ADMIN:-5174}" ;;
+    frontend-tenant) echo "${PORT_FRONTEND_TENANT:-5173}" ;;
+    go-engine) echo "${PORT_GO_ENGINE:-8081}" ;;
+    *) echo "" ;;
+  esac
+}
+
+stop_compose_services() {
+  local profile="$1"
+  shift
+  local services=("$@")
+  if [[ ${#services[@]} -eq 0 ]]; then
+    warn "중지할 Compose 서비스가 없습니다."
+    return 0
+  fi
+
+  # 서비스명을 직접 지정해 profile 여부와 관계없이 정지/삭제 시도
+  docker compose -f "$COMPOSE_FILE" stop "${services[@]}" || true
+  docker compose -f "$COMPOSE_FILE" rm -f "${services[@]}" || true
+}
+
 kill_service() {
   local name="$1"
   local pid_file="$PID_DIR/$name.pid"
+  local service_port
+  local fallback_pid
+
   if [[ -f "$pid_file" ]]; then
     local pid
     pid=$(cat "$pid_file")
@@ -33,31 +73,46 @@ kill_service() {
     fi
     rm -f "$pid_file"
   else
-    warn "$name PID 파일 없음 (이미 종료되었거나 시작하지 않음)"
+    warn "$name PID 파일 없음 (포트 기반으로 확인 시도)"
+  fi
+
+  service_port="$(port_for_service "$name")"
+  if [[ -n "$service_port" ]]; then
+    fallback_pid="$(find_pid_by_port "$service_port")"
+    if [[ -n "$fallback_pid" ]] && kill -0 "$fallback_pid" 2>/dev/null; then
+      kill "$fallback_pid" || true
+      success "$name 포트($service_port) 기반 프로세스 종료됨 (PID $fallback_pid)"
+    fi
   fi
 }
 
 stop_docker() {
   info "Docker Compose 컨테이너 종료 중..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" down
+  docker compose -f "$COMPOSE_FILE" down
   success "Docker Compose 종료 완료"
 }
 
 stop_dev() {
-  info "Docker Compose dev 프로파일 종료 중..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile dev down
+  info "dev 관련 로컬 프로세스 및 컨테이너 종료 중..."
+  kill_service backend
+  kill_service frontend-admin
+  kill_service frontend-tenant
+  kill_service go-engine
+  stop_compose_services "dev" backend-dev go-engine-dev frontend-admin-dev frontend-tenant-dev
   success "dev 프로파일 종료 완료"
 }
 
 stop_prod() {
-  info "Docker Compose prod 프로파일 종료 중..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" --profile prod down
+  info "prod 관련 로컬 프로세스 및 컨테이너 종료 중..."
+  kill_service backend
+  kill_service go-engine
+  stop_compose_services "prod" backend-prod go-engine-prod frontend-admin-prod frontend-tenant-prod gateway-prod
   success "prod 프로파일 종료 완료"
 }
 
 stop_infra() {
   info "인프라 컨테이너 종료 중..."
-  docker compose -f "$REPO_ROOT/docker-compose.yml" down
+  stop_compose_services "" mariadb redis clickhouse redpanda redpanda-console
   success "인프라 종료 완료"
 }
 
@@ -68,17 +123,35 @@ case "$SERVICE" in
   dev)     stop_dev ;;
   prod)    stop_prod ;;
   infra)   stop_infra ;;
-  backend) kill_service backend ;;
-  admin)   kill_service frontend-admin ;;
-  tenant)  kill_service frontend-tenant ;;
-  engine)  kill_service go-engine ;;
+  backend)
+    kill_service backend
+    stop_compose_services "dev" backend-dev
+    stop_compose_services "prod" backend-prod
+    ;;
+  admin)
+    kill_service frontend-admin
+    stop_compose_services "dev" frontend-admin-dev
+    stop_compose_services "prod" frontend-admin-prod
+    ;;
+  tenant)
+    kill_service frontend-tenant
+    stop_compose_services "dev" frontend-tenant-dev
+    stop_compose_services "prod" frontend-tenant-prod
+    ;;
+  engine)
+    kill_service go-engine
+    stop_compose_services "dev" go-engine-dev
+    stop_compose_services "prod" go-engine-prod
+    ;;
   all)
     kill_service backend
     kill_service frontend-admin
     kill_service frontend-tenant
     kill_service go-engine
-    echo ""
-    info "인프라 컨테이너도 종료하려면: ./scripts/stop.sh infra"
+    stop_dev
+    stop_prod
+    stop_infra
+    success "로컬 프로세스 + dev/prod/infra 전체 종료 완료"
     ;;
   *)
     echo "사용법: $0 [all|docker|dev|prod|infra|backend|admin|tenant|engine]"

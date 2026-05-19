@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
@@ -16,6 +15,19 @@ import { SelectButton } from 'primereact/selectbutton';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
+import CommonDataTable from '../../components/CommonDataTable';
+
+type TierCode = 'LITE' | 'PREMIUM' | 'ENTERPRISE';
+
+interface TenantTier {
+  id: number;
+  code: TierCode;
+  name: string;
+  dailyLogQuotaGb: number;
+  maxUsers: number;
+  description: string | null;
+  isActive: boolean;
+}
 
 interface Tenant {
   id: number;
@@ -23,16 +35,32 @@ interface Tenant {
   name: string;
   status: 'ACTIVE' | 'SUSPENDED' | 'DELETED';
   contactEmail: string;
+  expiresAt: string | null;
+  ipCidr: string | null;
+  tierCode: TierCode;
+  tier?: TenantTier;
   createdAt: string;
 }
 
-type TenantVisibleField = 'id' | 'slug' | 'name' | 'status' | 'contactEmail' | 'createdAt';
+type TenantVisibleField =
+  | 'id'
+  | 'slug'
+  | 'name'
+  | 'status'
+  | 'tierCode'
+  | 'expiresAt'
+  | 'ipCidr'
+  | 'contactEmail'
+  | 'createdAt';
 
 const tenantFieldOrder: TenantVisibleField[] = [
   'id',
   'slug',
   'name',
   'status',
+  'tierCode',
+  'expiresAt',
+  'ipCidr',
   'contactEmail',
   'createdAt',
 ];
@@ -46,7 +74,7 @@ const statusSeverity = (status: string) => {
 const statusLabelKey = (status: Tenant['status']) => {
   if (status === 'ACTIVE') return 'common.active';
   if (status === 'SUSPENDED') return 'common.suspend';
-  return 'common.inactive';
+  return 'tenants.filters.deleted';
 };
 
 const TenantsPage: React.FC = () => {
@@ -55,21 +83,33 @@ const TenantsPage: React.FC = () => {
   const rowMenusRef = React.useRef<Record<number, Menu | null>>({});
   const fieldPanelRef = React.useRef<OverlayPanel | null>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tiers, setTiers] = useState<TenantTier[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | Tenant['status']>('ALL');
   const [visibleFields, setVisibleFields] = useState<TenantVisibleField[]>(tenantFieldOrder);
-  const [form, setForm] = useState({ slug: '', name: '', contactEmail: '' });
+  const [form, setForm] = useState({
+    slug: '',
+    name: '',
+    contactEmail: '',
+    tierCode: 'LITE' as TierCode,
+    expiresAt: '',
+    ipCidr: '',
+  });
 
   const locale = i18n.language.startsWith('ko') ? 'ko-KR' : 'en-US';
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await api.get<Tenant[]>('/admin/tenants');
-      setTenants(res.data);
+      const [tenantRes, tierRes] = await Promise.all([
+        api.get<Tenant[]>('/admin/tenants'),
+        api.get<TenantTier[]>('/admin/tenants/tiers'),
+      ]);
+      setTenants(tenantRes.data);
+      setTiers(tierRes.data);
     } finally {
       setLoading(false);
     }
@@ -88,9 +128,13 @@ const TenantsPage: React.FC = () => {
   }, [searchInput]);
 
   const handleCreate = async () => {
-    await api.post('/admin/tenants', form);
+    await api.post('/admin/tenants', {
+      ...form,
+      expiresAt: form.expiresAt || undefined,
+      ipCidr: form.ipCidr || undefined,
+    });
     setShowCreate(false);
-    setForm({ slug: '', name: '', contactEmail: '' });
+    setForm({ slug: '', name: '', contactEmail: '', tierCode: 'LITE', expiresAt: '', ipCidr: '' });
     load();
   };
 
@@ -162,7 +206,13 @@ const TenantsPage: React.FC = () => {
       const statusMatched = statusFilter === 'ALL' || tenant.status === statusFilter;
       if (!statusMatched) return false;
       if (!keyword) return true;
-      return [tenant.slug, tenant.name, tenant.contactEmail].some((value) =>
+      return [
+        tenant.slug,
+        tenant.name,
+        tenant.contactEmail,
+        tenant.ipCidr ?? '',
+        tenant.tier?.name ?? tenant.tierCode,
+      ].some((value) =>
         value.toLowerCase().includes(keyword),
       );
     });
@@ -173,7 +223,7 @@ const TenantsPage: React.FC = () => {
       { label: t('tenants.filters.all'), value: 'ALL' as const },
       { label: t('common.active'), value: 'ACTIVE' as const },
       { label: t('common.suspend'), value: 'SUSPENDED' as const },
-      { label: t('tenants.actions.delete'), value: 'DELETED' as const },
+      { label: t('tenants.filters.deleted'), value: 'DELETED' as const },
     ],
     [t],
   );
@@ -192,8 +242,29 @@ const TenantsPage: React.FC = () => {
       { label: t('tenants.table.slug'), value: 'slug' as const },
       { label: t('tenants.table.name'), value: 'name' as const },
       { label: t('common.status'), value: 'status' as const },
+      { label: t('tenants.table.tier'), value: 'tierCode' as const },
+      { label: t('tenants.table.expiresAt'), value: 'expiresAt' as const },
+      { label: t('tenants.table.ipCidr'), value: 'ipCidr' as const },
       { label: t('tenants.table.contactEmail'), value: 'contactEmail' as const },
       { label: t('common.createdAt'), value: 'createdAt' as const },
+    ],
+    [t],
+  );
+
+  const tierOptions = useMemo(
+    () =>
+      tiers.map((tier) => ({
+        label: `${tier.name} (${tier.dailyLogQuotaGb}GB / ${tier.maxUsers})`,
+        value: tier.code,
+      })),
+    [tiers],
+  );
+
+  const tierCodeOptions = useMemo(
+    () => [
+      { label: 'Lite', value: 'LITE' as const },
+      { label: t('tenants.tiers.premiumName'), value: 'PREMIUM' as const },
+      { label: t('tenants.tiers.enterpriseName'), value: 'ENTERPRISE' as const },
     ],
     [t],
   );
@@ -275,15 +346,16 @@ const TenantsPage: React.FC = () => {
   ];
 
   return (
-    <div className="tenants-page p-4">
+    <div className="tenants-page">
       <ConfirmDialog />
       <div className="page-header">
-        <h1>{t('tenants.title')}</h1>
+        <div></div>
         <Button
           label={t('tenants.createBtn')}
           icon="pi pi-plus"
           onClick={() => setShowCreate(true)}
           rounded
+          size="small"
         />
       </div>
 
@@ -315,7 +387,7 @@ const TenantsPage: React.FC = () => {
                 <InputText
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full tenants-search-input"
+                  className="w-full tenants-search-input p-inputtext-sm"
                   placeholder={t('tenants.searchPlaceholder')}
                 />
               </IconField>
@@ -388,19 +460,15 @@ const TenantsPage: React.FC = () => {
             </OverlayPanel>
           </div>
         </div>
-        <DataTable
+        <CommonDataTable
           value={filteredTenants}
           loading={loading}
           paginator
           rows={10}
           rowsPerPageOptions={[10, 20, 50]}
           removableSort
-          stripedRows
-          rowHover
-          emptyMessage={t('tenants.table.empty')}
           rowClassName={(row: Tenant) => (row.status === 'DELETED' ? 'tenant-row-deleted' : '')}
           className="admin-tenants-table"
-          size="small"
         >
         {isFieldVisible('id') && (
           <Column field="id" header={t('tenants.table.id')} style={{ width: '72px' }} bodyClassName="text-right" headerClassName="text-right" />
@@ -433,6 +501,30 @@ const TenantsPage: React.FC = () => {
                 className={`tenant-status-tag tenant-status-${row.status.toLowerCase()}`}
               />
             )}
+          />
+        )}
+        {isFieldVisible('tierCode') && (
+          <Column
+            field="tierCode"
+            header={t('tenants.table.tier')}
+            style={{ minWidth: '10rem' }}
+            body={(row: Tenant) => <span>{row.tier?.name ?? row.tierCode}</span>}
+          />
+        )}
+        {isFieldVisible('expiresAt') && (
+          <Column
+            field="expiresAt"
+            header={t('tenants.table.expiresAt')}
+            style={{ minWidth: '8.5rem' }}
+            body={(row: Tenant) => (row.expiresAt ? new Date(row.expiresAt).toLocaleDateString(locale) : '-')}
+          />
+        )}
+        {isFieldVisible('ipCidr') && (
+          <Column
+            field="ipCidr"
+            header={t('tenants.table.ipCidr')}
+            style={{ minWidth: '10rem' }}
+            body={(row: Tenant) => row.ipCidr || '-'}
           />
         )}
         {isFieldVisible('contactEmail') && (
@@ -502,7 +594,7 @@ const TenantsPage: React.FC = () => {
             </div>
           )}
         />
-        </DataTable>
+        </CommonDataTable>
       </div>
 
       <Dialog
@@ -535,6 +627,35 @@ const TenantsPage: React.FC = () => {
               value={form.contactEmail}
               onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
               className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">{t('tenants.dialog.tierCode')}</label>
+            <SelectButton
+              value={form.tierCode}
+              options={tierOptions.length ? tierOptions : tierCodeOptions}
+              optionLabel="label"
+              optionValue="value"
+              className="w-full"
+              onChange={(e) => setForm({ ...form, tierCode: e.value as TierCode })}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">{t('tenants.dialog.expiresAt')}</label>
+            <InputText
+              type="date"
+              value={form.expiresAt}
+              onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">{t('tenants.dialog.ipCidr')}</label>
+            <InputText
+              value={form.ipCidr}
+              onChange={(e) => setForm({ ...form, ipCidr: e.target.value })}
+              className="w-full"
+              placeholder="10.0.0.0/24"
             />
           </div>
           <Button label={t('common.create')} onClick={handleCreate} />

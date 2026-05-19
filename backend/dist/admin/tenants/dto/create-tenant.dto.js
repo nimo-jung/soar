@@ -12,10 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTenantDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
+const tenant_tier_entity_1 = require("../entities/tenant-tier.entity");
 class CreateTenantDto {
     slug;
     name;
     contactEmail;
+    tierCode;
+    expiresAt;
+    ipCidr;
 }
 exports.CreateTenantDto = CreateTenantDto;
 __decorate([
@@ -35,4 +39,26 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTenantDto.prototype, "contactEmail", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        enum: tenant_tier_entity_1.TenantTierCode,
+        description: '테넌트 등급 코드 (기본값: LITE)',
+        default: tenant_tier_entity_1.TenantTierCode.LITE,
+    }),
+    (0, class_validator_1.IsEnum)(tenant_tier_entity_1.TenantTierCode),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "tierCode", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' }),
+    (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "expiresAt", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '허용 IP 대역(CIDR 또는 콤마 구분 목록)', example: '10.0.0.0/24' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "ipCidr", void 0);
 //# sourceMappingURL=create-tenant.dto.js.map

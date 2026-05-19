@@ -1,22 +1,30 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate, Outlet } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
 import LanguageSwitcher from '../LanguageSwitcher';
 
 const navItems = [
   { labelKey: 'nav.tenants', path: '/tenants', icon: 'pi pi-building' },
+  { labelKey: 'nav.tiers', path: '/tiers', icon: 'pi pi-id-card' },
   { labelKey: 'nav.threatIntel', path: '/threat-intel', icon: 'pi pi-shield' },
   { labelKey: 'nav.billing', path: '/billing', icon: 'pi pi-chart-bar' },
   { labelKey: 'nav.monitoring', path: '/monitoring', icon: 'pi pi-desktop' },
 ];
 
+function getBreadcrumbItem(pathname: string) {
+  return navItems.find((item) => pathname.startsWith(item.path));
+}
+
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
   const { t } = useTranslation();
   const [staticInactive, setStaticInactive] = useState(false);
   const [mobileActive, setMobileActive] = useState(false);
+
+  const breadcrumbItem = useMemo(() => getBreadcrumbItem(location.pathname), [location.pathname]);
 
   const toggleMenu = () => {
     if (window.innerWidth < 992) {
@@ -70,9 +78,21 @@ const AdminLayout: React.FC = () => {
       {/* ── Main container ── */}
       <div className="layout-main-container">
         <div className="layout-topbar">
-          <button className="layout-menu-button" onClick={toggleMenu} aria-label="메뉴 토글">
-            <i className="pi pi-bars" />
-          </button>
+          <div className="layout-topbar-left">
+            <button className="layout-menu-button" onClick={toggleMenu} aria-label="메뉴 토글">
+              <i className="pi pi-bars" />
+            </button>
+            <div className="layout-topbar-breadcrumb">
+              <i className="pi pi-home breadcrumb-home" />
+              {breadcrumbItem && (
+                <>
+                  <i className="pi pi-chevron-right breadcrumb-separator" />
+                  <i className={`${breadcrumbItem.icon} breadcrumb-menu-icon`} />
+                  <span className="breadcrumb-current">{t(breadcrumbItem.labelKey)}</span>
+                </>
+              )}
+            </div>
+          </div>
           <div className="layout-topbar-actions">
             <LanguageSwitcher />
             <span className="topbar-label">{t('nav.masterAdmin')}</span>

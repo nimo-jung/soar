@@ -18,6 +18,8 @@ const swagger_1 = require("@nestjs/swagger");
 const tenants_service_1 = require("./tenants.service");
 const create_tenant_dto_1 = require("./dto/create-tenant.dto");
 const update_tenant_dto_1 = require("./dto/update-tenant.dto");
+const create_tenant_tier_dto_1 = require("./dto/create-tenant-tier.dto");
+const update_tenant_tier_dto_1 = require("./dto/update-tenant-tier.dto");
 const master_guard_1 = require("../../common/guards/master.guard");
 let TenantsController = class TenantsController {
     tenantsService;
@@ -29,6 +31,15 @@ let TenantsController = class TenantsController {
     }
     findAll() {
         return this.tenantsService.findAll();
+    }
+    getTiers() {
+        return this.tenantsService.getTiers();
+    }
+    createTier(dto) {
+        return this.tenantsService.createTier(dto);
+    }
+    updateTier(id, dto) {
+        return this.tenantsService.updateTier(id, dto);
     }
     findOne(id) {
         return this.tenantsService.findOne(id);
@@ -59,6 +70,30 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('tiers'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 목록 조회' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "getTiers", null);
+__decorate([
+    (0, common_1.Post)('tiers'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 생성' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_tenant_tier_dto_1.CreateTenantTierDto]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "createTier", null);
+__decorate([
+    (0, common_1.Patch)('tiers/:id'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 등급(티어) 수정' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, update_tenant_tier_dto_1.UpdateTenantTierDto]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "updateTier", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 상세 조회' }),

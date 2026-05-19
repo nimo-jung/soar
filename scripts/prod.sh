@@ -22,6 +22,40 @@ success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 
+print_prod_stop_hint() {
+  local scope="$1"
+
+  echo ""
+  echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+  echo -e "${BOLD} PROD 종료 안내${RESET}"
+  case "$scope" in
+    docker)
+      echo -e "  앱 종료      → ./scripts/stop.sh prod"
+      echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      echo -e "  전체 종료    → ./scripts/stop.sh"
+      ;;
+    all)
+      echo -e "  전체 종료    → ./scripts/stop.sh"
+      ;;
+    backend)
+      echo -e "  Backend 종료 → ./scripts/stop.sh backend"
+      echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      ;;
+    engine)
+      echo -e "  Engine 종료  → ./scripts/stop.sh engine"
+      echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      ;;
+    build)
+      echo -e "  빌드 전용 실행입니다. 종료할 런타임 프로세스가 없습니다."
+      ;;
+    admin|tenant)
+      echo -e "  빌드 전용 실행입니다. 종료할 런타임 프로세스가 없습니다."
+      ;;
+  esac
+  echo -e "  상태 확인    → ./scripts/status.sh"
+  echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+}
+
 if [[ ! -f "$ENV_FILE" ]]; then
   error "환경변수 파일이 없습니다: $ENV_FILE"
   error "예시: cp .env.example .env.prod 후 운영 값으로 수정하세요."
@@ -314,6 +348,7 @@ SERVICE="${1:-all}"
 case "$SERVICE" in
   docker)
     start_docker
+    print_prod_stop_hint docker
     ;;
   build)
     build_backend
@@ -321,22 +356,27 @@ case "$SERVICE" in
     build_tenant
     build_engine
     success "전체 빌드 완료"
+    print_prod_stop_hint build
     ;;
   backend)
     start_infra
     build_backend
     start_backend_prod
+    print_prod_stop_hint backend
     ;;
   admin)
     build_admin
+    print_prod_stop_hint admin
     ;;
   tenant)
     build_tenant
+    print_prod_stop_hint tenant
     ;;
   engine)
     start_infra
     build_engine
     start_engine_prod
+    print_prod_stop_hint engine
     ;;
   all)
     start_infra
@@ -356,7 +396,7 @@ case "$SERVICE" in
     echo -e "  Tenant UI  → frontend-tenant/dist/ (별도 웹서버 필요)"
     echo -e "${YELLOW}※ 운영 환경 권장: ./scripts/prod.sh docker${RESET}"
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${YELLOW}종료: ./scripts/stop.sh${RESET}"
+    print_prod_stop_hint all
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"
