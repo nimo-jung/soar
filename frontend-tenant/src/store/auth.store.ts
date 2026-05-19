@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { AuthPolicy } from '../types/auth-policy';
 
 export interface UserInfo {
   sub: number;
@@ -10,7 +11,10 @@ export interface UserInfo {
 interface AuthState {
   accessToken: string | null;
   user: UserInfo | null;
-  setAuth: (token: string, user: UserInfo) => void;
+  authSettings: AuthPolicy | null;
+  setAuth: (token: string, user: UserInfo, authSettings: AuthPolicy) => void;
+  replaceToken: (token: string) => void;
+  setAuthSettings: (authSettings: AuthPolicy) => void;
   logout: () => void;
 }
 
@@ -19,8 +23,11 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       accessToken: null,
       user: null,
-      setAuth: (accessToken, user) => set({ accessToken, user }),
-      logout: () => set({ accessToken: null, user: null }),
+      authSettings: null,
+      setAuth: (accessToken, user, authSettings) => set({ accessToken, user, authSettings }),
+      replaceToken: (accessToken) => set({ accessToken }),
+      setAuthSettings: (authSettings) => set({ authSettings }),
+      logout: () => set({ accessToken: null, user: null, authSettings: null }),
     }),
     { name: 'tenant-auth' },
   ),

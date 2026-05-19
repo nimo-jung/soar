@@ -30,6 +30,9 @@
     "monitoring": "Monitoring",
     "securityAudit": "Security Audit",
     "auditLogs": "Audit Logs",
+    "systemManagement": "System Settings",
+    "userManagement": "Admin Settings",
+    "authSettings": "Auth Settings",
     "masterAdmin": "Master Admin"
   },
   "auth": {
@@ -42,7 +45,7 @@
   },
   "tenants": {
     "title": "Tenant Management",
-    "createBtn": "Create Tenant",
+    "createBtn": "Add Tenant",
     "searchPlaceholder": "company code, company name, email",
     "summary": {
       "total": "Total Tenants",
@@ -62,7 +65,8 @@
     },
     "actions": {
       "more": "More",
-      "settings": "Settings",
+      "settings": "Edit",
+      "edit": "Edit",
       "delete": "Delete",
       "restore": "Restore",
       "deletedLocked": "Deleted tenant cannot change status"
@@ -80,14 +84,32 @@
       "message": "Are you sure you want to restore tenant {{name}} to active status?"
     },
     "dialog": {
-      "title": "Create Tenant",
+      "title": "Add Tenant",
+      "editTitle": "Edit Tenant",
       "slug": "Company Code (lowercase)",
       "slugPlaceholder": "acme-corp",
       "companyName": "Company Name",
       "contactEmail": "Contact Email",
       "tierCode": "Tier",
+      "tierPlaceholder": "Select a tier",
       "expiresAt": "Expiration",
-      "ipCidr": "IP Range"
+      "ipCidr": "Log Collection Target IP Ranges",
+      "ipCidrPlaceholder": "e.g. 10.0.0.10, 10.0.1.0/24",
+      "ipCidrHelp": "Press Enter or type a comma to add multiple entries.",
+      "submitAdd": "Add Tenant",
+      "submitEdit": "Save Changes"
+    },
+    "validation": {
+      "slugRequired": "Company code is required.",
+      "slugInvalid": "Company code can include lowercase letters, numbers, and hyphens only.",
+      "nameRequired": "Company name is required.",
+      "contactEmailRequired": "Contact email is required.",
+      "contactEmailInvalid": "Please enter a valid email format.",
+      "tierRequired": "Tier is required.",
+      "expiresAtRequired": "Expiration date is required.",
+      "expiresAtInvalid": "Please enter a valid expiration date.",
+      "ipCidrRequired": "At least one log collection target IP range is required.",
+      "ipCidrInvalid": "Use single IP or CIDR format, and separate multiple entries with commas (,)."
     },
     "table": {
       "id": "ID",
@@ -95,7 +117,7 @@
       "name": "Company Name",
       "tier": "Tier",
       "expiresAt": "Expiration",
-      "ipCidr": "IP Range",
+      "ipCidr": "Log Collection Target IP Ranges",
       "contactEmail": "Contact Email",
       "empty": "No tenants match your criteria.",
       "suspendBtn": "Suspend",
@@ -104,6 +126,7 @@
     "tiers": {
       "title": "Tier Management",
       "createBtn": "Add Tier",
+      "searchPlaceholder": "tier name, description",
       "createDialogTitle": "Add Tier",
       "editDialogTitle": "Edit Tier",
       "code": "Tier Code",
@@ -112,6 +135,7 @@
       "maxUsers": "Users",
       "description": "Description",
       "empty": "No tiers available.",
+      "liteName": "Lite",
       "premiumName": "Premium",
       "enterpriseName": "Enterprise",
       "validation": {
@@ -158,6 +182,15 @@
       "message": "Message",
       "ipAddress": "IP",
       "empty": "No audit logs found."
+    },
+    "detail": {
+      "title": "Audit Log Detail",
+      "metadata": "Metadata",
+      "userAgent": "User-Agent"
+    },
+    "actor": {
+      "masterIdPrefix": "Master Admin ID",
+      "idPrefix": "Actor ID"
     }
   },
   "threatIntel": {
@@ -177,5 +210,97 @@
       "source": "Source",
       "deactivateBtn": "Deactivate"
     }
+  },
+  "masterUsers": {
+    "title": "User Management",
+    "description": "Active admins {{current}} / max {{max}}",
+    "createBtn": "Add Admin",
+    "limitReached": "Master admins are limited to a maximum of 10 accounts.",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "confirmDelete": {
+      "header": "Confirm Admin Deletion",
+      "message": "Are you sure you want to mark {{email}} as deleted?"
+    },
+    "confirmRestore": {
+      "header": "Confirm Admin Restore",
+      "message": "Are you sure you want to restore {{email}}?"
+    },
+    "dialog": {
+      "createTitle": "Add Admin",
+      "editTitle": "Edit Admin",
+      "email": "Email",
+      "password": "Password",
+      "passwordOptional": "Leave blank to keep the current password",
+      "isActive": "Active"
+    },
+    "validation": {
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Please enter a valid email format.",
+      "passwordRequired": "Password is required.",
+      "passwordPolicy": "Password must contain no spaces and use letters/numbers/special characters with either 10+ characters (at least 2 categories) or 8+ characters (all 3 categories)."
+    },
+    "table": {
+      "id": "ID",
+      "email": "Email",
+      "isActive": "Active",
+      "status": "Status",
+      "createdAt": "Created At"
+    },
+    "result": {
+      "successTitle": "Completed",
+      "errorTitle": "Failed",
+      "saveSuccess": "Admin account saved successfully.",
+      "saveFailed": "An error occurred while saving the admin account.",
+      "deleteSuccess": "Admin has been marked as deleted.",
+      "deleteFailed": "An error occurred while deleting the admin account.",
+      "restoreSuccess": "Admin has been restored.",
+      "restoreFailed": "An error occurred while restoring the admin account."
+    }
+  },
+  "authSettings": {
+    "title": "Auth Settings",
+    "description": "Configure login lockout, concurrent sessions, and auto logout policies.",
+    "loadFailed": "Failed to load auth settings.",
+    "saveSuccess": "Auth settings have been saved.",
+    "saveFailed": "An error occurred while saving auth settings.",
+    "validation": {
+      "autoLogoutTimeoutMinutes": "Auto logout timeout must be 0 or between 1 and 30 minutes."
+    },
+    "maxLoginFailures": {
+      "label": "Max failed login attempts",
+      "help": "Default 3, minimum 1, maximum 5"
+    },
+    "lockMinutes": {
+      "label": "Lock time (minutes)",
+      "help": "Default 5 min, minimum 3 min, maximum 30 min"
+    },
+    "maxConcurrentSessions": {
+      "label": "Max concurrent sessions per account",
+      "help": "Default 1, minimum 1, maximum 5"
+    },
+    "autoLogoutTimeoutMinutes": {
+      "label": "Auto logout timeout (minutes)",
+      "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
+    }
+  },
+  "sessionTimeout": {
+    "dialogTitle": "Session About To Expire",
+    "dialogMessage": "For security, you will be logged out soon. Extend your session to continue.",
+    "remainingLabel": "Remaining time: {{time}}",
+    "extendSession": "Extend Session",
+    "logoutNow": "Log Out Now"
+  },
+  "serverError": {
+    "title": "A server connection problem occurred",
+    "description": "A server error occurred while processing your request. Please try again shortly or move to the dashboard.",
+    "statusCode": "Error code: {{code}}",
+    "devMessageTitle": "Development Error Detail",
+    "goBack": "Previous Page",
+    "goDashboard": "Go To Dashboard",
+    "retry": "Retry"
   }
 }

@@ -20,6 +20,9 @@ export declare class TenantsService {
     constructor(tenantRepo: Repository<Tenant>, settingsRepo: Repository<TenantSettings>, tierRepo: Repository<TenantTier>, dataSource: DataSource);
     private findTierForTenantById;
     private findDefaultTierForTenant;
+    private isValidIpv4;
+    private isValidIpv4OrCidr;
+    private normalizeIpCidrList;
     create(dto: CreateTenantDto): Promise<Tenant>;
     findAll(): Promise<Tenant[]>;
     findOne(id: number): Promise<Tenant>;

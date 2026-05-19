@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';

@@ -20,6 +20,10 @@ let TenantSettings = class TenantSettings {
     storageQuotaGb;
     retentionDays;
     brandingConfig;
+    maxLoginFailures;
+    lockMinutes;
+    maxConcurrentSessions;
+    autoLogoutTimeoutMinutes;
     createdAt;
     updatedAt;
 };
@@ -73,6 +77,42 @@ __decorate([
     }),
     __metadata("design:type", Object)
 ], TenantSettings.prototype, "brandingConfig", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'max_login_failures',
+        type: 'int',
+        default: 3,
+        comment: '로그인 실패 허용 횟수 (1~5)',
+    }),
+    __metadata("design:type", Number)
+], TenantSettings.prototype, "maxLoginFailures", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'lock_minutes',
+        type: 'int',
+        default: 5,
+        comment: '로그인 잠금 시간(분) (3~30)',
+    }),
+    __metadata("design:type", Number)
+], TenantSettings.prototype, "lockMinutes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'max_concurrent_sessions',
+        type: 'int',
+        default: 1,
+        comment: '계정당 동시 로그인 허용 세션 수 (1~5)',
+    }),
+    __metadata("design:type", Number)
+], TenantSettings.prototype, "maxConcurrentSessions", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'auto_logout_timeout_minutes',
+        type: 'int',
+        default: 5,
+        comment: '자동 로그아웃 타임아웃(분). 0이면 만료 없음',
+    }),
+    __metadata("design:type", Number)
+], TenantSettings.prototype, "autoLogoutTimeoutMinutes", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
     __metadata("design:type", Date)

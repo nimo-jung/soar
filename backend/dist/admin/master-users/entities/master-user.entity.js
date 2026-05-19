@@ -9,13 +9,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MasterUser = void 0;
+exports.MasterUser = exports.MasterUserStatus = void 0;
 const typeorm_1 = require("typeorm");
+var MasterUserStatus;
+(function (MasterUserStatus) {
+    MasterUserStatus["ACTIVE"] = "ACTIVE";
+    MasterUserStatus["DELETED"] = "DELETED";
+})(MasterUserStatus || (exports.MasterUserStatus = MasterUserStatus = {}));
 let MasterUser = class MasterUser {
     id;
     email;
     passwordHash;
+    status;
     isActive;
+    deletedAt;
     createdAt;
     updatedAt;
 };
@@ -33,9 +40,22 @@ __decorate([
     __metadata("design:type", String)
 ], MasterUser.prototype, "passwordHash", void 0);
 __decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: MasterUserStatus,
+        default: MasterUserStatus.ACTIVE,
+        comment: '계정 상태: ACTIVE | DELETED',
+    }),
+    __metadata("design:type", String)
+], MasterUser.prototype, "status", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: true, comment: '계정 활성 여부' }),
     __metadata("design:type", Boolean)
 ], MasterUser.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true, comment: '소프트 삭제 일시 (복구 시 NULL)' }),
+    __metadata("design:type", Object)
+], MasterUser.prototype, "deletedAt", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
     __metadata("design:type", Date)

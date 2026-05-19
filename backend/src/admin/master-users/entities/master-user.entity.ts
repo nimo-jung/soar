@@ -6,6 +6,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum MasterUserStatus {
+  ACTIVE = 'ACTIVE',
+  DELETED = 'DELETED',
+}
+
 @Entity('master_users', { comment: '마스터 관리자 계정 (soar_admin DB)' })
 export class MasterUser {
   @PrimaryGeneratedColumn({ comment: '계정 고유 ID' })
@@ -17,8 +22,19 @@ export class MasterUser {
   @Column({ comment: '비밀번호 해시 (bcrypt)' })
   passwordHash: string;
 
+  @Column({
+    type: 'enum',
+    enum: MasterUserStatus,
+    default: MasterUserStatus.ACTIVE,
+    comment: '계정 상태: ACTIVE | DELETED',
+  })
+  status: MasterUserStatus;
+
   @Column({ default: true, comment: '계정 활성 여부' })
   isActive: boolean;
+
+  @Column({ type: 'datetime', nullable: true, comment: '소프트 삭제 일시 (복구 시 NULL)' })
+  deletedAt: Date | null;
 
   @CreateDateColumn({ comment: '생성 일시' })
   createdAt: Date;

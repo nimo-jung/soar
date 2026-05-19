@@ -1,6 +1,8 @@
-import { IsEnum, IsOptional, IsEmail, IsDateString, IsString, IsInt, Min } from 'class-validator';
+import { IsEnum, IsOptional, IsEmail, IsDateString, IsString, IsInt, Min, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TenantStatus } from '../entities/tenant.entity';
+
+const IP_OR_CIDR_LIST_REGEX = /^\s*(?:\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)(?:\s*,\s*\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)*\s*$/;
 
 export class UpdateTenantDto {
   @ApiPropertyOptional({ description: '고객사명' })
@@ -28,8 +30,11 @@ export class UpdateTenantDto {
   @IsOptional()
   expiresAt?: string;
 
-  @ApiPropertyOptional({ description: '허용 IP 대역(CIDR 또는 콤마 구분 목록)' })
+  @ApiPropertyOptional({ description: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)' })
   @IsString()
   @IsOptional()
+  @Matches(IP_OR_CIDR_LIST_REGEX, {
+    message: 'ipCidr는 단일 IP 또는 CIDR 형식이며, 다중 입력은 콤마(,)로 구분해야 합니다.',
+  })
   ipCidr?: string;
 }

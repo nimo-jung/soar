@@ -18,19 +18,55 @@ const swagger_1 = require("@nestjs/swagger");
 const threat_intel_service_1 = require("./threat-intel.service");
 const create_threat_intel_dto_1 = require("./dto/create-threat-intel.dto");
 const master_guard_1 = require("../../common/guards/master.guard");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
+const audit_log_service_1 = require("../../common/audit/audit-log.service");
+const audit_log_entity_1 = require("../../common/audit/entities/audit-log.entity");
 let ThreatIntelController = class ThreatIntelController {
     threatIntelService;
-    constructor(threatIntelService) {
+    auditLogService;
+    constructor(threatIntelService, auditLogService) {
         this.threatIntelService = threatIntelService;
+        this.auditLogService = auditLogService;
     }
-    create(dto) {
-        return this.threatIntelService.create(dto);
+    buildAuditContext(user, req) {
+        return {
+            actorType: user.isMaster ? audit_log_entity_1.AuditActorType.MASTER : audit_log_entity_1.AuditActorType.TENANT,
+            actorId: user.sub,
+            actorEmail: user.email ?? null,
+            tenantSlug: user.tenantId ?? null,
+            ipAddress: req.ip ?? null,
+            userAgent: req.headers['user-agent'] ?? null,
+        };
+    }
+    async create(dto, user, req) {
+        const created = await this.threatIntelService.create(dto);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'THREAT_INTEL_CREATE',
+            resourceType: 'THREAT_INTEL',
+            resourceId: String(created.id),
+            message: '글로벌 TI 피드 등록',
+            metadata: {
+                feedType: created.feedType,
+                indicator: created.indicator,
+                severity: created.severity,
+                source: created.source,
+            },
+        });
+        return created;
     }
     findAll() {
         return this.threatIntelService.findAll();
     }
-    deactivate(id) {
-        return this.threatIntelService.deactivate(id);
+    async deactivate(id, user, req) {
+        await this.threatIntelService.deactivate(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'THREAT_INTEL_DEACTIVATE',
+            resourceType: 'THREAT_INTEL',
+            resourceId: String(id),
+            message: '글로벌 TI 피드 비활성화',
+        });
     }
 };
 exports.ThreatIntelController = ThreatIntelController;
@@ -38,9 +74,11 @@ __decorate([
     (0, common_1.Post)(),
     (0, swagger_1.ApiOperation)({ summary: '글로벌 TI 피드 등록 및 RedPanda 전파' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_threat_intel_dto_1.CreateThreatIntelDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [create_threat_intel_dto_1.CreateThreatIntelDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], ThreatIntelController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -54,15 +92,18 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
     (0, swagger_1.ApiOperation)({ summary: 'TI 피드 비활성화' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], ThreatIntelController.prototype, "deactivate", null);
 exports.ThreatIntelController = ThreatIntelController = __decorate([
     (0, swagger_1.ApiTags)('Admin - Threat Intel'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(master_guard_1.MasterGuard),
     (0, common_1.Controller)('admin/threat-intel'),
-    __metadata("design:paramtypes", [threat_intel_service_1.ThreatIntelService])
+    __metadata("design:paramtypes", [threat_intel_service_1.ThreatIntelService,
+        audit_log_service_1.AuditLogService])
 ], ThreatIntelController);
 //# sourceMappingURL=threat-intel.controller.js.map

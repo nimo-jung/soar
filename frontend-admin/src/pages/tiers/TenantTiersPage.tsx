@@ -8,11 +8,16 @@ import { InputSwitch } from 'primereact/inputswitch';
 import { SelectButton } from 'primereact/selectbutton';
 import { Tag } from 'primereact/tag';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { IconField } from 'primereact/iconfield';
+import { InputIcon } from 'primereact/inputicon';
+import { OverlayPanel } from 'primereact/overlaypanel';
+import { Checkbox } from 'primereact/checkbox';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
 
 type TierCode = 'LITE' | 'PREMIUM' | 'ENTERPRISE';
+type TierCodeFilter = 'ALL' | TierCode;
 
 interface TenantTier {
   id: number;
@@ -38,8 +43,26 @@ type TierFormErrors = {
   description?: string;
 };
 
+type TierVisibleField =
+  | 'code'
+  | 'name'
+  | 'dailyLogQuotaGb'
+  | 'maxUsers'
+  | 'description'
+  | 'isActive';
+
+const tierFieldOrder: TierVisibleField[] = [
+  'code',
+  'name',
+  'dailyLogQuotaGb',
+  'maxUsers',
+  'description',
+  'isActive',
+];
+
 const TenantTiersPage: React.FC = () => {
   const { t } = useTranslation();
+  const fieldPanelRef = React.useRef<OverlayPanel | null>(null);
   const [tiers, setTiers] = useState<TenantTier[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -47,6 +70,10 @@ const TenantTiersPage: React.FC = () => {
   const [editingTier, setEditingTier] = useState<TenantTier | null>(null);
   const [checkingDeleteTierId, setCheckingDeleteTierId] = useState<number | null>(null);
   const [deletingTierId, setDeletingTierId] = useState<number | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [codeFilter, setCodeFilter] = useState<TierCodeFilter>('ALL');
+  const [visibleFields, setVisibleFields] = useState<TierVisibleField[]>(tierFieldOrder);
   const [formErrors, setFormErrors] = useState<TierFormErrors>({});
   const [resultDialog, setResultDialog] = useState({
     visible: false,
@@ -78,18 +105,100 @@ const TenantTiersPage: React.FC = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearch(searchInput);
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [searchInput]);
+
+  const tierCodeLabelMap = useMemo(
+    () => ({
+      LITE: t('tenants.tiers.liteName'),
+      PREMIUM: t('tenants.tiers.premiumName'),
+      ENTERPRISE: t('tenants.tiers.enterpriseName'),
+    }),
+    [t],
+  );
+
+  const getTierCodeLabel = (code: TierCode) => tierCodeLabelMap[code] ?? code;
+
   const tierCodeOptions = useMemo(
     () => [
-      { label: 'Lite', value: 'LITE' as const },
-      { label: t('tenants.tiers.premiumName'), value: 'PREMIUM' as const },
-      { label: t('tenants.tiers.enterpriseName'), value: 'ENTERPRISE' as const },
+      { label: getTierCodeLabel('LITE'), value: 'LITE' as const },
+      { label: getTierCodeLabel('PREMIUM'), value: 'PREMIUM' as const },
+      { label: getTierCodeLabel('ENTERPRISE'), value: 'ENTERPRISE' as const },
     ],
-    [t],
+    [getTierCodeLabel],
+  );
+
+  const codeFilterOptions = useMemo(
+    () => [
+      { label: t('tenants.filters.all'), value: 'ALL' as const },
+      ...tierCodeOptions,
+    ],
+    [t, tierCodeOptions],
   );
 
   const renderTierCodeOption = (option: { label: string; value: TierCode }) => {
     return <span className="tenant-filter-pill">{option.label}</span>;
   };
+
+  const renderTierFilterOption = (option: { label: string; value: TierCodeFilter }) => {
+    return <span className={`tenant-filter-pill tenant-filter-pill-${option.value.toLowerCase()}`}>{option.label}</span>;
+  };
+
+  const fieldOptions = useMemo(
+    () => [
+      { label: t('tenants.tiers.code'), value: 'code' as const },
+      { label: t('tenants.tiers.name'), value: 'name' as const },
+      { label: t('tenants.tiers.dailyLogQuotaGb'), value: 'dailyLogQuotaGb' as const },
+      { label: t('tenants.tiers.maxUsers'), value: 'maxUsers' as const },
+      { label: t('tenants.tiers.description'), value: 'description' as const },
+      { label: t('common.status'), value: 'isActive' as const },
+    ],
+    [t],
+  );
+
+  const isFieldVisible = (field: TierVisibleField) => visibleFields.includes(field);
+
+  const handleToggleField = (field: TierVisibleField) => {
+    const exists = visibleFields.includes(field);
+
+    if (exists) {
+      if (visibleFields.length === 1) return;
+      setVisibleFields(visibleFields.filter((item) => item !== field));
+      return;
+    }
+
+    const next = [...visibleFields, field].sort(
+      (a, b) => tierFieldOrder.indexOf(a) - tierFieldOrder.indexOf(b),
+    );
+    setVisibleFields(next);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearch('');
+  };
+
+  const filteredTiers = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    return tiers.filter((tier) => {
+      const codeMatched = codeFilter === 'ALL' || tier.code === codeFilter;
+      if (!codeMatched) return false;
+
+      if (!keyword) return true;
+
+      return [tier.name, tier.description ?? ''].some((value) =>
+        value.toLowerCase().includes(keyword),
+      );
+    });
+  }, [tiers, codeFilter, search]);
 
   const showResultDialog = (success: boolean, message: string) => {
     setResultDialog({
@@ -105,7 +214,7 @@ const TenantTiersPage: React.FC = () => {
     setFormErrors({});
     setForm({
       code: 'LITE',
-      name: 'Lite',
+      name: t('tenants.tiers.liteName'),
       dailyLogQuotaGb: 1,
       maxUsers: 1,
       description: '',
@@ -200,7 +309,7 @@ const TenantTiersPage: React.FC = () => {
         rejectLabel: t('common.cancel'),
         message: (
           <div className="flex flex-column gap-2">
-            <div>{t('tenants.tiers.delete.confirmCode', { code: tier.code })}</div>
+            <div>{t('tenants.tiers.delete.confirmCode', { code: getTierCodeLabel(tier.code) })}</div>
             <div>{t('tenants.tiers.delete.confirmName', { name: tier.name })}</div>
             <div className="text-sm text-color-secondary">{t('tenants.tiers.delete.blockedRuleMessage')}</div>
           </div>
@@ -248,31 +357,130 @@ const TenantTiersPage: React.FC = () => {
       </div>
 
       <div className="tenants-table-card">
+        <div className="tenants-table-toolbar">
+          <div className="tenants-toolbar-left">
+            <div className="tenants-search-shell">
+              <IconField iconPosition="left" className="tenants-search">
+                <InputIcon className="pi pi-search" />
+                <InputText
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  className="w-full tenants-search-input p-inputtext-sm"
+                  placeholder={t('tenants.tiers.searchPlaceholder')}
+                />
+              </IconField>
+              {!!searchInput && (
+                <Button
+                  type="button"
+                  icon="pi pi-times"
+                  text
+                  rounded
+                  severity="secondary"
+                  className="tenants-search-clear"
+                  aria-label={t('tenants.toolbar.clearSearch')}
+                  tooltip={t('tenants.toolbar.clearSearch')}
+                  tooltipOptions={{ position: 'top' }}
+                  onClick={handleClearSearch}
+                />
+              )}
+            </div>
+          </div>
+          <div className="tenants-quick-filters">
+            <SelectButton
+              value={codeFilter}
+              options={codeFilterOptions}
+              optionLabel="label"
+              optionValue="value"
+              className="tenants-status-select"
+              itemTemplate={renderTierFilterOption}
+              onChange={(event) => setCodeFilter(event.value as TierCodeFilter)}
+            />
+            <Button
+              type="button"
+              icon="pi pi-refresh"
+              outlined
+              severity="secondary"
+              className="tenants-icon-button-xs"
+              aria-label={t('tenants.toolbar.refresh')}
+              tooltip={t('tenants.toolbar.refresh')}
+              tooltipOptions={{ position: 'top' }}
+              loading={loading}
+              onClick={load}
+            />
+            <Button
+              type="button"
+              icon="pi pi-sliders-h"
+              outlined
+              severity="secondary"
+              className="tenants-icon-button-xs"
+              aria-label={t('tenants.toolbar.fieldSettings')}
+              tooltip={t('tenants.toolbar.fieldSettings')}
+              tooltipOptions={{ position: 'top' }}
+              onClick={(event) => fieldPanelRef.current?.toggle(event)}
+            />
+            <OverlayPanel ref={fieldPanelRef} className="tenants-field-panel">
+              <div className="tenants-field-panel-list">
+                {fieldOptions.map((fieldOption) => (
+                  <label
+                    key={fieldOption.value}
+                    className="tenants-field-option"
+                    htmlFor={`tier-field-${fieldOption.value}`}
+                  >
+                    <Checkbox
+                      inputId={`tier-field-${fieldOption.value}`}
+                      checked={visibleFields.includes(fieldOption.value)}
+                      onChange={() => handleToggleField(fieldOption.value)}
+                    />
+                    <span>{fieldOption.label}</span>
+                  </label>
+                ))}
+              </div>
+            </OverlayPanel>
+          </div>
+        </div>
         <CommonDataTable
-          value={tiers}
+          value={filteredTiers}
           loading={loading}
           paginator
           rows={10}
           rowsPerPageOptions={[10, 20, 50]}
+          removableSort
           className="admin-tenants-table"
         >
-          <Column field="code" header={t('tenants.tiers.code')} style={{ width: '10rem' }} />
-          <Column field="name" header={t('tenants.tiers.name')} style={{ minWidth: '10rem' }} />
-          <Column field="dailyLogQuotaGb" header={t('tenants.tiers.dailyLogQuotaGb')} style={{ width: '12rem' }} />
-          <Column field="maxUsers" header={t('tenants.tiers.maxUsers')} style={{ width: '9rem' }} />
-          <Column field="description" header={t('tenants.tiers.description')} style={{ minWidth: '18rem' }} />
-          <Column
-            field="isActive"
-            header={t('common.status')}
-            style={{ width: '8rem' }}
-            body={(row: TenantTier) => (
-              <Tag
-                value={row.isActive ? t('common.active') : t('common.inactive')}
-                rounded
-                className={`tenant-status-tag ${row.isActive ? 'tenant-status-active' : 'tenant-status-inactive'}`}
-              />
-            )}
-          />
+          {isFieldVisible('code') && (
+            <Column
+              field="code"
+              header={t('tenants.tiers.code')}
+              style={{ width: '10rem' }}
+              body={(row: TenantTier) => getTierCodeLabel(row.code)}
+            />
+          )}
+          {isFieldVisible('name') && (
+            <Column field="name" header={t('tenants.tiers.name')} style={{ minWidth: '10rem' }} />
+          )}
+          {isFieldVisible('dailyLogQuotaGb') && (
+            <Column field="dailyLogQuotaGb" header={t('tenants.tiers.dailyLogQuotaGb')} style={{ width: '12rem' }} />
+          )}
+          {isFieldVisible('maxUsers') && (
+            <Column field="maxUsers" header={t('tenants.tiers.maxUsers')} style={{ width: '9rem' }} />
+          )}
+          {isFieldVisible('description') && (
+            <Column field="description" header={t('tenants.tiers.description')} style={{ minWidth: '18rem' }} />
+          )}
+          {isFieldVisible('isActive') && (
+            <Column
+              field="isActive"
+              header={t('common.status')}
+              style={{ width: '8rem' }}
+              body={(row: TenantTier) => (
+                <Tag
+                  value={row.isActive ? t('common.active') : t('common.inactive')}
+                  rounded
+                  className={`tenant-status-tag ${row.isActive ? 'tenant-status-active' : 'tenant-status-inactive'}`}
+                />
+              )}
+            />
+          )}
           <Column
             header={t('common.actions')}
             style={{ width: '5.2rem' }}

@@ -40,8 +40,8 @@ export class Tenant {
   @Column({ type: 'datetime', nullable: true, comment: '사용 기한(만료 일시)' })
   expiresAt: Date | null;
 
-  @Column({ type: 'text', nullable: true, comment: '허용 IP 대역(CIDR 또는 콤마 구분 목록)' })
-  ipCidr: string | null;
+  @Column({ type: 'text', nullable: false, comment: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)' })
+  ipCidr: string;
 
   @ManyToOne(() => TenantTier)
   @JoinColumn({ name: 'tierId', referencedColumnName: 'id' })

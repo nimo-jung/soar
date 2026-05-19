@@ -13,6 +13,7 @@ exports.UpdateTenantDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const tenant_entity_1 = require("../entities/tenant.entity");
+const IP_OR_CIDR_LIST_REGEX = /^\s*(?:\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)(?:\s*,\s*\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)*\s*$/;
 class UpdateTenantDto {
     name;
     status;
@@ -53,9 +54,12 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateTenantDto.prototype, "expiresAt", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: '허용 IP 대역(CIDR 또는 콤마 구분 목록)' }),
+    (0, swagger_1.ApiPropertyOptional)({ description: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.Matches)(IP_OR_CIDR_LIST_REGEX, {
+        message: 'ipCidr는 단일 IP 또는 CIDR 형식이며, 다중 입력은 콤마(,)로 구분해야 합니다.',
+    }),
     __metadata("design:type", String)
 ], UpdateTenantDto.prototype, "ipCidr", void 0);
 //# sourceMappingURL=update-tenant.dto.js.map

@@ -11,7 +11,7 @@ export declare class Tenant {
     status: TenantStatus;
     contactEmail: string;
     expiresAt: Date | null;
-    ipCidr: string | null;
+    ipCidr: string;
     tier: TenantTier;
     tierId: number;
     createdAt: Date;

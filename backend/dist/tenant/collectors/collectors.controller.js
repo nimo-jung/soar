@@ -21,19 +21,52 @@ const tenant_guard_1 = require("../../common/guards/tenant.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const roles_guard_2 = require("../../common/guards/roles.guard");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
+const audit_log_service_1 = require("../../common/audit/audit-log.service");
+const audit_log_entity_1 = require("../../common/audit/entities/audit-log.entity");
 let CollectorsController = class CollectorsController {
     collectorsService;
-    constructor(collectorsService) {
+    auditLogService;
+    constructor(collectorsService, auditLogService) {
         this.collectorsService = collectorsService;
+        this.auditLogService = auditLogService;
     }
-    create(dto) {
-        return this.collectorsService.create(dto);
+    buildAuditContext(user, req) {
+        return {
+            actorType: audit_log_entity_1.AuditActorType.TENANT,
+            actorId: user.sub,
+            tenantSlug: user.tenantId ?? null,
+            ipAddress: req.ip ?? null,
+            userAgent: req.headers['user-agent'] ?? null,
+        };
+    }
+    async create(dto, user, req) {
+        const created = await this.collectorsService.create(dto);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'COLLECTOR_CREATE',
+            resourceType: 'COLLECTOR',
+            resourceId: String(created.id),
+            message: 'Collector 생성',
+            metadata: {
+                name: created.name,
+                isActive: created.isActive,
+            },
+        });
+        return created;
     }
     findAll() {
         return this.collectorsService.findAll();
     }
-    deactivate(id) {
-        return this.collectorsService.deactivate(id);
+    async deactivate(id, user, req) {
+        await this.collectorsService.deactivate(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'COLLECTOR_DEACTIVATE',
+            resourceType: 'COLLECTOR',
+            resourceId: String(id),
+            message: 'Collector 비활성화',
+        });
     }
 };
 exports.CollectorsController = CollectorsController;
@@ -42,9 +75,11 @@ __decorate([
     (0, roles_decorator_1.Roles)(roles_guard_2.TenantRole.OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Collector 등록 및 API Key 발급 (plain key 단 1회 반환)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_collector_dto_1.CreateCollectorDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [create_collector_dto_1.CreateCollectorDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], CollectorsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
@@ -60,15 +95,18 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
     (0, swagger_1.ApiOperation)({ summary: 'Collector 비활성화' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], CollectorsController.prototype, "deactivate", null);
 exports.CollectorsController = CollectorsController = __decorate([
     (0, swagger_1.ApiTags)('Tenant - Collectors'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard),
     (0, common_1.Controller)('api/collectors'),
-    __metadata("design:paramtypes", [collectors_service_1.CollectorsService])
+    __metadata("design:paramtypes", [collectors_service_1.CollectorsService,
+        audit_log_service_1.AuditLogService])
 ], CollectorsController);
 //# sourceMappingURL=collectors.controller.js.map

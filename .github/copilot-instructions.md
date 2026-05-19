@@ -40,6 +40,13 @@
 * 레이아웃 및 커스텀 스타일링은 **Tailwind CSS**를 사용한다.
 * 전역 상태 관리는 **Zustand**를 사용한다.
 * PrimeReact 컴포넌트 사용 시 DataTable, Chart 등 복잡한 UI 요소에 대해 공식 모범 사례를 우선 적용한다.
+* **감사로그 의무화**: `frontend-admin` 및 `frontend-tenant`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.
+* CUD 화면을 구현할 때는 대응 백엔드 API에서 `AuditLogService` 기록을 함께 구현하고, 감사로그가 누락되는 CUD 엔드포인트를 허용하지 않는다.
+* **날짜 표기 표준**: 화면 날짜 표기는 용도별 정밀도에 맞춰 아래 형식을 사용한다.
+	* 날짜만 표시: `YYYY-MM-DD`
+	* 시간(분)까지 표시: `YYYY-MM-DD HH:mm`
+	* 시간(초)까지 표시: `YYYY-MM-DD HH:mm:ss`
+* 날짜 문자열은 자리수 0 패딩(월/일/시/분/초 2자리)을 적용하고, 임의의 `toLocaleString()` 기본 출력 형식을 직접 사용하지 않는다.
 
 ### Analysis Engine - GoLang
 
@@ -102,6 +109,11 @@
 * **주석 준수**: 모든 Entity 생성 시 `@Column({ comment: '...' })`을 빠뜨리지 마라.
 * **UI 일관성**: PrimeReact 중심으로 화면을 구성하고 Tailwind CSS는 보조적으로 사용하라.
 * **배치 처리**: 로그 관련 코드는 고처리량을 위해 병렬성 및 배치 처리 로직을 우선 고려하라.
+* **CUD 감사로그 체크리스트**: CUD 기능을 생성할 때 아래를 기본 포함하라.
+	* 프론트엔드: CUD 액션은 감사로그가 기록되는 API만 호출한다.
+	* 백엔드 컨트롤러/서비스: `AuditLogService`로 Create/Update/Delete 이벤트를 반드시 기록한다.
+	* 감사로그 필수 필드: 행위자, 액션 코드, 대상 리소스, 테넌트 식별자(해당 시), 발생 시각.
+	* CI 검증: `backend`에서 `npm run check:audit:cud`를 통과해야 한다.
 
 ## 5. 금지 사항
 

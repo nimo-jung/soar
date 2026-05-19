@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { MasterUser } from '../../admin/master-users/entities/master-user.entity';
+import { MasterUser, MasterUserStatus } from '../../admin/master-users/entities/master-user.entity';
 
 /**
  * AdminSeeder: soar_admin DB 초기 데이터 삽입
@@ -27,6 +27,8 @@ export async function runAdminSeed(dataSource: DataSource): Promise<void> {
       email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io',
       passwordHash,
       isActive: true,
+      status: MasterUserStatus.ACTIVE,
+      deletedAt: null,
     }),
   );
 

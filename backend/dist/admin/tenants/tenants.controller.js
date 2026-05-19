@@ -41,6 +41,13 @@ let TenantsController = class TenantsController {
             userAgent: req.headers['user-agent'] ?? null,
         };
     }
+    safe(value) {
+        if (value === null || value === undefined)
+            return '-';
+        if (typeof value === 'string' && value.trim().length === 0)
+            return '-';
+        return String(value);
+    }
     async create(dto, user, req) {
         const created = await this.tenantsService.create(dto);
         await this.auditLogService.record({
@@ -48,11 +55,22 @@ let TenantsController = class TenantsController {
             action: 'TENANT_CREATE',
             resourceType: 'TENANT',
             resourceId: String(created.id),
-            message: `테넌트 ${created.name}(${created.slug}) 생성`,
+            message: [
+                `테넌트 생성`,
+                `name=${this.safe(created.name)}`,
+                `slug=${this.safe(created.slug)}`,
+                `tierId=${this.safe(created.tierId)}`,
+                `status=${this.safe(created.status)}`,
+                `expiresAt=${this.safe(created.expiresAt)}`,
+                `ipCidr=${this.safe(created.ipCidr)}`,
+            ].join(' | '),
             metadata: {
                 name: created.name,
                 slug: created.slug,
                 tierId: created.tierId,
+                status: created.status,
+                expiresAt: created.expiresAt,
+                ipCidr: created.ipCidr,
             },
         });
         return created;
@@ -70,26 +88,44 @@ let TenantsController = class TenantsController {
             action: 'TENANT_TIER_CREATE',
             resourceType: 'TENANT_TIER',
             resourceId: String(created.id),
-            message: `등급 ${created.name}(${created.code}) 생성`,
+            message: [
+                '테넌트 등급 생성',
+                `code=${this.safe(created.code)}`,
+                `name=${this.safe(created.name)}`,
+                `dailyLogQuotaGb=${this.safe(created.dailyLogQuotaGb)}`,
+                `maxUsers=${this.safe(created.maxUsers)}`,
+                `isActive=${this.safe(created.isActive)}`,
+            ].join(' | '),
             metadata: {
                 code: created.code,
                 name: created.name,
                 dailyLogQuotaGb: created.dailyLogQuotaGb,
                 maxUsers: created.maxUsers,
+                isActive: created.isActive,
             },
         });
         return created;
     }
     async updateTier(id, dto, user, req) {
+        const before = await this.tenantsService.getTiers().then((tiers) => tiers.find((tier) => tier.id === id) ?? null);
         const updated = await this.tenantsService.updateTier(id, dto);
         await this.auditLogService.record({
             ...this.buildAuditContext(user, req),
             action: 'TENANT_TIER_UPDATE',
             resourceType: 'TENANT_TIER',
             resourceId: String(updated.id),
-            message: `등급 ${updated.name}(${updated.code}) 수정`,
+            message: [
+                '테넌트 등급 수정',
+                `code=${this.safe(updated.code)}`,
+                `name=${this.safe(before?.name)} -> ${this.safe(updated.name)}`,
+                `dailyLogQuotaGb=${this.safe(before?.dailyLogQuotaGb)} -> ${this.safe(updated.dailyLogQuotaGb)}`,
+                `maxUsers=${this.safe(before?.maxUsers)} -> ${this.safe(updated.maxUsers)}`,
+                `isActive=${this.safe(before?.isActive)} -> ${this.safe(updated.isActive)}`,
+            ].join(' | '),
             metadata: {
                 changedFields: Object.keys(dto),
+                before,
+                after: updated,
             },
         });
         return updated;
@@ -104,7 +140,11 @@ let TenantsController = class TenantsController {
             action: 'TENANT_TIER_DELETE',
             resourceType: 'TENANT_TIER',
             resourceId: String(deletedTier.id),
-            message: `등급 ${deletedTier.name}(${deletedTier.code}) 삭제`,
+            message: [
+                '테넌트 등급 삭제',
+                `code=${this.safe(deletedTier.code)}`,
+                `name=${this.safe(deletedTier.name)}`,
+            ].join(' | '),
             metadata: {
                 code: deletedTier.code,
                 name: deletedTier.name,
@@ -115,30 +155,50 @@ let TenantsController = class TenantsController {
         return this.tenantsService.findOne(id);
     }
     async update(id, dto, user, req) {
+        const before = await this.tenantsService.findOne(id);
         const updated = await this.tenantsService.update(id, dto);
         const isDeleteAction = dto.status === 'DELETED';
+        const isStatusChange = dto.status !== undefined && dto.status !== before.status;
         await this.auditLogService.record({
             ...this.buildAuditContext(user, req),
-            action: isDeleteAction ? 'TENANT_DELETE' : 'TENANT_UPDATE',
+            action: isDeleteAction ? 'TENANT_DELETE' : isStatusChange ? 'TENANT_STATUS_CHANGE' : 'TENANT_UPDATE',
             resourceType: 'TENANT',
             resourceId: String(updated.id),
-            message: isDeleteAction
-                ? `테넌트 ${updated.name}(${updated.slug}) 삭제(상태 전환)`
-                : `테넌트 ${updated.name}(${updated.slug}) 수정`,
+            message: [
+                isDeleteAction ? '테넌트 삭제(상태 전환)' : isStatusChange ? '테넌트 상태 변경' : '테넌트 수정',
+                `name=${this.safe(updated.name)}`,
+                `slug=${this.safe(updated.slug)}`,
+                `status=${this.safe(before.status)} -> ${this.safe(updated.status)}`,
+                `tierId=${this.safe(before.tierId)} -> ${this.safe(updated.tierId)}`,
+                `expiresAt=${this.safe(before.expiresAt)} -> ${this.safe(updated.expiresAt)}`,
+                `ipCidr=${this.safe(before.ipCidr)} -> ${this.safe(updated.ipCidr)}`,
+            ].join(' | '),
             metadata: {
                 changedFields: Object.keys(dto),
+                before,
+                after: updated,
             },
         });
         return updated;
     }
     async remove(id, user, req) {
+        const before = await this.tenantsService.findOne(id);
         await this.tenantsService.softDelete(id);
         await this.auditLogService.record({
             ...this.buildAuditContext(user, req),
             action: 'TENANT_DELETE',
             resourceType: 'TENANT',
             resourceId: String(id),
-            message: `테넌트 ID ${id} 삭제(소프트)`,
+            message: [
+                '테넌트 삭제(소프트)',
+                `id=${id}`,
+                `name=${this.safe(before.name)}`,
+                `slug=${this.safe(before.slug)}`,
+                `status=${this.safe(before.status)} -> DELETED`,
+            ].join(' | '),
+            metadata: {
+                before,
+            },
         });
     }
     getSettings(id) {

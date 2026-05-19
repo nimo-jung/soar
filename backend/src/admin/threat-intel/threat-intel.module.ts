@@ -5,10 +5,12 @@ import { ConfigService } from '@nestjs/config';
 import { ThreatIntelController } from './threat-intel.controller';
 import { ThreatIntelService } from './threat-intel.service';
 import { ThreatIntelFeed } from './entities/threat-intel-feed.entity';
+import { AuditLog } from '../../common/audit/entities/audit-log.entity';
+import { AuditLogService } from '../../common/audit/audit-log.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ThreatIntelFeed]),
+    TypeOrmModule.forFeature([ThreatIntelFeed, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),
@@ -17,6 +19,6 @@ import { ThreatIntelFeed } from './entities/threat-intel-feed.entity';
     }),
   ],
   controllers: [ThreatIntelController],
-  providers: [ThreatIntelService],
+  providers: [ThreatIntelService, AuditLogService],
 })
 export class ThreatIntelModule {}

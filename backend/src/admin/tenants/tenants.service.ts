@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Tenant, TenantStatus } from './entities/tenant.entity';
@@ -49,6 +49,53 @@ export class TenantsService {
       .getOne();
   }
 
+  private isValidIpv4(ip: string): boolean {
+    const parts = ip.split('.');
+    if (parts.length !== 4) {
+      return false;
+    }
+
+    return parts.every((part) => {
+      if (!/^\d{1,3}$/.test(part)) {
+        return false;
+      }
+      const value = Number(part);
+      return value >= 0 && value <= 255;
+    });
+  }
+
+  private isValidIpv4OrCidr(item: string): boolean {
+    if (this.isValidIpv4(item)) {
+      return true;
+    }
+
+    const [ip, prefix] = item.split('/');
+    if (!ip || prefix === undefined || !this.isValidIpv4(ip) || !/^\d{1,2}$/.test(prefix)) {
+      return false;
+    }
+
+    const prefixNum = Number(prefix);
+    return prefixNum >= 0 && prefixNum <= 32;
+  }
+
+  private normalizeIpCidrList(value: string): string {
+    const items = value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+
+    if (items.length === 0) {
+      throw new BadRequestException('ipCidr는 최소 1개 이상의 항목이 필요합니다.');
+    }
+
+    const hasInvalid = items.some((item) => !this.isValidIpv4OrCidr(item));
+    if (hasInvalid) {
+      throw new BadRequestException('ipCidr는 단일 IP 또는 CIDR 형식이어야 하며, 다중 값은 콤마(,)로 구분해야 합니다.');
+    }
+
+    return items.join(',');
+  }
+
   async create(dto: CreateTenantDto): Promise<Tenant> {
     const existing = await this.tenantRepo.findOne({ where: { slug: dto.slug } });
     if (existing) {
@@ -72,7 +119,7 @@ export class TenantsService {
         name: dto.name,
         contactEmail: dto.contactEmail,
         tierId: tier.id,
-        ipCidr: dto.ipCidr ?? null,
+        ipCidr: this.normalizeIpCidrList(dto.ipCidr),
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
       });
       const saved = await queryRunner.manager.save(tenant);
@@ -125,10 +172,31 @@ export class TenantsService {
       }
     }
 
-    const normalized: Partial<Tenant> = {
-      ...dto,
-      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : tenant.expiresAt,
-    };
+    const normalized: Partial<Tenant> = {};
+
+    if (dto.name !== undefined) {
+      normalized.name = dto.name;
+    }
+
+    if (dto.status !== undefined) {
+      normalized.status = dto.status;
+    }
+
+    if (dto.contactEmail !== undefined) {
+      normalized.contactEmail = dto.contactEmail;
+    }
+
+    if (dto.tierId !== undefined) {
+      normalized.tierId = dto.tierId;
+    }
+
+    if (dto.expiresAt) {
+      normalized.expiresAt = new Date(dto.expiresAt);
+    }
+
+    if (dto.ipCidr !== undefined) {
+      normalized.ipCidr = this.normalizeIpCidrList(dto.ipCidr);
+    }
 
     Object.assign(tenant, normalized);
     return this.tenantRepo.save(tenant);

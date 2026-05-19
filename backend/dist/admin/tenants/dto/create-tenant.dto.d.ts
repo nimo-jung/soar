@@ -3,6 +3,6 @@ export declare class CreateTenantDto {
     name: string;
     contactEmail?: string;
     tierId?: number;
-    expiresAt?: string;
-    ipCidr?: string;
+    expiresAt: string;
+    ipCidr: string;
 }

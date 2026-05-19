@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTenantDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
+const IP_OR_CIDR_LIST_REGEX = /^\s*(?:\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)(?:\s*,\s*\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)*\s*$/;
 class CreateTenantDto {
     slug;
     name;
@@ -49,15 +50,17 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateTenantDto.prototype, "tierId", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' }),
+    (0, swagger_1.ApiProperty)({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' }),
     (0, class_validator_1.IsDateString)(),
-    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTenantDto.prototype, "expiresAt", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: '허용 IP 대역(CIDR 또는 콤마 구분 목록)', example: '10.0.0.0/24' }),
+    (0, swagger_1.ApiProperty)({ description: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)', example: '10.0.0.10,10.0.1.0/24' }),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Matches)(IP_OR_CIDR_LIST_REGEX, {
+        message: 'ipCidr는 단일 IP 또는 CIDR 형식이며, 다중 입력은 콤마(,)로 구분해야 합니다.',
+    }),
     __metadata("design:type", String)
 ], CreateTenantDto.prototype, "ipCidr", void 0);
 //# sourceMappingURL=create-tenant.dto.js.map

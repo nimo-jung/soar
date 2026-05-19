@@ -62,8 +62,8 @@ __decorate([
     __metadata("design:type", Object)
 ], Tenant.prototype, "expiresAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'text', nullable: true, comment: '허용 IP 대역(CIDR 또는 콤마 구분 목록)' }),
-    __metadata("design:type", Object)
+    (0, typeorm_1.Column)({ type: 'text', nullable: false, comment: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)' }),
+    __metadata("design:type", String)
 ], Tenant.prototype, "ipCidr", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => tenant_tier_entity_1.TenantTier),

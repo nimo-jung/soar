@@ -29,7 +29,8 @@
     "alerts": "알람",
     "playbooks": "플레이북",
     "collectors": "Collector",
-    "settings": "설정"
+    "settings": "설정",
+    "authSettings": "인증 설정"
   },
   "auth": {
     "logoAlt": "회사 로고",
@@ -99,5 +100,47 @@
       "status": "상태",
       "runBtn": "실행"
     }
+  },
+  "authSettings": {
+    "title": "인증 설정",
+    "description": "로그인 실패 잠금, 동시 세션, 자동 로그아웃 정책을 설정합니다.",
+    "loadFailed": "인증 설정을 불러오지 못했습니다.",
+    "saveSuccess": "인증 설정이 저장되었습니다.",
+    "saveFailed": "인증 설정 저장 중 오류가 발생했습니다.",
+    "validation": {
+      "autoLogoutTimeoutMinutes": "자동 로그아웃 타임아웃은 0 또는 1~30분으로 입력해야 합니다."
+    },
+    "maxLoginFailures": {
+      "label": "로그인 실패 시도 횟수 제한",
+      "help": "기본 3회, 최소 1회, 최대 5회"
+    },
+    "lockMinutes": {
+      "label": "잠금 시간(분)",
+      "help": "기본 5분, 최소 3분, 최대 30분"
+    },
+    "maxConcurrentSessions": {
+      "label": "계정당 동시 로그인 세션",
+      "help": "기본 1회, 최소 1회, 최대 5회"
+    },
+    "autoLogoutTimeoutMinutes": {
+      "label": "자동 로그아웃 타임아웃(분)",
+      "help": "기본 5분, 최소 1분, 최대 30분, 0이면 만료 없음"
+    }
+  },
+  "sessionTimeout": {
+    "dialogTitle": "세션 만료 임박",
+    "dialogMessage": "보안을 위해 곧 자동 로그아웃됩니다. 계속 사용하려면 세션을 연장하세요.",
+    "remainingLabel": "남은 시간: {{time}}",
+    "extendSession": "로그인 연장",
+    "logoutNow": "지금 로그아웃"
+  },
+  "serverError": {
+    "title": "서버 연결에 문제가 발생했습니다",
+    "description": "요청 처리 중 서버 오류가 발생했습니다. 잠시 후 다시 시도하거나 대시보드로 이동해 주세요.",
+    "statusCode": "오류 코드: {{code}}",
+    "devMessageTitle": "개발 모드 상세 오류",
+    "goBack": "이전 페이지",
+    "goDashboard": "대시보드 이동",
+    "retry": "다시 시도"
   }
 }

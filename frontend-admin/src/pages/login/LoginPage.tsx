@@ -7,11 +7,12 @@ import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import api from '../../api';
 import { useAuthStore } from '../../store/auth.store';
+import { AuthPolicy } from '../../types/auth-policy';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const setToken = useAuthStore((s) => s.setToken);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,11 +29,11 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post<{ accessToken: string }>('/auth/master/login', {
+      const res = await api.post<{ accessToken: string; authSettings: AuthPolicy }>('/auth/master/login', {
         email,
         password,
       });
-      setToken(res.data.accessToken);
+      setAuth(res.data.accessToken, res.data.authSettings);
       navigate('/tenants');
     } catch {
       setError(t('auth.errorInvalid'));

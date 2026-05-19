@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { CollectorsController } from './collectors/collectors.controller';
@@ -7,9 +8,16 @@ import { IpWhitelistController } from './ip-whitelist/ip-whitelist.controller';
 import { IpWhitelistService } from './ip-whitelist/ip-whitelist.service';
 import { PlaybooksController } from './playbooks/playbooks.controller';
 import { PlaybooksService } from './playbooks/playbooks.service';
+import { Tenant } from '../admin/tenants/entities/tenant.entity';
+import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
+import { TenantAuthSettingsController } from './auth-settings/auth-settings.controller';
+import { TenantAuthSettingsService } from './auth-settings/auth-settings.service';
+import { AuditLog } from '../common/audit/entities/audit-log.entity';
+import { AuditLogService } from '../common/audit/audit-log.service';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Tenant, TenantSettings, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),
@@ -17,7 +25,18 @@ import { PlaybooksService } from './playbooks/playbooks.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [CollectorsController, IpWhitelistController, PlaybooksController],
-  providers: [CollectorsService, IpWhitelistService, PlaybooksService],
+  controllers: [
+    CollectorsController,
+    IpWhitelistController,
+    PlaybooksController,
+    TenantAuthSettingsController,
+  ],
+  providers: [
+    CollectorsService,
+    IpWhitelistService,
+    PlaybooksService,
+    TenantAuthSettingsService,
+    AuditLogService,
+  ],
 })
 export class TenantModule {}

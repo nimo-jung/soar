@@ -38,6 +38,9 @@ let AuthController = class AuthController {
     logout(authorization, req) {
         return this.authService.logout(authorization, this.getRequestContext(req));
     }
+    extendSession(authorization) {
+        return this.authService.extendSession(authorization);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -70,6 +73,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, common_1.Post)('session/extend'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '세션 만료 시간 연장' }),
+    __param(0, (0, common_1.Headers)('authorization')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "extendSession", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),

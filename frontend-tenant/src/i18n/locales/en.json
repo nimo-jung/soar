@@ -29,7 +29,8 @@
     "alerts": "Alerts",
     "playbooks": "Playbooks",
     "collectors": "Collector",
-    "settings": "Settings"
+    "settings": "Settings",
+    "authSettings": "Auth Settings"
   },
   "auth": {
     "logoAlt": "Company logo",
@@ -99,5 +100,47 @@
       "status": "Status",
       "runBtn": "Run"
     }
+  },
+  "authSettings": {
+    "title": "Auth Settings",
+    "description": "Configure login lockout, concurrent sessions, and auto logout policies.",
+    "loadFailed": "Failed to load auth settings.",
+    "saveSuccess": "Auth settings have been saved.",
+    "saveFailed": "An error occurred while saving auth settings.",
+    "validation": {
+      "autoLogoutTimeoutMinutes": "Auto logout timeout must be 0 or between 1 and 30 minutes."
+    },
+    "maxLoginFailures": {
+      "label": "Max failed login attempts",
+      "help": "Default 3, minimum 1, maximum 5"
+    },
+    "lockMinutes": {
+      "label": "Lock time (minutes)",
+      "help": "Default 5 min, minimum 3 min, maximum 30 min"
+    },
+    "maxConcurrentSessions": {
+      "label": "Max concurrent sessions per account",
+      "help": "Default 1, minimum 1, maximum 5"
+    },
+    "autoLogoutTimeoutMinutes": {
+      "label": "Auto logout timeout (minutes)",
+      "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
+    }
+  },
+  "sessionTimeout": {
+    "dialogTitle": "Session About To Expire",
+    "dialogMessage": "For security, you will be logged out soon. Extend your session to continue.",
+    "remainingLabel": "Remaining time: {{time}}",
+    "extendSession": "Extend Session",
+    "logoutNow": "Log Out Now"
+  },
+  "serverError": {
+    "title": "A server connection problem occurred",
+    "description": "A server error occurred while processing your request. Please try again shortly or move to the dashboard.",
+    "statusCode": "Error code: {{code}}",
+    "devMessageTitle": "Development Error Detail",
+    "goBack": "Previous Page",
+    "goDashboard": "Go To Dashboard",
+    "retry": "Retry"
   }
 }

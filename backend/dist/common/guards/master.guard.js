@@ -29,7 +29,10 @@ let MasterGuard = class MasterGuard {
             if (!payload.isMaster) {
                 throw new common_1.ForbiddenException('마스터 관리자 권한이 필요합니다.');
             }
-            req.user = payload;
+            req.user = {
+                ...payload,
+                email: payload.email ?? null,
+            };
             return true;
         }
         catch (err) {

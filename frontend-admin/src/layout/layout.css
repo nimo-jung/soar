@@ -529,6 +529,24 @@ body {
     font-size: 0.86rem;
 }
 
+.tenants-page .tenant-ip-chips.p-chips {
+    width: 100% !important;
+    display: flex;
+}
+
+.tenants-page .tenant-ip-chips .p-chips-multiple-container {
+    width: 100% !important;
+    flex: 1 1 auto;
+}
+
+.tenants-page .tenant-ip-chips .p-chips-input-token {
+    flex: 1 1 12rem;
+}
+
+.tenants-page .tenant-ip-chips .p-chips-input-token input {
+    width: 100%;
+}
+
 .tenants-status-select.p-selectbutton {
     display: inline-flex;
     align-items: center;
@@ -651,6 +669,10 @@ body {
     background: color-mix(in srgb, var(--primary-color) 9%, transparent 91%);
 }
 
+.audit-logs-clickable-table .p-datatable-tbody > tr {
+    cursor: pointer;
+}
+
 .admin-tenants-table .p-datatable-tbody > tr.tenant-row-deleted > td {
     color: color-mix(in srgb, var(--text-color-secondary) 88%, var(--surface-card) 12%);
 }
@@ -682,6 +704,17 @@ body {
 .tiers-dialog .tiers-switch-sm {
     transform: scale(0.86);
     transform-origin: left center;
+}
+
+/* Master user dialog: force Password component chain to occupy full width */
+.tiers-dialog .master-user-password,
+.tiers-dialog .master-user-password .p-icon-field,
+.tiers-dialog .master-user-password .p-password-input {
+    width: 100%;
+}
+
+.tiers-dialog .master-user-password .p-icon-field {
+    display: flex;
 }
 
 .tenant-slug-tag.p-tag {

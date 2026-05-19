@@ -38,6 +38,7 @@ export async function runTenantSeed(
       slug: DEMO_SLUG,
       name: 'SOAR Demo Corp',
       contactEmail: 'operator@demo.local',
+      ipCidr: '10.0.0.10,10.0.1.0/24',
       status: TenantStatus.ACTIVE,
     });
     tenant = await tenantRepo.save(tenant);

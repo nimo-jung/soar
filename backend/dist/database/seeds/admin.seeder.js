@@ -51,6 +51,8 @@ async function runAdminSeed(dataSource) {
         email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io',
         passwordHash,
         isActive: true,
+        status: master_user_entity_1.MasterUserStatus.ACTIVE,
+        deletedAt: null,
     }));
     console.log('[Seed] 마스터 관리자 계정이 생성되었습니다.');
     console.log(`[Seed] Email: ${process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io'}`);

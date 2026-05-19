@@ -22,6 +22,8 @@ const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const class_validator_1 = require("class-validator");
 const swagger_2 = require("@nestjs/swagger");
+const audit_log_service_1 = require("../../common/audit/audit-log.service");
+const audit_log_entity_1 = require("../../common/audit/entities/audit-log.entity");
 class CreatePlaybookDto {
     name;
     description;
@@ -44,17 +46,52 @@ __decorate([
 ], CreatePlaybookDto.prototype, "definition", void 0);
 let PlaybooksController = class PlaybooksController {
     playbooksService;
-    constructor(playbooksService) {
+    auditLogService;
+    constructor(playbooksService, auditLogService) {
         this.playbooksService = playbooksService;
+        this.auditLogService = auditLogService;
+    }
+    buildAuditContext(user, req) {
+        return {
+            actorType: audit_log_entity_1.AuditActorType.TENANT,
+            actorId: user.sub,
+            tenantSlug: user.tenantId ?? null,
+            ipAddress: req.ip ?? null,
+            userAgent: req.headers['user-agent'] ?? null,
+        };
     }
     findAll() {
         return this.playbooksService.findAll();
     }
-    create(dto, user) {
-        return this.playbooksService.create(dto.name, dto.definition, user.sub, dto.description);
+    async create(dto, user, req) {
+        const created = await this.playbooksService.create(dto.name, dto.definition, user.sub, dto.description);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'PLAYBOOK_CREATE',
+            resourceType: 'PLAYBOOK',
+            resourceId: String(created.id),
+            message: '플레이북 생성',
+            metadata: {
+                name: created.name,
+                status: created.status,
+            },
+        });
+        return created;
     }
-    execute(id) {
-        return this.playbooksService.execute(id);
+    async execute(id, user, req) {
+        const result = await this.playbooksService.execute(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'PLAYBOOK_EXECUTE',
+            resourceType: 'PLAYBOOK',
+            resourceId: String(id),
+            message: '플레이북 실행',
+            metadata: {
+                runId: result?.id ?? null,
+                status: result?.status ?? null,
+            },
+        });
+        return result;
     }
 };
 exports.PlaybooksController = PlaybooksController;
@@ -72,24 +109,28 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: '플레이북 생성' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [CreatePlaybookDto, Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [CreatePlaybookDto, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], PlaybooksController.prototype, "create", null);
 __decorate([
     (0, common_1.Post)(':id/execute'),
     (0, roles_decorator_1.Roles)(roles_guard_1.TenantRole.OPERATOR, roles_guard_1.TenantRole.ANALYST),
     (0, swagger_1.ApiOperation)({ summary: '플레이북 즉시 실행 (정의 동적 로드)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], PlaybooksController.prototype, "execute", null);
 exports.PlaybooksController = PlaybooksController = __decorate([
     (0, swagger_1.ApiTags)('Tenant - Playbooks'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard),
     (0, common_1.Controller)('api/playbooks'),
-    __metadata("design:paramtypes", [playbooks_service_1.PlaybooksService])
+    __metadata("design:paramtypes", [playbooks_service_1.PlaybooksService,
+        audit_log_service_1.AuditLogService])
 ], PlaybooksController);
 //# sourceMappingURL=playbooks.controller.js.map

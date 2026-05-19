@@ -27,6 +27,7 @@ export class MasterGuard implements CanActivate {
     try {
       const payload = this.jwtService.verify<{
         sub: number;
+        email?: string;
         role: string;
         isMaster: boolean;
       }>(token);
@@ -35,7 +36,10 @@ export class MasterGuard implements CanActivate {
         throw new ForbiddenException('마스터 관리자 권한이 필요합니다.');
       }
 
-      (req as any).user = payload;
+      (req as any).user = {
+        ...payload,
+        email: payload.email ?? null,
+      };
       return true;
     } catch (err) {
       if (err instanceof ForbiddenException) throw err;

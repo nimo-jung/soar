@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
 import LanguageSwitcher from '../LanguageSwitcher';
+import SessionTimeoutManager from '../SessionTimeoutManager';
 import api from '../../api';
 
 const navSections = [
@@ -22,6 +23,14 @@ const navSections = [
     sectionIcon: 'pi pi-bookmark',
     items: [
       { labelKey: 'nav.auditLogs', path: '/audit-logs', icon: 'pi pi-book' },
+    ],
+  },
+  {
+    sectionLabelKey: 'nav.systemManagement',
+    sectionIcon: 'pi pi-cog',
+    items: [
+      { labelKey: 'nav.userManagement', path: '/master-users', icon: 'pi pi-users' },
+      { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
     ],
   },
 ];
@@ -170,6 +179,8 @@ const AdminLayout: React.FC = () => {
 
       {/* ── Mobile overlay ── */}
       <div className="layout-mask" onClick={() => setMobileActive(false)} />
+
+      <SessionTimeoutManager />
     </div>
   );
 };

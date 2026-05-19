@@ -7,6 +7,10 @@ export declare class TenantSettings {
     storageQuotaGb: number;
     retentionDays: number;
     brandingConfig: Record<string, string> | null;
+    maxLoginFailures: number;
+    lockMinutes: number;
+    maxConcurrentSessions: number;
+    autoLogoutTimeoutMinutes: number;
     createdAt: Date;
     updatedAt: Date;
 }

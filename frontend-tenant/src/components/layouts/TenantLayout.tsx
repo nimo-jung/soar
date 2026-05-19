@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import LanguageSwitcher from '../LanguageSwitcher';
+import SessionTimeoutManager from '../SessionTimeoutManager';
 import api from '../../api';
 
 /* ── Verona grouped nav model ─────────────────────────────────── */
@@ -26,6 +27,7 @@ const navModel = [
     categoryKey: 'nav.categories.management',
     items: [
       { labelKey: 'nav.settings', path: '/settings', icon: 'pi pi-cog' },
+      { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
     ],
   },
 ];
@@ -205,6 +207,8 @@ const TenantLayout: React.FC = () => {
 
       {/* Mobile overlay */}
       <div className="layout-mask" onClick={() => setMobileActive(false)} />
+
+      <SessionTimeoutManager />
     </div>
   );
 };

@@ -40,4 +40,11 @@ export class AuthController {
   ) {
     return this.authService.logout(authorization, this.getRequestContext(req));
   }
+
+  @Post('session/extend')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '세션 만료 시간 연장' })
+  extendSession(@Headers('authorization') authorization: string | undefined) {
+    return this.authService.extendSession(authorization);
+  }
 }

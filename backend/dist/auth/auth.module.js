@@ -18,13 +18,24 @@ const tenant_entity_1 = require("../admin/tenants/entities/tenant.entity");
 const tenant_settings_entity_1 = require("../admin/tenants/entities/tenant-settings.entity");
 const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
+const master_auth_settings_entity_1 = require("./entities/master-auth-settings.entity");
+const auth_user_security_state_entity_1 = require("./entities/auth-user-security-state.entity");
+const auth_session_entity_1 = require("./entities/auth-session.entity");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([master_user_entity_1.MasterUser, tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, audit_log_entity_1.AuditLog]),
+            typeorm_1.TypeOrmModule.forFeature([
+                master_user_entity_1.MasterUser,
+                tenant_entity_1.Tenant,
+                tenant_settings_entity_1.TenantSettings,
+                audit_log_entity_1.AuditLog,
+                master_auth_settings_entity_1.MasterAuthSettings,
+                auth_user_security_state_entity_1.AuthUserSecurityState,
+                auth_session_entity_1.AuthSession,
+            ]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),

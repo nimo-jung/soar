@@ -12,10 +12,12 @@ import { InputIcon } from 'primereact/inputicon';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { Checkbox } from 'primereact/checkbox';
 import { SelectButton } from 'primereact/selectbutton';
-import { useNavigate } from 'react-router-dom';
+import { Dropdown } from 'primereact/dropdown';
+import { Calendar } from 'primereact/calendar';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
+import { formatDateTimeSeconds } from '../../utils/date';
 
 interface TenantTier {
   id: number;
@@ -39,6 +41,15 @@ interface Tenant {
   tier?: TenantTier;
   createdAt: string;
 }
+
+type TenantFormErrors = {
+  slug?: string;
+  name?: string;
+  contactEmail?: string;
+  tierId?: string;
+  expiresAt?: string;
+  ipCidr?: string;
+};
 
 type TenantVisibleField =
   | 'id'
@@ -75,29 +86,83 @@ const statusLabelKey = (status: Tenant['status']) => {
   return 'tenants.filters.deleted';
 };
 
+const isValidTenantSlug = (value: string) => /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/.test(value);
+
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+const isValidIpv4Cidr = (value: string) => {
+  const match = value.match(/^(\d{1,3}(?:\.\d{1,3}){3})\/(\d{1,2})$/);
+  if (!match) return false;
+
+  const octets = match[1].split('.').map((part) => Number(part));
+  if (octets.some((octet) => Number.isNaN(octet) || octet < 0 || octet > 255)) return false;
+
+  const prefix = Number(match[2]);
+  return Number.isInteger(prefix) && prefix >= 0 && prefix <= 32;
+};
+
+const isValidIpv4 = (value: string) => {
+  const match = value.match(/^(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (!match) return false;
+
+  const octets = match[1].split('.').map((part) => Number(part));
+  return !octets.some((octet) => Number.isNaN(octet) || octet < 0 || octet > 255);
+};
+
+const normalizeIpCidrList = (value: string): string[] | null => {
+  const items = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  const allValid = items.every((item) => isValidIpv4(item) || isValidIpv4Cidr(item));
+  if (!allValid) {
+    return null;
+  }
+
+  return items;
+};
+
+const getDefaultExpiresAt = () => {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  return date;
+};
+
 const TenantsPage: React.FC = () => {
-  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const rowMenusRef = React.useRef<Record<number, Menu | null>>({});
   const fieldPanelRef = React.useRef<OverlayPanel | null>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tiers, setTiers] = useState<TenantTier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showTenantDialog, setShowTenantDialog] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | Tenant['status']>('ALL');
   const [visibleFields, setVisibleFields] = useState<TenantVisibleField[]>(tenantFieldOrder);
+  const [formErrors, setFormErrors] = useState<TenantFormErrors>({});
   const [form, setForm] = useState({
     slug: '',
     name: '',
     contactEmail: '',
     tierId: undefined as number | undefined,
-    expiresAt: '',
+    expiresAt: getDefaultExpiresAt() as Date | null,
     ipCidr: '',
   });
 
   const locale = i18n.language.startsWith('ko') ? 'ko-KR' : 'en-US';
+  const minSelectableDate = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -128,23 +193,125 @@ const TenantsPage: React.FC = () => {
     };
   }, [searchInput]);
 
-  const handleCreate = async () => {
-    await api.post('/admin/tenants', {
-      ...form,
-      tierId: form.tierId || undefined,
-      expiresAt: form.expiresAt || undefined,
-      ipCidr: form.ipCidr || undefined,
-    });
-    setShowCreate(false);
+  const resetCreateForm = () => {
     setForm({
       slug: '',
       name: '',
       contactEmail: '',
       tierId: tiers[0]?.id,
-      expiresAt: '',
+      expiresAt: getDefaultExpiresAt(),
       ipCidr: '',
     });
-    load();
+    setFormErrors({});
+  };
+
+  const openCreateDialog = () => {
+    setEditingTenant(null);
+    resetCreateForm();
+    setShowTenantDialog(true);
+  };
+
+  const openEditDialog = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    setForm({
+      slug: tenant.slug,
+      name: tenant.name,
+      contactEmail: tenant.contactEmail ?? '',
+      tierId: tenant.tierId,
+      expiresAt: tenant.expiresAt ? new Date(tenant.expiresAt) : null,
+      ipCidr: tenant.ipCidr ?? '',
+    });
+    setFormErrors({});
+    setShowTenantDialog(true);
+  };
+
+  const closeTenantDialog = () => {
+    setShowTenantDialog(false);
+    setEditingTenant(null);
+    setFormErrors({});
+  };
+
+  const validateTenantForm = () => {
+    const nextErrors: TenantFormErrors = {};
+    const trimmedSlug = form.slug.trim();
+    const trimmedName = form.name.trim();
+    const trimmedEmail = form.contactEmail.trim();
+    const trimmedCidr = form.ipCidr.trim();
+    const normalizedIpCidrs = normalizeIpCidrList(trimmedCidr);
+
+    if (!trimmedSlug) {
+      nextErrors.slug = t('tenants.validation.slugRequired');
+    } else if (!isValidTenantSlug(trimmedSlug)) {
+      nextErrors.slug = t('tenants.validation.slugInvalid');
+    }
+
+    if (!trimmedName) {
+      nextErrors.name = t('tenants.validation.nameRequired');
+    }
+
+    if (!trimmedEmail) {
+      nextErrors.contactEmail = t('tenants.validation.contactEmailRequired');
+    } else if (!isValidEmail(trimmedEmail)) {
+      nextErrors.contactEmail = t('tenants.validation.contactEmailInvalid');
+    }
+
+    if (!form.tierId) {
+      nextErrors.tierId = t('tenants.validation.tierRequired');
+    }
+
+    if (!form.expiresAt) {
+      nextErrors.expiresAt = t('tenants.validation.expiresAtRequired');
+    } else if (Number.isNaN(form.expiresAt.getTime())) {
+      nextErrors.expiresAt = t('tenants.validation.expiresAtInvalid');
+    }
+
+    if (!trimmedCidr) {
+      nextErrors.ipCidr = t('tenants.validation.ipCidrRequired');
+    } else if (!normalizedIpCidrs) {
+      nextErrors.ipCidr = t('tenants.validation.ipCidrInvalid');
+    }
+
+    setFormErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSaveTenant = async () => {
+    if (!validateTenantForm()) {
+      return;
+    }
+
+    const normalizedIpCidrs = normalizeIpCidrList(form.ipCidr.trim());
+    if (!normalizedIpCidrs) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editingTenant) {
+        await api.patch(`/admin/tenants/${editingTenant.id}`, {
+          name: form.name.trim(),
+          contactEmail: form.contactEmail.trim(),
+          tierId: form.tierId || undefined,
+          expiresAt: form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined,
+          ipCidr: normalizedIpCidrs.join(','),
+        });
+      } else {
+        await api.post('/admin/tenants', {
+          slug: form.slug.trim(),
+          name: form.name.trim(),
+          contactEmail: form.contactEmail.trim(),
+          tierId: form.tierId || undefined,
+          expiresAt: form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined,
+          ipCidr: normalizedIpCidrs.join(','),
+        });
+      }
+
+      closeTenantDialog();
+      resetCreateForm();
+      await load();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSuspend = async (id: number, current: string) => {
@@ -263,7 +430,7 @@ const TenantsPage: React.FC = () => {
   const tierOptions = useMemo(
     () =>
       tiers.map((tier) => ({
-        label: `${tier.name} (${tier.dailyLogQuotaGb}GB / ${tier.maxUsers})`,
+        label: `${tier.name} (${tier.code} · ${tier.dailyLogQuotaGb}GB / ${tier.maxUsers})`,
         value: tier.id,
       })),
     [tiers],
@@ -303,9 +470,9 @@ const TenantsPage: React.FC = () => {
 
   const buildTenantActions = (row: Tenant): MenuItem[] => [
     {
-      label: t('tenants.actions.settings'),
-      icon: 'pi pi-cog',
-      command: () => navigate(`/tenants/${row.id}/settings`),
+      label: t('tenants.actions.edit'),
+      icon: 'pi pi-pencil',
+      command: () => openEditDialog(row),
     },
     {
       separator: true,
@@ -353,12 +520,11 @@ const TenantsPage: React.FC = () => {
         <Button
           label={t('tenants.createBtn')}
           icon="pi pi-plus"
-          onClick={() => setShowCreate(true)}
+          onClick={openCreateDialog}
           rounded
           size="small"
         />
       </div>
-
       <div className="tenant-summary-grid mb-3">
         <div className="tenant-summary-card">
           <span className="summary-label">{t('tenants.summary.total')}</span>
@@ -537,8 +703,8 @@ const TenantsPage: React.FC = () => {
             sortable
             bodyClassName="text-right"
             headerClassName="text-right"
-            style={{ width: '9rem' }}
-            body={(row: Tenant) => new Date(row.createdAt).toLocaleDateString(locale)}
+            style={{ width: '27rem' }}
+            body={(row: Tenant) => formatDateTimeSeconds(row.createdAt)}
           />
         )}
         <Column
@@ -598,67 +764,138 @@ const TenantsPage: React.FC = () => {
       </div>
 
       <Dialog
-        header={t('tenants.dialog.title')}
-        visible={showCreate}
-        style={{ width: '480px' }}
-        onHide={() => setShowCreate(false)}
+        header={editingTenant ? t('tenants.dialog.editTitle') : t('tenants.dialog.title')}
+        visible={showTenantDialog}
+        style={{ width: '560px', maxWidth: '96vw' }}
+        className="tenant-create-dialog"
+        onHide={closeTenantDialog}
       >
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">{t('tenants.dialog.slug')}</label>
+            <label className="block mb-1 text-sm">
+              {t('tenants.dialog.slug')}
+              <span className="p-error ml-1">*</span>
+            </label>
             <InputText
               value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              className="w-full"
+              disabled={!!editingTenant}
+              onChange={(e) => {
+                setForm({ ...form, slug: e.target.value });
+                if (formErrors.slug) {
+                  setFormErrors({ ...formErrors, slug: undefined });
+                }
+              }}
+              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.slug ? 'p-invalid' : ''}`}
               placeholder={t('tenants.dialog.slugPlaceholder')}
             />
+            {formErrors.slug && <small className="p-error">{formErrors.slug}</small>}
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('tenants.dialog.companyName')}</label>
+            <label className="block mb-1 text-sm">
+              {t('tenants.dialog.companyName')}
+              <span className="p-error ml-1">*</span>
+            </label>
             <InputText
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full"
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                if (formErrors.name) {
+                  setFormErrors({ ...formErrors, name: undefined });
+                }
+              }}
+              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.name ? 'p-invalid' : ''}`}
             />
+            {formErrors.name && <small className="p-error">{formErrors.name}</small>}
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('tenants.dialog.contactEmail')}</label>
+            <label className="block mb-1 text-sm">
+              {t('tenants.dialog.contactEmail')}
+              <span className="p-error ml-1">*</span>
+            </label>
             <InputText
               value={form.contactEmail}
-              onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
-              className="w-full"
+              onChange={(e) => {
+                setForm({ ...form, contactEmail: e.target.value });
+                if (formErrors.contactEmail) {
+                  setFormErrors({ ...formErrors, contactEmail: undefined });
+                }
+              }}
+              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.contactEmail ? 'p-invalid' : ''}`}
             />
+            {formErrors.contactEmail && <small className="p-error">{formErrors.contactEmail}</small>}
+          </div>
+          <div className="grid m-0">
+            <div className="col-12 md:col-6 pl-0 pr-0 md:pr-2">
+              <label className="block mb-1 text-sm">
+                {t('tenants.dialog.tierCode')}
+                <span className="p-error ml-1">*</span>
+              </label>
+              <Dropdown
+                value={form.tierId ?? null}
+                options={tierOptions}
+                optionLabel="label"
+                optionValue="value"
+                placeholder={t('tenants.dialog.tierPlaceholder')}
+                className={`w-full ${formErrors.tierId ? 'p-invalid' : ''}`}
+                onChange={(e) => {
+                  setForm({ ...form, tierId: e.value ? Number(e.value) : undefined });
+                  if (formErrors.tierId) {
+                    setFormErrors({ ...formErrors, tierId: undefined });
+                  }
+                }}
+              />
+              {formErrors.tierId && <small className="p-error">{formErrors.tierId}</small>}
+            </div>
+            <div className="col-12 md:col-6 pl-0 pr-0 md:pr-2">
+              <label className="block mb-1 text-sm">{t('tenants.dialog.expiresAt')}</label>
+              <Calendar
+                value={form.expiresAt}
+                onChange={(e) => {
+                  setForm({ ...form, expiresAt: (e.value as Date | null) ?? null });
+                  if (formErrors.expiresAt) {
+                    setFormErrors({ ...formErrors, expiresAt: undefined });
+                  }
+                }}
+                dateFormat="yy-mm-dd"
+                showIcon
+                showButtonBar
+                touchUI={false}
+                minDate={minSelectableDate}
+                inputClassName="w-full"
+                className={`w-full ${formErrors.expiresAt ? 'p-invalid' : ''}`}
+              />
+              {formErrors.expiresAt && <small className="p-error">{formErrors.expiresAt}</small>}
+            </div>
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('tenants.dialog.tierCode')}</label>
-            <SelectButton
-              value={form.tierId}
-              options={tierOptions}
-              optionLabel="label"
-              optionValue="value"
-              className="w-full"
-              onChange={(e) => setForm({ ...form, tierId: Number(e.value) })}
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-sm">{t('tenants.dialog.expiresAt')}</label>
-            <InputText
-              type="date"
-              value={form.expiresAt}
-              onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-sm">{t('tenants.dialog.ipCidr')}</label>
+            <label className="block mb-1 text-sm">
+              {t('tenants.dialog.ipCidr')}
+              <span className="p-error ml-1">*</span>
+            </label>
             <InputText
               value={form.ipCidr}
-              onChange={(e) => setForm({ ...form, ipCidr: e.target.value })}
-              className="w-full"
-              placeholder="10.0.0.0/24"
+              onChange={(e) => {
+                setForm({ ...form, ipCidr: e.target.value });
+                if (formErrors.ipCidr) {
+                  setFormErrors({ ...formErrors, ipCidr: undefined });
+                }
+              }}
+              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.ipCidr ? 'p-invalid' : ''}`}
+              placeholder={t('tenants.dialog.ipCidrPlaceholder')}
             />
+            {formErrors.ipCidr && <small className="p-error">{formErrors.ipCidr}</small>}
           </div>
-          <Button label={t('common.create')} onClick={handleCreate} />
+          <div className="flex gap-1 justify-between pt-1">
+            <div className="flex gap-1"></div>
+            <div className="flex gap-1 flex-1 flex-row-reverse">
+              <Button
+                label={t('common.save')}
+                onClick={handleSaveTenant}
+                loading={saving}
+                size="small"
+              />
+            </div>
+          </div>
         </div>
       </Dialog>
     </div>

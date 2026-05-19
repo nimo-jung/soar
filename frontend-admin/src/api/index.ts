@@ -1,6 +1,25 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/auth.store';
 
+const stringifyErrorMessage = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => stringifyErrorMessage(item)).filter(Boolean).join(', ');
+  }
+
+  if (value && typeof value === 'object') {
+    const message = (value as { message?: unknown }).message;
+    if (message !== undefined) {
+      return stringifyErrorMessage(message);
+    }
+  }
+
+  return '';
+};
+
 const api = axios.create({
   baseURL: '/',
   headers: { 'Content-Type': 'application/json' },
@@ -17,10 +36,44 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const status = err.response?.status as number | undefined;
+
+    if (status === 401) {
       useAuthStore.getState().logout();
       window.location.href = '/login';
+      return Promise.reject(err);
     }
+
+    const isServerErrorPage = window.location.pathname.startsWith('/server-error');
+    const isServerFailure = (typeof status === 'number' && status >= 500) || !err.response;
+
+    if (isServerFailure && !isServerErrorPage) {
+      const searchParams = new URLSearchParams();
+
+      if (status) {
+        searchParams.set('status', String(status));
+      }
+
+      if (window.location.pathname) {
+        searchParams.set('from', window.location.pathname);
+      }
+
+      if (typeof err.config?.url === 'string' && err.config.url.length > 0) {
+        searchParams.set('request', err.config.url);
+      }
+
+      if (import.meta.env.DEV) {
+        const messageFromResponse = stringifyErrorMessage(err.response?.data?.message);
+        const message = messageFromResponse || stringifyErrorMessage(err.message);
+
+        if (message) {
+          searchParams.set('message', message);
+        }
+      }
+
+      window.location.href = `/server-error?${searchParams.toString()}`;
+    }
+
     return Promise.reject(err);
   },
 );

@@ -9,6 +9,13 @@ import api from '../../api';
 import { useAuthStore } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import { parseJwt } from '../../utils/jwt';
+import { AuthPolicy } from '../../types/auth-policy';
+
+interface TenantJwtPayload {
+  sub: number;
+  tenantId: string;
+  role: string;
+}
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,12 +38,26 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post<{ accessToken: string; brandingConfig: Record<string, string> | null }>(
+      const res = await api.post<{ accessToken: string; brandingConfig: Record<string, string> | null; authSettings: AuthPolicy }>(
         '/auth/tenant/login',
         { tenantSlug, email, password },
       );
-      const payload = parseJwt(res.data.accessToken);
-      setAuth(res.data.accessToken, { sub: payload.sub, tenantId: payload.tenantId, role: payload.role });
+      const rawPayload = parseJwt(res.data.accessToken);
+      const payload: TenantJwtPayload = {
+        sub: typeof rawPayload.sub === 'number' ? rawPayload.sub : Number(rawPayload.sub ?? 0),
+        tenantId: typeof rawPayload.tenantId === 'string' ? rawPayload.tenantId : '',
+        role: typeof rawPayload.role === 'string' ? rawPayload.role : '',
+      };
+
+      if (!Number.isFinite(payload.sub) || payload.sub <= 0 || !payload.tenantId || !payload.role) {
+        throw new Error('Invalid tenant JWT payload');
+      }
+
+      setAuth(
+        res.data.accessToken,
+        { sub: payload.sub, tenantId: payload.tenantId, role: payload.role },
+        res.data.authSettings,
+      );
       applyBranding(res.data.brandingConfig);
       navigate('/dashboard');
     } catch {

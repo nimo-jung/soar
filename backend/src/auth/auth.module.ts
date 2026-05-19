@@ -9,10 +9,21 @@ import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
 import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
+import { MasterAuthSettings } from './entities/master-auth-settings.entity';
+import { AuthUserSecurityState } from './entities/auth-user-security-state.entity';
+import { AuthSession } from './entities/auth-session.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MasterUser, Tenant, TenantSettings, AuditLog]),
+    TypeOrmModule.forFeature([
+      MasterUser,
+      Tenant,
+      TenantSettings,
+      AuditLog,
+      MasterAuthSettings,
+      AuthUserSecurityState,
+      AuthSession,
+    ]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),

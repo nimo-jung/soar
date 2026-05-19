@@ -30,6 +30,9 @@
     "monitoring": "모니터링",
     "securityAudit": "보안감사",
     "auditLogs": "감사로그",
+    "systemManagement": "시스템 설정",
+    "userManagement": "관리자 설정",
+    "authSettings": "인증 설정",
     "masterAdmin": "Master Admin"
   },
   "auth": {
@@ -42,7 +45,7 @@
   },
   "tenants": {
     "title": "테넌트 관리",
-    "createBtn": "테넌트 생성",
+    "createBtn": "테넌트 추가",
     "searchPlaceholder": "고객사 코드, 고객사명, 이메일",
     "summary": {
       "total": "전체 테넌트",
@@ -62,7 +65,8 @@
     },
     "actions": {
       "more": "더보기",
-      "settings": "설정",
+      "settings": "수정",
+      "edit": "수정",
       "delete": "삭제",
       "restore": "복구",
       "deletedLocked": "삭제된 테넌트는 상태 변경이 불가합니다"
@@ -80,14 +84,32 @@
       "message": "{{name}} 테넌트를 활성 상태로 복구하시겠습니까?"
     },
     "dialog": {
-      "title": "테넌트 생성",
+      "title": "테넌트 추가",
+      "editTitle": "테넌트 수정",
       "slug": "고객사 코드 (영문 소문자)",
       "slugPlaceholder": "acme-corp",
       "companyName": "고객사명",
       "contactEmail": "담당자 이메일",
       "tierCode": "등급",
+      "tierPlaceholder": "등급을 선택하세요",
       "expiresAt": "사용기한",
-      "ipCidr": "IP 대역"
+      "ipCidr": "로그 수집 대상 IP 대역",
+      "ipCidrPlaceholder": "예: 10.0.0.10, 10.0.1.0/24",
+      "ipCidrHelp": "엔터 또는 콤마 입력하여 복수 입력이 가능합니다.",
+      "submitAdd": "테넌트 추가",
+      "submitEdit": "테넌트 수정"
+    },
+    "validation": {
+      "slugRequired": "고객사 코드는 필수입니다.",
+      "slugInvalid": "고객사 코드는 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.",
+      "nameRequired": "고객사명은 필수입니다.",
+      "contactEmailRequired": "담당자 이메일은 필수입니다.",
+      "contactEmailInvalid": "유효한 이메일 형식을 입력하세요.",
+      "tierRequired": "등급은 필수입니다.",
+      "expiresAtRequired": "사용기한은 필수입니다.",
+      "expiresAtInvalid": "유효한 사용기한을 입력하세요.",
+      "ipCidrRequired": "로그 수집 대상 IP 대역은 최소 1개 이상 입력해야 합니다.",
+      "ipCidrInvalid": "단일 IP 또는 CIDR 형식으로 입력하고, 2개 이상일 경우 콤마(,)로 구분하세요."
     },
     "table": {
       "id": "ID",
@@ -95,7 +117,7 @@
       "name": "고객사명",
       "tier": "등급",
       "expiresAt": "사용기한",
-      "ipCidr": "IP 대역",
+      "ipCidr": "로그 수집 대상 IP 대역",
       "contactEmail": "담당자 이메일",
       "empty": "조건에 맞는 테넌트가 없습니다.",
       "suspendBtn": "정지",
@@ -104,6 +126,7 @@
     "tiers": {
       "title": "등급 관리",
       "createBtn": "등급 추가",
+      "searchPlaceholder": "등급명, 설명",
       "createDialogTitle": "등급 추가",
       "editDialogTitle": "등급 수정",
       "code": "등급 코드",
@@ -112,6 +135,7 @@
       "maxUsers": "사용자 수",
       "description": "설명",
       "empty": "등록된 등급이 없습니다.",
+      "liteName": "라이트",
       "premiumName": "프리미엄",
       "enterpriseName": "엔터프라이즈",
       "validation": {
@@ -158,6 +182,15 @@
       "message": "메시지",
       "ipAddress": "IP",
       "empty": "조회된 감사로그가 없습니다."
+    },
+    "detail": {
+      "title": "감사로그 상세",
+      "metadata": "메타데이터",
+      "userAgent": "User-Agent"
+    },
+    "actor": {
+      "masterIdPrefix": "마스터 관리자 ID",
+      "idPrefix": "행위자 ID"
     }
   },
   "threatIntel": {
@@ -177,5 +210,97 @@
       "source": "출처",
       "deactivateBtn": "비활성화"
     }
+  },
+  "masterUsers": {
+    "title": "사용자 관리",
+    "description": "활성 관리자 {{current}} / 최대 {{max}}",
+    "createBtn": "관리자 추가",
+    "limitReached": "마스터 관리자는 최대 10명까지 등록할 수 있습니다.",
+    "actions": {
+      "edit": "수정",
+      "delete": "삭제",
+      "restore": "복구"
+    },
+    "confirmDelete": {
+      "header": "관리자 삭제 확인",
+      "message": "{{email}} 계정을 삭제 상태로 변경하시겠습니까?"
+    },
+    "confirmRestore": {
+      "header": "관리자 복구 확인",
+      "message": "{{email}} 계정을 복구하시겠습니까?"
+    },
+    "dialog": {
+      "createTitle": "관리자 추가",
+      "editTitle": "관리자 수정",
+      "email": "이메일",
+      "password": "비밀번호",
+      "passwordOptional": "변경하지 않으려면 비워두세요",
+      "isActive": "활성 여부"
+    },
+    "validation": {
+      "emailRequired": "이메일은 필수입니다.",
+      "emailInvalid": "유효한 이메일 형식을 입력하세요.",
+      "passwordRequired": "비밀번호는 필수입니다.",
+      "passwordPolicy": "비밀번호는 공백 없이 영문/숫자/특수문자 조합으로 10자 이상(2종류 이상) 또는 8자 이상(3종류 이상)이어야 합니다."
+    },
+    "table": {
+      "id": "ID",
+      "email": "이메일",
+      "isActive": "활성",
+      "status": "상태",
+      "createdAt": "생성일"
+    },
+    "result": {
+      "successTitle": "처리 완료",
+      "errorTitle": "처리 실패",
+      "saveSuccess": "관리자 정보가 저장되었습니다.",
+      "saveFailed": "관리자 저장 중 오류가 발생했습니다.",
+      "deleteSuccess": "관리자가 삭제 상태로 전환되었습니다.",
+      "deleteFailed": "관리자 삭제 중 오류가 발생했습니다.",
+      "restoreSuccess": "관리자가 복구되었습니다.",
+      "restoreFailed": "관리자 복구 중 오류가 발생했습니다."
+    }
+  },
+  "authSettings": {
+    "title": "인증 설정",
+    "description": "로그인 실패 잠금, 동시 세션, 자동 로그아웃 정책을 설정합니다.",
+    "loadFailed": "인증 설정을 불러오지 못했습니다.",
+    "saveSuccess": "인증 설정이 저장되었습니다.",
+    "saveFailed": "인증 설정 저장 중 오류가 발생했습니다.",
+    "validation": {
+      "autoLogoutTimeoutMinutes": "자동 로그아웃 타임아웃은 0 또는 1~30분으로 입력해야 합니다."
+    },
+    "maxLoginFailures": {
+      "label": "로그인 실패 시도 횟수 제한",
+      "help": "기본 3회, 최소 1회, 최대 5회"
+    },
+    "lockMinutes": {
+      "label": "잠금 시간(분)",
+      "help": "기본 5분, 최소 3분, 최대 30분"
+    },
+    "maxConcurrentSessions": {
+      "label": "계정당 동시 로그인 세션",
+      "help": "기본 1회, 최소 1회, 최대 5회"
+    },
+    "autoLogoutTimeoutMinutes": {
+      "label": "자동 로그아웃 타임아웃(분)",
+      "help": "기본 5분, 최소 1분, 최대 30분, 0이면 만료 없음"
+    }
+  },
+  "sessionTimeout": {
+    "dialogTitle": "세션 만료 임박",
+    "dialogMessage": "보안을 위해 곧 자동 로그아웃됩니다. 계속 사용하려면 세션을 연장하세요.",
+    "remainingLabel": "남은 시간: {{time}}",
+    "extendSession": "로그인 연장",
+    "logoutNow": "지금 로그아웃"
+  },
+  "serverError": {
+    "title": "서버 연결에 문제가 발생했습니다",
+    "description": "요청 처리 중 서버 오류가 발생했습니다. 잠시 후 다시 시도하거나 대시보드로 이동해 주세요.",
+    "statusCode": "오류 코드: {{code}}",
+    "devMessageTitle": "개발 모드 상세 오류",
+    "goBack": "이전 페이지",
+    "goDashboard": "대시보드 이동",
+    "retry": "다시 시도"
   }
 }

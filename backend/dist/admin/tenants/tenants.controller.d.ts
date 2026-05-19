@@ -11,6 +11,7 @@ export declare class TenantsController {
     private readonly auditLogService;
     constructor(tenantsService: TenantsService, auditLogService: AuditLogService);
     private buildAuditContext;
+    private safe;
     create(dto: CreateTenantDto, user: CurrentUserPayload, req: Request): Promise<import("./entities/tenant.entity").Tenant>;
     findAll(): Promise<import("./entities/tenant.entity").Tenant[]>;
     getTiers(): Promise<import("./entities/tenant-tier.entity").TenantTier[]>;
