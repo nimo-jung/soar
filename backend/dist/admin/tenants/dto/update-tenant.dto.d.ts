@@ -4,6 +4,9 @@ export declare class UpdateTenantDto {
     status?: TenantStatus;
     contactEmail?: string;
     tierId?: number;
+    epsLimit?: number;
+    storageQuotaGb?: number;
+    retentionDays?: number;
     expiresAt?: string;
     ipCidr?: string;
 }

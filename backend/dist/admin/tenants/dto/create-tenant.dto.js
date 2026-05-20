@@ -18,6 +18,9 @@ class CreateTenantDto {
     name;
     contactEmail;
     tierId;
+    epsLimit;
+    storageQuotaGb;
+    retentionDays;
     expiresAt;
     ipCidr;
 }
@@ -49,6 +52,27 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateTenantDto.prototype, "tierId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '초당 허용 이벤트 수(EPS) 한도', example: 1000 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateTenantDto.prototype, "epsLimit", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '스토리지 허용 한도(GB). 미지정 시 등급 기본값 적용', example: 100 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateTenantDto.prototype, "storageQuotaGb", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '로그 보관 주기(일)', example: 90 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateTenantDto.prototype, "retentionDays", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' }),
     (0, class_validator_1.IsDateString)(),

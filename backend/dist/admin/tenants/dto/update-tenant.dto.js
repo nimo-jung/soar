@@ -19,6 +19,9 @@ class UpdateTenantDto {
     status;
     contactEmail;
     tierId;
+    epsLimit;
+    storageQuotaGb;
+    retentionDays;
     expiresAt;
     ipCidr;
 }
@@ -47,6 +50,27 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], UpdateTenantDto.prototype, "tierId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '초당 허용 이벤트 수(EPS) 한도' }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateTenantDto.prototype, "epsLimit", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '스토리지 허용 한도(GB)' }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateTenantDto.prototype, "storageQuotaGb", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '로그 보관 주기(일)' }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateTenantDto.prototype, "retentionDays", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601)' }),
     (0, class_validator_1.IsDateString)(),

@@ -59,6 +59,7 @@ export class TenantsController {
   @ApiOperation({ summary: '테넌트 생성 및 전용 DB 프로비저닝' })
   async create(@Body() dto: CreateTenantDto, @CurrentUser() user: CurrentUserPayload, @Req() req: Request) {
     const created = await this.tenantsService.create(dto);
+    const settings = await this.tenantsService.getSettings(created.id);
     await this.auditLogService.record({
       ...this.buildAuditContext(user, req),
       action: 'TENANT_CREATE',
@@ -69,6 +70,9 @@ export class TenantsController {
         `name=${this.safe(created.name)}`,
         `slug=${this.safe(created.slug)}`,
         `tierId=${this.safe(created.tierId)}`,
+        `epsLimit=${this.safe(settings.epsLimit)}`,
+        `storageQuotaGb=${this.safe(settings.storageQuotaGb)}`,
+        `retentionDays=${this.safe(settings.retentionDays)}`,
         `status=${this.safe(created.status)}`,
         `expiresAt=${this.safe(created.expiresAt)}`,
         `ipCidr=${this.safe(created.ipCidr)}`,
@@ -77,6 +81,9 @@ export class TenantsController {
         name: created.name,
         slug: created.slug,
         tierId: created.tierId,
+        epsLimit: settings.epsLimit,
+        storageQuotaGb: settings.storageQuotaGb,
+        retentionDays: settings.retentionDays,
         status: created.status,
         expiresAt: created.expiresAt,
         ipCidr: created.ipCidr,
@@ -204,7 +211,9 @@ export class TenantsController {
     @Req() req: Request,
   ) {
     const before = await this.tenantsService.findOne(id);
+    const beforeSettings = await this.tenantsService.getSettings(id).catch(() => null);
     const updated = await this.tenantsService.update(id, dto);
+    const updatedSettings = await this.tenantsService.getSettings(id).catch(() => null);
     const isDeleteAction = dto.status === 'DELETED';
     const isStatusChange = dto.status !== undefined && dto.status !== before.status;
     await this.auditLogService.record({
@@ -218,6 +227,9 @@ export class TenantsController {
         `slug=${this.safe(updated.slug)}`,
         `status=${this.safe(before.status)} -> ${this.safe(updated.status)}`,
         `tierId=${this.safe(before.tierId)} -> ${this.safe(updated.tierId)}`,
+        `epsLimit=${this.safe(beforeSettings?.epsLimit)} -> ${this.safe(updatedSettings?.epsLimit)}`,
+        `storageQuotaGb=${this.safe(beforeSettings?.storageQuotaGb)} -> ${this.safe(updatedSettings?.storageQuotaGb)}`,
+        `retentionDays=${this.safe(beforeSettings?.retentionDays)} -> ${this.safe(updatedSettings?.retentionDays)}`,
         `expiresAt=${this.safe(before.expiresAt)} -> ${this.safe(updated.expiresAt)}`,
         `ipCidr=${this.safe(before.ipCidr)} -> ${this.safe(updated.ipCidr)}`,
       ].join(' | '),
@@ -225,6 +237,8 @@ export class TenantsController {
         changedFields: Object.keys(dto),
         before,
         after: updated,
+        beforeSettings,
+        afterSettings: updatedSettings,
       },
     });
     return updated;

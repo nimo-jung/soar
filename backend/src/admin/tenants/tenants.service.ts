@@ -139,7 +139,9 @@ export class TenantsService {
       // 기본 설정 생성
       const settings = this.settingsRepo.create({
         tenantId: saved.id,
-        storageQuotaGb: tier.dailyLogQuotaGb,
+        epsLimit: dto.epsLimit ?? 1000,
+        storageQuotaGb: dto.storageQuotaGb ?? tier.dailyLogQuotaGb,
+        retentionDays: dto.retentionDays ?? 90,
       });
       await queryRunner.manager.save(settings);
 
@@ -176,16 +178,37 @@ export class TenantsService {
       throw new BadRequestException('system 테넌트는 비활성화하거나 삭제 상태로 변경할 수 없습니다.');
     }
 
-    if (dto.tierId) {
-      const tier = await this.findTierForTenantById(dto.tierId);
+    const hasSettingsUpdate = dto.tierId !== undefined
+      || dto.epsLimit !== undefined
+      || dto.storageQuotaGb !== undefined
+      || dto.retentionDays !== undefined;
+
+    if (hasSettingsUpdate) {
+      const tier = dto.tierId !== undefined ? await this.findTierForTenantById(dto.tierId) : null;
       if (!tier) {
         throw new NotFoundException(`등급 ID ${dto.tierId}를 찾을 수 없습니다.`);
       }
-      const settings = await this.settingsRepo.findOne({ where: { tenantId: id } });
-      if (settings) {
+
+      const settings = await this.settingsRepo.findOne({ where: { tenantId: id } })
+        ?? this.settingsRepo.create({ tenantId: id });
+
+      if (tier) {
         settings.storageQuotaGb = tier.dailyLogQuotaGb;
-        await this.settingsRepo.save(settings);
       }
+
+      if (dto.epsLimit !== undefined) {
+        settings.epsLimit = dto.epsLimit;
+      }
+
+      if (dto.storageQuotaGb !== undefined) {
+        settings.storageQuotaGb = dto.storageQuotaGb;
+      }
+
+      if (dto.retentionDays !== undefined) {
+        settings.retentionDays = dto.retentionDays;
+      }
+
+      await this.settingsRepo.save(settings);
     }
 
     const normalized: Partial<Tenant> = {};

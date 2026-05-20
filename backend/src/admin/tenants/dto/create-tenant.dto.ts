@@ -27,6 +27,24 @@ export class CreateTenantDto {
   @IsOptional()
   tierId?: number;
 
+  @ApiPropertyOptional({ description: '초당 허용 이벤트 수(EPS) 한도', example: 1000 })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  epsLimit?: number;
+
+  @ApiPropertyOptional({ description: '스토리지 허용 한도(GB). 미지정 시 등급 기본값 적용', example: 100 })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  storageQuotaGb?: number;
+
+  @ApiPropertyOptional({ description: '로그 보관 주기(일)', example: 90 })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  retentionDays?: number;
+
   @ApiProperty({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' })
   @IsDateString()
   expiresAt: string;

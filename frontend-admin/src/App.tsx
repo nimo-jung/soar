@@ -14,7 +14,6 @@ import AuthSettingsPage from './pages/auth-settings/AuthSettingsPage';
 import ProductInfoPage from './pages/product-info/ProductInfoPage';
 import BillingPage from './pages/billing/BillingPage';
 import MonitoringPage from './pages/monitoring/MonitoringPage';
-import QuotaPage from './pages/quotas/QuotaPage';
 import DataIsolationPage from './pages/data-isolation/DataIsolationPage';
 import SystemStatusPage from './pages/system-status/SystemStatusPage';
 import IntegrityPage from './pages/integrity/IntegrityPage';
@@ -30,6 +29,7 @@ const App: React.FC = () => {
           <Route element={<AdminLayout />}>
             <Route path="/tenants" element={<TenantsPage />} />
             <Route path="/tiers" element={<TenantTiersPage />} />
+            <Route path="/quotas" element={<Navigate to="/tenants" replace />} />
             <Route path="/master-users" element={<MasterUsersPage />} />
             <Route path="/auth-settings" element={<AuthSettingsPage />} />
             <Route path="/product-info" element={<ProductInfoPage />} />
@@ -37,7 +37,6 @@ const App: React.FC = () => {
             <Route path="/threat-intel" element={<ThreatIntelPage />} />
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/monitoring" element={<MonitoringPage />} />
-            <Route path="/quotas" element={<QuotaPage />} />
             <Route path="/data-isolation" element={<DataIsolationPage />} />
             <Route path="/system-status" element={<SystemStatusPage />} />
             <Route path="/integrity" element={<IntegrityPage />} />

@@ -14,6 +14,7 @@ import { Checkbox } from 'primereact/checkbox';
 import { SelectButton } from 'primereact/selectbutton';
 import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
+import { InputNumber } from 'primereact/inputnumber';
 import { Toast } from 'primereact/toast';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
@@ -30,6 +31,14 @@ interface TenantTier {
   isActive: boolean;
 }
 
+interface TenantQuota {
+  tenantId: number;
+  epsLimit: number;
+  storageQuotaGb: number;
+  retentionDays: number;
+  updatedAt: string;
+}
+
 interface Tenant {
   id: number;
   slug: string;
@@ -40,6 +49,7 @@ interface Tenant {
   ipCidr: string | null;
   tierId: number;
   tier?: TenantTier;
+  quota?: TenantQuota;
   createdAt: string;
 }
 
@@ -72,6 +82,9 @@ type TenantFormErrors = {
   name?: string;
   contactEmail?: string;
   tierId?: string;
+  epsLimit?: string;
+  storageQuotaGb?: string;
+  retentionDays?: string;
   expiresAt?: string;
   ipCidr?: string;
 };
@@ -179,6 +192,10 @@ const formatTierLimit = (value: number, unit: string, unlimitedLabel: string): s
   return `${value}${unit}`;
 };
 
+const DEFAULT_EPS_LIMIT = 1000;
+const DEFAULT_STORAGE_QUOTA_GB = 100;
+const DEFAULT_RETENTION_DAYS = 90;
+
 const TenantsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const rowMenusRef = React.useRef<Record<number, Menu | null>>({});
@@ -216,6 +233,9 @@ const TenantsPage: React.FC = () => {
     name: '',
     contactEmail: '',
     tierId: undefined as number | undefined,
+    epsLimit: DEFAULT_EPS_LIMIT,
+    storageQuotaGb: DEFAULT_STORAGE_QUOTA_GB,
+    retentionDays: DEFAULT_RETENTION_DAYS,
     expiresAt: getDefaultExpiresAt() as Date | null,
     ipCidr: '',
   });
@@ -230,14 +250,23 @@ const TenantsPage: React.FC = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [tenantRes, tierRes] = await Promise.all([
+      const [tenantRes, tierRes, quotaRes] = await Promise.all([
         api.get<Tenant[]>('/admin/tenants'),
         api.get<TenantTier[]>('/admin/tenants/tiers'),
+        api.get<TenantQuota[]>('/admin/quotas'),
       ]);
-      setTenants(tenantRes.data);
+      const quotaByTenantId = new Map(quotaRes.data.map((quota) => [quota.tenantId, quota]));
+      setTenants(tenantRes.data.map((tenant) => ({
+        ...tenant,
+        quota: quotaByTenantId.get(tenant.id),
+      })));
       setTiers(tierRes.data);
       if (!form.tierId && tierRes.data.length > 0) {
-        setForm((prev) => ({ ...prev, tierId: tierRes.data[0].id }));
+        setForm((prev) => ({
+          ...prev,
+          tierId: tierRes.data[0].id,
+          storageQuotaGb: tierRes.data[0].dailyLogQuotaGb,
+        }));
       }
     } finally {
       setLoading(false);
@@ -262,6 +291,9 @@ const TenantsPage: React.FC = () => {
       name: '',
       contactEmail: '',
       tierId: tiers[0]?.id,
+      epsLimit: DEFAULT_EPS_LIMIT,
+      storageQuotaGb: tiers[0]?.dailyLogQuotaGb ?? DEFAULT_STORAGE_QUOTA_GB,
+      retentionDays: DEFAULT_RETENTION_DAYS,
       expiresAt: getDefaultExpiresAt(),
       ipCidr: '',
     });
@@ -281,6 +313,9 @@ const TenantsPage: React.FC = () => {
       name: tenant.name,
       contactEmail: tenant.contactEmail ?? '',
       tierId: tenant.tierId,
+      epsLimit: tenant.quota?.epsLimit ?? DEFAULT_EPS_LIMIT,
+      storageQuotaGb: tenant.quota?.storageQuotaGb ?? tenant.tier?.dailyLogQuotaGb ?? DEFAULT_STORAGE_QUOTA_GB,
+      retentionDays: tenant.quota?.retentionDays ?? DEFAULT_RETENTION_DAYS,
       expiresAt: tenant.expiresAt ? new Date(tenant.expiresAt) : null,
       ipCidr: tenant.ipCidr ?? '',
     });
@@ -424,6 +459,18 @@ const TenantsPage: React.FC = () => {
       nextErrors.tierId = t('tenants.validation.tierRequired');
     }
 
+    if (!Number.isFinite(form.epsLimit) || form.epsLimit < 0) {
+      nextErrors.epsLimit = t('tenants.validation.epsLimitInvalid');
+    }
+
+    if (!Number.isFinite(form.storageQuotaGb) || form.storageQuotaGb < 0) {
+      nextErrors.storageQuotaGb = t('tenants.validation.storageQuotaGbInvalid');
+    }
+
+    if (!Number.isFinite(form.retentionDays) || form.retentionDays < 0) {
+      nextErrors.retentionDays = t('tenants.validation.retentionDaysInvalid');
+    }
+
     if (!form.expiresAt) {
       nextErrors.expiresAt = t('tenants.validation.expiresAtRequired');
     } else if (Number.isNaN(form.expiresAt.getTime())) {
@@ -457,6 +504,9 @@ const TenantsPage: React.FC = () => {
           name: form.name.trim(),
           contactEmail: form.contactEmail.trim(),
           tierId: form.tierId || undefined,
+          epsLimit: form.epsLimit,
+          storageQuotaGb: form.storageQuotaGb,
+          retentionDays: form.retentionDays,
           expiresAt: form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined,
           ipCidr: normalizedIpCidrs.join(','),
         });
@@ -466,6 +516,9 @@ const TenantsPage: React.FC = () => {
           name: form.name.trim(),
           contactEmail: form.contactEmail.trim(),
           tierId: form.tierId || undefined,
+          epsLimit: form.epsLimit,
+          storageQuotaGb: form.storageQuotaGb,
+          retentionDays: form.retentionDays,
           expiresAt: form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined,
           ipCidr: normalizedIpCidrs.join(','),
         });
@@ -599,6 +652,11 @@ const TenantsPage: React.FC = () => {
         value: tier.id,
       })),
     [tiers, t],
+  );
+
+  const selectedTier = useMemo(
+    () => tiers.find((tier) => tier.id === form.tierId) ?? null,
+    [tiers, form.tierId],
   );
 
   const isFieldVisible = (field: TenantVisibleField) => visibleFields.includes(field);
@@ -853,8 +911,17 @@ const TenantsPage: React.FC = () => {
           <Column
             field="tierId"
             header={t('tenants.table.tier')}
-            style={{ minWidth: '10rem' }}
-            body={(row: Tenant) => <span>{row.tier?.name ?? '-'}</span>}
+            style={{ minWidth: '15rem' }}
+            body={(row: Tenant) => (
+              <div className="flex flex-column gap-1">
+                <span>{row.tier?.name ?? '-'}</span>
+                {row.quota && (
+                  <small className="text-color-secondary">
+                    {`${t('quota.table.epsLimit')} ${formatTierLimit(row.quota.epsLimit, '', t('quota.unlimited'))} · ${t('quota.table.storageQuotaGb')} ${formatTierLimit(row.quota.storageQuotaGb, 'GB', t('quota.unlimited'))} · ${t('quota.table.retentionDays')} ${formatTierLimit(row.quota.retentionDays, t('quota.dialog.daysSuffix'), t('quota.unlimited'))}`}
+                  </small>
+                )}
+              </div>
+            )}
           />
         )}
         {isFieldVisible('expiresAt') && (
@@ -1018,7 +1085,13 @@ const TenantsPage: React.FC = () => {
                 placeholder={t('tenants.dialog.tierPlaceholder')}
                 className={`w-full ${formErrors.tierId ? 'p-invalid' : ''}`}
                 onChange={(e) => {
-                  setForm({ ...form, tierId: e.value ? Number(e.value) : undefined });
+                  const nextTierId = e.value ? Number(e.value) : undefined;
+                  const nextTier = tiers.find((tier) => tier.id === nextTierId);
+                  setForm({
+                    ...form,
+                    tierId: nextTierId,
+                    storageQuotaGb: nextTier?.dailyLogQuotaGb ?? form.storageQuotaGb,
+                  });
                   if (formErrors.tierId) {
                     setFormErrors({ ...formErrors, tierId: undefined });
                   }
@@ -1047,6 +1120,69 @@ const TenantsPage: React.FC = () => {
               {formErrors.expiresAt && <small className="p-error">{formErrors.expiresAt}</small>}
             </div>
           </div>
+          <div className="surface-ground border-1 border-300 border-round p-3 flex flex-column gap-2">
+            <div className="font-semibold">{t('tenants.dialog.quotaSectionTitle')}</div>
+            <small className="text-color-secondary">{t('tenants.dialog.quotaSectionHelp')}</small>
+            {selectedTier && (
+              <div className="text-sm text-color-secondary">
+                {t('tenants.dialog.tierDefaults', {
+                  dailyLogQuotaGb: formatTierLimit(selectedTier.dailyLogQuotaGb, 'GB', t('quota.unlimited')),
+                  maxUsers: formatTierLimit(selectedTier.maxUsers, '', t('tenants.tiers.unlimited')),
+                })}
+              </div>
+            )}
+          </div>
+          <div className="grid m-0">
+            <div className="col-12 md:col-4 pl-0 pr-0 md:pr-2">
+              <label className="admin-form-label">{t('quota.dialog.epsLimit')}</label>
+              <InputNumber
+                value={form.epsLimit}
+                min={0}
+                onValueChange={(e) => {
+                  setForm({ ...form, epsLimit: e.value ?? 0 });
+                  if (formErrors.epsLimit) {
+                    setFormErrors({ ...formErrors, epsLimit: undefined });
+                  }
+                }}
+                className={`w-full ${formErrors.epsLimit ? 'p-invalid' : ''}`}
+                suffix={t('quota.dialog.epsSuffix')}
+              />
+              {formErrors.epsLimit && <small className="p-error">{formErrors.epsLimit}</small>}
+            </div>
+            <div className="col-12 md:col-4 pl-0 pr-0 md:pr-2">
+              <label className="admin-form-label">{t('quota.dialog.storageQuotaGb')}</label>
+              <InputNumber
+                value={form.storageQuotaGb}
+                min={0}
+                onValueChange={(e) => {
+                  setForm({ ...form, storageQuotaGb: e.value ?? 0 });
+                  if (formErrors.storageQuotaGb) {
+                    setFormErrors({ ...formErrors, storageQuotaGb: undefined });
+                  }
+                }}
+                className={`w-full ${formErrors.storageQuotaGb ? 'p-invalid' : ''}`}
+                suffix=" GB"
+              />
+              {formErrors.storageQuotaGb && <small className="p-error">{formErrors.storageQuotaGb}</small>}
+            </div>
+            <div className="col-12 md:col-4 pl-0 pr-0">
+              <label className="admin-form-label">{t('quota.dialog.retentionDays')}</label>
+              <InputNumber
+                value={form.retentionDays}
+                min={0}
+                onValueChange={(e) => {
+                  setForm({ ...form, retentionDays: e.value ?? 0 });
+                  if (formErrors.retentionDays) {
+                    setFormErrors({ ...formErrors, retentionDays: undefined });
+                  }
+                }}
+                className={`w-full ${formErrors.retentionDays ? 'p-invalid' : ''}`}
+                suffix={t('quota.dialog.daysSuffix')}
+              />
+              {formErrors.retentionDays && <small className="p-error">{formErrors.retentionDays}</small>}
+            </div>
+          </div>
+          <small className="text-color-secondary">{t('quota.dialog.zeroMeansUnlimited')}</small>
           <div>
             <label className="admin-form-label">
               {t('tenants.dialog.ipCidr')}

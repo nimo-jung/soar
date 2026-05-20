@@ -16,7 +16,6 @@ const navSections = [
       { labelKey: 'nav.threatIntel', path: '/threat-intel', icon: 'pi pi-shield' },
       { labelKey: 'nav.billing', path: '/billing', icon: 'pi pi-chart-bar' },
       { labelKey: 'nav.monitoring', path: '/monitoring', icon: 'pi pi-desktop' },
-      { labelKey: 'nav.quotas', path: '/quotas', icon: 'pi pi-sliders-h' },
       { labelKey: 'nav.dataIsolation', path: '/data-isolation', icon: 'pi pi-lock-open' },
     ],
   },
