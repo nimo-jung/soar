@@ -15,6 +15,14 @@ export declare class AuthController {
         daysRemaining: number | null;
         expiresAt: string | null;
     }>;
+    getMasterLockStatus(email: string | undefined): Promise<{
+        locked: boolean;
+        lockedUntil: string | null;
+    }>;
+    getTenantLockStatus(tenantSlug: string | undefined, email: string | undefined): Promise<{
+        locked: boolean;
+        lockedUntil: string | null;
+    }>;
     masterLogin(dto: LoginDto, req: Request): Promise<{
         accessToken: string;
         authSettings: import("./auth-policy.constants").AuthPolicy;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
@@ -10,6 +10,8 @@ import { useAuthStore } from '../../store/auth.store';
 import type { LicenseWarning } from '../../store/auth.store';
 import { AuthPolicy } from '../../types/auth-policy';
 import { formatDateOnly } from '../../utils/date';
+
+const LOCKOUT_STORAGE_KEY = 'soar_admin_lockout';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,9 +26,89 @@ const LoginPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showBootstrapNoticeInline, setShowBootstrapNoticeInline] = useState(false);
   const [licenseWarning, setLicenseWarning] = useState<LicenseWarning | null>(null);
+  const [lockSecondsRemaining, setLockSecondsRemaining] = useState<number>(0);
+  const lockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearLockTimer = useCallback(() => {
+    if (lockTimerRef.current !== null) {
+      clearInterval(lockTimerRef.current);
+      lockTimerRef.current = null;
+    }
+  }, []);
+
+  const formatLockClock = useCallback((totalSeconds: number): string => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }, []);
+
+  const startLockCountdown = useCallback(
+    (lockedUntilIso: string) => {
+      clearLockTimer();
+      localStorage.setItem(LOCKOUT_STORAGE_KEY, lockedUntilIso);
+
+      const tick = () => {
+        const remaining = Math.ceil((new Date(lockedUntilIso).getTime() - Date.now()) / 1000);
+        if (remaining <= 0) {
+          clearLockTimer();
+          localStorage.removeItem(LOCKOUT_STORAGE_KEY);
+          setLockSecondsRemaining(0);
+          setError(t('auth.errorLockedExpired'));
+        } else {
+          setLockSecondsRemaining(remaining);
+          setError(
+            t('auth.errorLocked', {
+              clock: formatLockClock(remaining),
+            }),
+          );
+        }
+      };
+
+      tick();
+      lockTimerRef.current = setInterval(tick, 1000);
+    },
+    [clearLockTimer, formatLockClock, t],
+  );
+
+  const checkMasterLockStatus = useCallback(
+    async (rawEmail: string) => {
+      const normalized = rawEmail.trim();
+      if (!normalized) {
+        return;
+      }
+
+      try {
+        const res = await api.get<{ locked: boolean; lockedUntil: string | null }>(
+          `/auth/master/lock-status?email=${encodeURIComponent(normalized)}`,
+        );
+        if (res.data.locked && res.data.lockedUntil) {
+          startLockCountdown(res.data.lockedUntil);
+        }
+      } catch {
+        // 잠금 상태 조회 실패는 로그인 흐름에 영향을 주지 않는다.
+      }
+    },
+    [startLockCountdown],
+  );
   const loginTitle = t('auth.title');
   const titlePrefix = loginTitle.slice(0, -1);
   const titleLastChar = loginTitle.slice(-1);
+
+  React.useEffect(() => {
+    const stored = localStorage.getItem(LOCKOUT_STORAGE_KEY);
+    if (stored) {
+      const remaining = Math.ceil((new Date(stored).getTime() - Date.now()) / 1000);
+      if (remaining > 0) {
+        startLockCountdown(stored);
+      } else {
+        localStorage.removeItem(LOCKOUT_STORAGE_KEY);
+      }
+    }
+
+    return () => {
+      clearLockTimer();
+    };
+  }, [startLockCountdown, clearLockTimer]);
 
   React.useEffect(() => {
     const checkBootstrap = async () => {
@@ -78,9 +160,13 @@ const LoginPage: React.FC = () => {
       setAuth(res.data.accessToken, res.data.authSettings, res.data.licenseWarning);
       navigate('/tenants');
     } catch (loginError: any) {
-      const responseMessage = loginError?.response?.data?.message;
-      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
-      setError(message || t('auth.errorInvalid'));
+      const data = loginError?.response?.data;
+      const lockedUntil: string | undefined = data?.lockedUntil;
+      if (lockedUntil) {
+        startLockCountdown(lockedUntil);
+      } else {
+        setError(t('auth.errorInvalid'));
+      }
     } finally {
       setLoading(false);
     }
@@ -122,6 +208,7 @@ const LoginPage: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (lockSecondsRemaining > 0) return;
     if (e.key === 'Enter') {
       if (bootstrapRequired) {
         void handleBootstrap();
@@ -146,7 +233,7 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
         <div className="layout-login-form" onKeyDown={handleKeyDown}>
-          {error && <Message severity="error" text={error} className="w-full" />}
+          {error && <Message severity={lockSecondsRemaining > 0 ? 'warn' : 'error'} text={error} className="w-full" />}
           {success && <Message severity="success" text={success} className="w-full" />}
           {licenseWarning && (
             <Message
@@ -172,9 +259,11 @@ const LoginPage: React.FC = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={(e) => void checkMasterLockStatus(e.target.value)}
               className="w-full"
               placeholder={t('auth.emailPlaceholder')}
               autoComplete="username"
+              disabled={lockSecondsRemaining > 0}
             />
           </div>
 
@@ -189,6 +278,7 @@ const LoginPage: React.FC = () => {
               feedback={false}
               toggleMask
               autoComplete={bootstrapRequired ? 'new-password' : 'current-password'}
+              disabled={lockSecondsRemaining > 0}
             />
           </div>
 
@@ -205,6 +295,7 @@ const LoginPage: React.FC = () => {
                   feedback={false}
                   toggleMask
                   autoComplete="new-password"
+                  disabled={lockSecondsRemaining > 0}
                 />
               </div>
               <small className="text-color-secondary">{t('auth.bootstrap.passwordPolicy')}</small>
@@ -216,7 +307,7 @@ const LoginPage: React.FC = () => {
             icon={bootstrapRequired ? 'pi pi-user-plus' : 'pi pi-sign-in'}
             onClick={bootstrapRequired ? handleBootstrap : handleLogin}
             loading={loading}
-            disabled={bootstrapRequired === null}
+            disabled={bootstrapRequired === null || lockSecondsRemaining > 0}
             className="w-full"
           />
         </div>

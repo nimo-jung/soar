@@ -26,7 +26,6 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({ example: 'securepassword' }),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(8),
     __metadata("design:type", String)
 ], TenantLoginDto.prototype, "password", void 0);
 __decorate([

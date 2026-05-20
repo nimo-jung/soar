@@ -44,6 +44,8 @@
     "submit": "로그인",
     "errorEmpty": "이메일과 비밀번호를 입력하세요.",
     "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "errorLocked": "로그인 실패 횟수를 초과하여 계정이 잠금 상태입니다. {{clock}} 후 다시 시도할 수 있습니다.",
+    "errorLockedExpired": "잠금이 해제되었습니다. 다시 로그인해 주세요.",
     "licenseExpirySoon": "라이선스 만료 임박: {{days}}일 후 만료됩니다. (만료일: {{date}}) 제품 정보 페이지에서 라이선스를 업데이트하세요.",
     "bootstrap": {
       "notice": "최초 관리자 계정이 없어 초기 등록이 필요합니다.",

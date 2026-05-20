@@ -35,6 +35,16 @@ export declare class AuthService {
     private isMultiTenantEnabled;
     private getTenantAuthPolicyByTenantId;
     private getSecurityState;
+    private findSecurityState;
+    private lockStatusResponse;
+    getMasterLockStatus(email: string): Promise<{
+        locked: boolean;
+        lockedUntil: string | null;
+    }>;
+    getTenantLockStatus(tenantSlug: string, email: string): Promise<{
+        locked: boolean;
+        lockedUntil: string | null;
+    }>;
     private ensureNotLocked;
     private recordFailedAttempt;
     private resetSecurityState;

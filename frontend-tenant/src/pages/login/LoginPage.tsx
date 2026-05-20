@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
@@ -19,6 +19,8 @@ interface TenantJwtPayload {
   role: string;
 }
 
+const LOCKOUT_STORAGE_KEY = 'soar_tenant_lockout';
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -32,6 +34,87 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [tenantWarning, setTenantWarning] = useState<TenantWarning | null>(null);
+  const [lockSecondsRemaining, setLockSecondsRemaining] = useState<number>(0);
+  const lockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearLockTimer = useCallback(() => {
+    if (lockTimerRef.current !== null) {
+      clearInterval(lockTimerRef.current);
+      lockTimerRef.current = null;
+    }
+  }, []);
+
+  const formatLockClock = useCallback((totalSeconds: number): string => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }, []);
+
+  const startLockCountdown = useCallback(
+    (lockedUntilIso: string) => {
+      clearLockTimer();
+      localStorage.setItem(LOCKOUT_STORAGE_KEY, lockedUntilIso);
+
+      const tick = () => {
+        const remaining = Math.ceil((new Date(lockedUntilIso).getTime() - Date.now()) / 1000);
+        if (remaining <= 0) {
+          clearLockTimer();
+          localStorage.removeItem(LOCKOUT_STORAGE_KEY);
+          setLockSecondsRemaining(0);
+          setError(t('auth.errorLockedExpired'));
+        } else {
+          setLockSecondsRemaining(remaining);
+          setError(
+            t('auth.errorLocked', {
+              clock: formatLockClock(remaining),
+            }),
+          );
+        }
+      };
+
+      tick();
+      lockTimerRef.current = setInterval(tick, 1000);
+    },
+    [clearLockTimer, formatLockClock, t],
+  );
+
+  const checkTenantLockStatus = useCallback(
+    async (rawTenantSlug: string, rawEmail: string) => {
+      const tenantSlug = rawTenantSlug.trim();
+      const email = rawEmail.trim();
+      if (!tenantSlug || !email) {
+        return;
+      }
+
+      try {
+        const res = await api.get<{ locked: boolean; lockedUntil: string | null }>(
+          `/auth/tenant/lock-status?tenantSlug=${encodeURIComponent(tenantSlug)}&email=${encodeURIComponent(email)}`,
+        );
+        if (res.data.locked && res.data.lockedUntil) {
+          startLockCountdown(res.data.lockedUntil);
+        }
+      } catch {
+        // 잠금 상태 조회 실패는 로그인 흐름에 영향을 주지 않는다.
+      }
+    },
+    [startLockCountdown],
+  );
+
+  React.useEffect(() => {
+    const stored = localStorage.getItem(LOCKOUT_STORAGE_KEY);
+    if (stored) {
+      const remaining = Math.ceil((new Date(stored).getTime() - Date.now()) / 1000);
+      if (remaining > 0) {
+        startLockCountdown(stored);
+      } else {
+        localStorage.removeItem(LOCKOUT_STORAGE_KEY);
+      }
+    }
+
+    return () => {
+      clearLockTimer();
+    };
+  }, [startLockCountdown, clearLockTimer]);
 
   const checkTenantExpiry = async (slug: string) => {
     const trimmed = slug.trim();
@@ -89,14 +172,20 @@ const LoginPage: React.FC = () => {
       );
       applyBranding(res.data.brandingConfig);
       navigate('/dashboard');
-    } catch {
-      setError(t('auth.errorInvalid'));
+    } catch (loginError: any) {
+      const lockedUntil: string | undefined = loginError?.response?.data?.lockedUntil;
+      if (lockedUntil) {
+        startLockCountdown(lockedUntil);
+      } else {
+        setError(t('auth.errorInvalid'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (lockSecondsRemaining > 0) return;
     if (e.key === 'Enter') handleLogin();
   };
 
@@ -207,7 +296,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div className="login-form" onKeyDown={handleKeyDown}>
-            {error && <Message severity="error" text={error} className="w-full" />}
+            {error && <Message severity={lockSecondsRemaining > 0 ? 'warn' : 'error'} text={error} className="w-full" />}
             {tenantWarning && (
               <Message
                 severity="warn"
@@ -224,9 +313,15 @@ const LoginPage: React.FC = () => {
               <InputText
                 id="tenant-slug"
                 value={tenantSlug}
-                onChange={(e) => setTenantSlug(e.target.value)}              onBlur={(e) => void checkTenantExpiry(e.target.value)}                className="w-full"
+                onChange={(e) => setTenantSlug(e.target.value)}
+                onBlur={(e) => {
+                  void checkTenantExpiry(e.target.value);
+                  void checkTenantLockStatus(e.target.value, email);
+                }}
+                className="w-full"
                 placeholder={t('auth.tenantSlugPlaceholder')}
                 autoComplete="organization"
+                disabled={lockSecondsRemaining > 0}
               />
             </div>
 
@@ -236,8 +331,10 @@ const LoginPage: React.FC = () => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={(e) => void checkTenantLockStatus(tenantSlug, e.target.value)}
                 className="w-full"
                 autoComplete="username"
+                disabled={lockSecondsRemaining > 0}
               />
             </div>
 
@@ -252,6 +349,7 @@ const LoginPage: React.FC = () => {
                 feedback={false}
                 toggleMask
                 autoComplete="current-password"
+                disabled={lockSecondsRemaining > 0}
               />
             </div>
 
@@ -260,6 +358,7 @@ const LoginPage: React.FC = () => {
               icon="pi pi-sign-in"
               onClick={handleLogin}
               loading={loading}
+              disabled={lockSecondsRemaining > 0}
               className="w-full"
             />
           </div>

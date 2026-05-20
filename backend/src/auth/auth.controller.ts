@@ -32,6 +32,23 @@ export class AuthController {
     return this.authService.getPublicTenantExpiryStatus(tenantSlug ?? '');
   }
 
+  @Get('master/lock-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '마스터 로그인 계정 잠금 상태 조회 (공개 API)' })
+  getMasterLockStatus(@Query('email') email: string | undefined) {
+    return this.authService.getMasterLockStatus(email ?? '');
+  }
+
+  @Get('tenant/lock-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '테넌트 로그인 계정 잠금 상태 조회 (공개 API)' })
+  getTenantLockStatus(
+    @Query('tenantSlug') tenantSlug: string | undefined,
+    @Query('email') email: string | undefined,
+  ) {
+    return this.authService.getTenantLockStatus(tenantSlug ?? '', email ?? '');
+  }
+
   @Post('master/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '마스터 관리자 로그인' })

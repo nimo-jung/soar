@@ -120,7 +120,20 @@ let AuthService = class AuthService {
         return this.resolvePolicy(settings ?? null);
     }
     async getSecurityState(scope, tenantSlug, loginId) {
-        let state = await this.securityStateRepo.findOne({
+        let state = await this.findSecurityState(scope, tenantSlug, loginId);
+        if (!state) {
+            state = await this.securityStateRepo.save(this.securityStateRepo.create({
+                scope,
+                tenantSlug,
+                loginId,
+                failedAttempts: 0,
+                lockUntil: null,
+            }));
+        }
+        return state;
+    }
+    async findSecurityState(scope, tenantSlug, loginId) {
+        return this.securityStateRepo.findOne({
             where: tenantSlug
                 ? {
                     scope,
@@ -133,21 +146,48 @@ let AuthService = class AuthService {
                     loginId,
                 },
         });
-        if (!state) {
-            state = await this.securityStateRepo.save(this.securityStateRepo.create({
-                scope,
-                tenantSlug,
-                loginId,
-                failedAttempts: 0,
-                lockUntil: null,
-            }));
+    }
+    lockStatusResponse(state) {
+        const now = Date.now();
+        const lockedUntil = state?.lockUntil ?? null;
+        if (!lockedUntil || lockedUntil.getTime() <= now) {
+            return { locked: false, lockedUntil: null };
         }
-        return state;
+        return { locked: true, lockedUntil: lockedUntil.toISOString() };
+    }
+    async getMasterLockStatus(email) {
+        const loginId = this.normalizeLoginId(email);
+        if (!loginId) {
+            return { locked: false, lockedUntil: null };
+        }
+        const state = await this.findSecurityState(auth_policy_constants_1.AuthScope.MASTER, null, loginId);
+        return this.lockStatusResponse(state);
+    }
+    async getTenantLockStatus(tenantSlug, email) {
+        const loginId = this.normalizeLoginId(email);
+        if (!loginId) {
+            return { locked: false, lockedUntil: null };
+        }
+        const isMultiTenantEnabled = await this.isMultiTenantEnabled();
+        const requestedTenantSlug = tenantSlug?.trim();
+        const resolvedTenantSlug = isMultiTenantEnabled
+            ? requestedTenantSlug
+            : system_tenant_constants_1.SYSTEM_TENANT_SLUG;
+        if (!resolvedTenantSlug) {
+            return { locked: false, lockedUntil: null };
+        }
+        const state = await this.findSecurityState(auth_policy_constants_1.AuthScope.TENANT, resolvedTenantSlug, loginId);
+        return this.lockStatusResponse(state);
     }
     ensureNotLocked(state) {
         const now = Date.now();
         if (state.lockUntil && state.lockUntil.getTime() > now) {
-            throw new common_1.UnauthorizedException('로그인 실패 횟수를 초과하여 계정이 잠금 상태입니다. 잠시 후 다시 시도해 주세요.');
+            throw new common_1.UnauthorizedException({
+                statusCode: 401,
+                error: 'Unauthorized',
+                message: '로그인 실패 횟수를 초과하여 계정이 잠금 상태입니다. 잠시 후 다시 시도해 주세요.',
+                lockedUntil: state.lockUntil.toISOString(),
+            });
         }
     }
     async recordFailedAttempt(state, policy) {
