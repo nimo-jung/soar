@@ -20,6 +20,7 @@ const auth_settings_controller_1 = require("./auth-settings/auth-settings.contro
 const auth_settings_service_1 = require("./auth-settings/auth-settings.service");
 const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
+const product_info_module_1 = require("./product-info/product-info.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -30,6 +31,7 @@ exports.AdminModule = AdminModule = __decorate([
             threat_intel_module_1.ThreatIntelModule,
             audit_logs_module_1.AuditLogsModule,
             master_users_module_1.MasterUsersModule,
+            product_info_module_1.ProductInfoModule,
             typeorm_1.TypeOrmModule.forFeature([master_auth_settings_entity_1.MasterAuthSettings, audit_log_entity_1.AuditLog]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({

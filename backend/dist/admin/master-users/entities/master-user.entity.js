@@ -20,6 +20,7 @@ let MasterUser = class MasterUser {
     id;
     email;
     passwordHash;
+    passwordHistory;
     status;
     isActive;
     deletedAt;
@@ -39,6 +40,14 @@ __decorate([
     (0, typeorm_1.Column)({ comment: '비밀번호 해시 (bcrypt)' }),
     __metadata("design:type", String)
 ], MasterUser.prototype, "passwordHash", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'json',
+        nullable: true,
+        comment: '최근 비밀번호 해시 이력 (재사용 방지용)',
+    }),
+    __metadata("design:type", Object)
+], MasterUser.prototype, "passwordHistory", void 0);
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',

@@ -11,6 +11,7 @@ import { AdminAuthSettingsController } from './auth-settings/auth-settings.contr
 import { AdminAuthSettingsService } from './auth-settings/auth-settings.service';
 import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
+import { ProductInfoModule } from './product-info/product-info.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuditLogService } from '../common/audit/audit-log.service';
     ThreatIntelModule,
     AuditLogsModule,
     MasterUsersModule,
+    ProductInfoModule,
     TypeOrmModule.forFeature([MasterAuthSettings, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({

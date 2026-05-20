@@ -31,6 +31,7 @@ const navSections = [
     items: [
       { labelKey: 'nav.userManagement', path: '/master-users', icon: 'pi pi-users' },
       { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
+      { labelKey: 'nav.productInfo', path: '/product-info', icon: 'pi pi-info-circle' },
     ],
   },
 ];
@@ -46,7 +47,6 @@ function getSectionLabelKeyByPath(pathname: string) {
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const token = useAuthStore((s) => s.accessToken);
   const logout = useAuthStore((s) => s.logout);
   const { t } = useTranslation();
   const [staticInactive, setStaticInactive] = useState(false);
@@ -64,35 +64,6 @@ const AdminLayout: React.FC = () => {
       setExpandedSectionKeys((prev) => (prev.includes(activeSectionKey) ? prev : [...prev, activeSectionKey]));
     }
   }, [activeSectionKey]);
-
-  useEffect(() => {
-    if (!token) {
-      return;
-    }
-
-    const handlePageHide = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        return;
-      }
-
-      const payload = JSON.stringify({ token: useAuthStore.getState().accessToken });
-
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon('/auth/logout/beacon', new Blob([payload], { type: 'application/json' }));
-        return;
-      }
-
-      void fetch('/auth/logout/beacon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-        keepalive: true,
-      });
-    };
-
-    window.addEventListener('pagehide', handlePageHide);
-    return () => window.removeEventListener('pagehide', handlePageHide);
-  }, [token]);
 
   const handleLogout = async () => {
     try {

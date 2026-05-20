@@ -9,9 +9,10 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MODE="${SOAR_MODE:-dev}"
 ENV_FILE="$REPO_ROOT/.env.$MODE"
 
-CYAN='\033[0;36m'; GREEN='\033[0;32m'; RED='\033[0;31m'; RESET='\033[0m'
+CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; RESET='\033[0m'
 info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 
 print_migrate_hint() {
@@ -104,8 +105,6 @@ reset_admin_tables() {
 run_admin_migrate_and_seed() {
   info "soar_admin 마이그레이션 실행..."
   npm run migration:run:admin
-  info "Admin Seed 실행..."
-  npm run setup
 }
 
 if [[ ! -f "$ENV_FILE" ]]; then

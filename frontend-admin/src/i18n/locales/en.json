@@ -10,6 +10,7 @@
     "create": "Create",
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "register": "Register",
     "active": "Active",
     "inactive": "Inactive",
@@ -33,6 +34,7 @@
     "systemManagement": "System Settings",
     "userManagement": "Admin Settings",
     "authSettings": "Auth Settings",
+    "productInfo": "Product Info",
     "masterAdmin": "Master Admin"
   },
   "auth": {
@@ -41,7 +43,51 @@
     "emailPlaceholder": "admin@soar.io",
     "submit": "Sign In",
     "errorEmpty": "Please enter email and password.",
-    "errorInvalid": "Incorrect email or password."
+    "errorInvalid": "Incorrect email or password.",
+    "licenseExpirySoon": "License Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please update the license on the Product Info page.",
+    "bootstrap": {
+      "notice": "No master admin account exists yet. Initial registration is required.",
+      "submit": "Register First Admin",
+      "confirmPassword": "Confirm Password",
+      "errorEmpty": "Please enter email, password, and confirmation password.",
+      "errorPasswordConfirm": "Password and confirmation do not match.",
+      "passwordPolicy": "Password must contain no spaces and satisfy either 10+ characters with at least 2 categories, or 8+ characters with all 3 categories (letters/numbers/special), and must not include 3+ sequential or repeated characters.",
+      "registered": "Initial admin registration completed. You can now sign in.",
+      "registerFailed": "Failed to register the initial admin account.",
+      "noticeDialogTitle": "License Notice",
+      "noticeDialogBody": "When the first master admin account is registered, a demo license is stored automatically. Please update it with a formal license."
+    }
+  },
+  "productInfo": {
+    "title": "Product Info",
+    "subtitle": "View release information and license data, then upload a license file to update it.",
+    "loadFailed": "Failed to load product information.",
+    "product": {
+      "title": "Release Information",
+      "productName": "Product Name",
+      "productVersion": "Product Version",
+      "releaseVersion": "Release Version",
+      "buildInfo": "Build Information",
+      "readOnly": "Product info is read from product.dat and cannot be edited on this screen."
+    },
+    "license": {
+      "title": "License Information",
+      "licenseKey": "License Key",
+      "expiresAt": "Expires At",
+      "nicMacAddress": "NIC MAC Address",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "empty": "No license information is registered."
+    },
+    "upload": {
+      "button": "Update License",
+      "dialogTitle": "Upload License File",
+      "help": "Upload a license file in JSON or key=value text format. Required fields: licenseKey, expiresAt, nicMacAddress(optional)",
+      "submit": "Apply",
+      "fileRequired": "Please select a license file to upload.",
+      "success": "License information has been updated.",
+      "failed": "Failed to update license information."
+    }
   },
   "tenants": {
     "title": "Tenant Management",
@@ -133,6 +179,7 @@
       "name": "Tier Name",
       "dailyLogQuotaGb": "Daily Log Quota (GB)",
       "maxUsers": "Users",
+      "unlimited": "Unlimited",
       "description": "Description",
       "empty": "No tiers available.",
       "liteName": "Lite",
@@ -141,8 +188,8 @@
       "validation": {
         "codeRequired": "Tier code is required.",
         "nameRequired": "Tier name is required.",
-        "dailyLogQuotaGbRequired": "Daily log quota must be at least 1.",
-        "maxUsersRequired": "User limit must be at least 1.",
+        "dailyLogQuotaGbRequired": "Daily log quota must be 0 or greater. (0 = unlimited)",
+        "maxUsersRequired": "User limit must be 0 or greater. (0 = unlimited)",
         "descriptionRequired": "Description is required."
       },
       "delete": {
@@ -293,6 +340,10 @@
     "remainingLabel": "Remaining time: {{time}}",
     "extendSession": "Extend Session",
     "logoutNow": "Log Out Now"
+  },
+  "licenseWarning": {
+    "dialogTitle": "License Expiry Warning",
+    "dialogBody": "Your license will expire in {{days}} day(s).\nExpiry date: {{date}}\n\nPlease update the license on the Product Info page."
   },
   "serverError": {
     "title": "A server connection problem occurred",

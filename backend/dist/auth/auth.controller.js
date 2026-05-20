@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
 const tenant_login_dto_1 = require("./dto/tenant-login.dto");
+const bootstrap_master_dto_1 = require("./dto/bootstrap-master.dto");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -29,8 +30,20 @@ let AuthController = class AuthController {
             userAgent: req.headers['user-agent'] ?? null,
         };
     }
+    getLicenseStatus() {
+        return this.authService.getPublicLicenseStatus();
+    }
+    getTenantExpiryStatus(tenantSlug) {
+        return this.authService.getPublicTenantExpiryStatus(tenantSlug ?? '');
+    }
     masterLogin(dto, req) {
         return this.authService.loginAsMaster(dto, this.getRequestContext(req));
+    }
+    masterBootstrap(dto, req) {
+        return this.authService.bootstrapMaster(dto, this.getRequestContext(req));
+    }
+    masterBootstrapStatus() {
+        return this.authService.getMasterBootstrapStatus();
     }
     tenantLogin(dto, req) {
         return this.authService.loginAsTenant(dto, this.getRequestContext(req));
@@ -47,6 +60,23 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
+    (0, common_1.Get)('license/status'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '라이선스 만료 경고 조회 (공개 API)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getLicenseStatus", null);
+__decorate([
+    (0, common_1.Get)('tenant/expiry-status'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 사용기한 만료 경고 조회 (공개 API)' }),
+    __param(0, (0, common_1.Query)('tenantSlug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getTenantExpiryStatus", null);
+__decorate([
     (0, common_1.Post)('master/login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: '마스터 관리자 로그인' }),
@@ -56,6 +86,24 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "masterLogin", null);
+__decorate([
+    (0, common_1.Post)('master/bootstrap'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, swagger_1.ApiOperation)({ summary: '최초 마스터 관리자 계정 등록 (관리자 계정이 없을 때만 가능)' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bootstrap_master_dto_1.BootstrapMasterDto, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "masterBootstrap", null);
+__decorate([
+    (0, common_1.Post)('master/bootstrap/status'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '최초 마스터 관리자 등록 필요 여부 조회' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "masterBootstrapStatus", null);
 __decorate([
     (0, common_1.Post)('tenant/login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

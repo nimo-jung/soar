@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import RolesGuard from './components/RolesGuard';
 import TenantLayout from './components/layouts/TenantLayout';
+import TenantExpiryWarningDialog from './components/TenantExpiryWarningDialog';
 import LoginPage from './pages/login/LoginPage';
 import CollectorsPage from './pages/collectors/CollectorsPage';
 import AlertsPage from './pages/alerts/AlertsPage';
@@ -14,22 +15,25 @@ const SettingsPage = () => <div className="p-4"><h1 className="text-2xl font-bol
 
 const App: React.FC = () => {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/server-error" element={<ServerErrorPage />} />
-      <Route element={<RolesGuard />}>
-        <Route element={<TenantLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/collectors" element={<CollectorsPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
-          <Route path="/playbooks" element={<PlaybooksPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/auth-settings" element={<AuthSettingsPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <>
+      <TenantExpiryWarningDialog />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/server-error" element={<ServerErrorPage />} />
+        <Route element={<RolesGuard />}>
+          <Route element={<TenantLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/collectors" element={<CollectorsPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
+            <Route path="/playbooks" element={<PlaybooksPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/auth-settings" element={<AuthSettingsPage />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };
 

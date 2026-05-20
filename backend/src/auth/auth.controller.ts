@@ -1,9 +1,10 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Req, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Query, Body, HttpCode, HttpStatus, Req, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
+import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -17,11 +18,39 @@ export class AuthController {
     };
   }
 
+  @Get('license/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '라이선스 만료 경고 조회 (공개 API)' })
+  getLicenseStatus() {
+    return this.authService.getPublicLicenseStatus();
+  }
+
+  @Get('tenant/expiry-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '테넌트 사용기한 만료 경고 조회 (공개 API)' })
+  getTenantExpiryStatus(@Query('tenantSlug') tenantSlug: string | undefined) {
+    return this.authService.getPublicTenantExpiryStatus(tenantSlug ?? '');
+  }
+
   @Post('master/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '마스터 관리자 로그인' })
   masterLogin(@Body() dto: LoginDto, @Req() req: Request) {
     return this.authService.loginAsMaster(dto, this.getRequestContext(req));
+  }
+
+  @Post('master/bootstrap')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: '최초 마스터 관리자 계정 등록 (관리자 계정이 없을 때만 가능)' })
+  masterBootstrap(@Body() dto: BootstrapMasterDto, @Req() req: Request) {
+    return this.authService.bootstrapMaster(dto, this.getRequestContext(req));
+  }
+
+  @Post('master/bootstrap/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '최초 마스터 관리자 등록 필요 여부 조회' })
+  masterBootstrapStatus() {
+    return this.authService.getMasterBootstrapStatus();
   }
 
   @Post('tenant/login')

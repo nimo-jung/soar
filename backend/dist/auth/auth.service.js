@@ -62,27 +62,32 @@ const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const auth_policy_constants_1 = require("./auth-policy.constants");
 const master_auth_settings_entity_1 = require("./entities/master-auth-settings.entity");
 const auth_user_security_state_entity_1 = require("./entities/auth-user-security-state.entity");
-const auth_session_entity_1 = require("./entities/auth-session.entity");
+const system_tenant_constants_1 = require("../admin/tenants/constants/system-tenant.constants");
+const password_policy_1 = require("../admin/master-users/password-policy");
+const product_info_service_1 = require("../admin/product-info/product-info.service");
+const session_store_service_1 = require("../common/session/session-store.service");
 let AuthService = class AuthService {
     masterUserRepo;
     tenantRepo;
     tenantSettingsRepo;
     masterAuthSettingsRepo;
     securityStateRepo;
-    sessionRepo;
     tenantConnectionService;
     jwtService;
     auditLogService;
-    constructor(masterUserRepo, tenantRepo, tenantSettingsRepo, masterAuthSettingsRepo, securityStateRepo, sessionRepo, tenantConnectionService, jwtService, auditLogService) {
+    productInfoService;
+    sessionStore;
+    constructor(masterUserRepo, tenantRepo, tenantSettingsRepo, masterAuthSettingsRepo, securityStateRepo, tenantConnectionService, jwtService, auditLogService, productInfoService, sessionStore) {
         this.masterUserRepo = masterUserRepo;
         this.tenantRepo = tenantRepo;
         this.tenantSettingsRepo = tenantSettingsRepo;
         this.masterAuthSettingsRepo = masterAuthSettingsRepo;
         this.securityStateRepo = securityStateRepo;
-        this.sessionRepo = sessionRepo;
         this.tenantConnectionService = tenantConnectionService;
         this.jwtService = jwtService;
         this.auditLogService = auditLogService;
+        this.productInfoService = productInfoService;
+        this.sessionStore = sessionStore;
     }
     normalizeLoginId(email) {
         return email.trim().toLowerCase();
@@ -98,9 +103,17 @@ let AuthService = class AuthService {
     async getMasterAuthPolicy() {
         let settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
         if (!settings) {
-            settings = await this.masterAuthSettingsRepo.save(this.masterAuthSettingsRepo.create({ id: 1, ...auth_policy_constants_1.DEFAULT_AUTH_POLICY }));
+            settings = await this.masterAuthSettingsRepo.save(this.masterAuthSettingsRepo.create({
+                id: 1,
+                ...auth_policy_constants_1.DEFAULT_AUTH_POLICY,
+                isMultiTenantEnabled: false,
+            }));
         }
         return this.resolvePolicy(settings);
+    }
+    async isMultiTenantEnabled() {
+        const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
+        return settings?.isMultiTenantEnabled ?? false;
     }
     async getTenantAuthPolicyByTenantId(tenantId) {
         const settings = await this.tenantSettingsRepo.findOne({ where: { tenantId } });
@@ -171,21 +184,14 @@ let AuthService = class AuthService {
             accountId: String(payload.sub),
         };
     }
+    sessionSetKey(identity) {
+        if (identity.scope === auth_policy_constants_1.AuthScope.MASTER) {
+            return `sessions:master:${identity.accountId}`;
+        }
+        return `sessions:tenant:${identity.tenantSlug}:${identity.accountId}`;
+    }
     async assertConcurrentSessionLimit(identity, policy) {
-        const now = new Date();
-        const qb = this.sessionRepo
-            .createQueryBuilder('session')
-            .where('session.scope = :scope', { scope: identity.scope })
-            .andWhere('session.account_id = :accountId', { accountId: identity.accountId })
-            .andWhere('session.is_revoked = :isRevoked', { isRevoked: false })
-            .andWhere('(session.expires_at IS NULL OR session.expires_at > :now)', { now });
-        if (identity.tenantSlug) {
-            qb.andWhere('session.tenant_slug = :tenantSlug', { tenantSlug: identity.tenantSlug });
-        }
-        else {
-            qb.andWhere('session.tenant_slug IS NULL');
-        }
-        const activeCount = await qb.getCount();
+        const activeCount = await this.sessionStore.pruneAndCount(this.sessionSetKey(identity));
         if (activeCount >= policy.maxConcurrentSessions) {
             throw new common_1.UnauthorizedException('계정당 동시 로그인 가능 세션 수를 초과했습니다. 기존 세션 종료 후 다시 시도해 주세요.');
         }
@@ -204,22 +210,15 @@ let AuthService = class AuthService {
     }
     async createSessionAndToken(payload, policy) {
         const jti = (0, crypto_1.randomUUID)().replace(/-/g, '');
-        const expiresAt = this.sessionExpiresAt(policy);
         const identity = this.buildSessionIdentity({ ...payload, jti });
+        const ttl = this.sessionExpiresIn(policy);
         await this.assertConcurrentSessionLimit(identity, policy);
-        await this.sessionRepo.save(this.sessionRepo.create({
-            scope: identity.scope,
-            tenantSlug: identity.tenantSlug,
-            accountId: identity.accountId,
-            jti,
-            isRevoked: false,
-            expiresAt,
-            lastActivityAt: new Date(),
-        }));
-        const accessToken = this.jwtService.sign({ ...payload, jti }, { expiresIn: this.sessionExpiresIn(policy) });
+        await this.sessionStore.set(jti, identity.accountId, ttl);
+        await this.sessionStore.addToSet(this.sessionSetKey(identity), jti);
+        const accessToken = this.jwtService.sign({ ...payload, jti }, { expiresIn: ttl });
         return {
             accessToken,
-            sessionExpiresAt: expiresAt ? expiresAt.toISOString() : null,
+            sessionExpiresAt: this.sessionExpiresAt(policy)?.toISOString() ?? null,
         };
     }
     async safeAudit(payload) {
@@ -228,6 +227,89 @@ let AuthService = class AuthService {
         }
         catch {
         }
+    }
+    async getMasterBootstrapStatus() {
+        const masterCount = await this.masterUserRepo.count();
+        return { requiresBootstrap: masterCount === 0 };
+    }
+    async bootstrapMaster(dto, context) {
+        const existingCount = await this.masterUserRepo.count();
+        if (existingCount > 0) {
+            throw new common_1.ConflictException('이미 마스터 관리자 계정이 존재합니다.');
+        }
+        const normalizedEmail = this.normalizeLoginId(dto.email);
+        const passwordError = (0, password_policy_1.getMasterUserPasswordValidationError)(dto.password, normalizedEmail);
+        if (passwordError) {
+            throw new common_1.BadRequestException(passwordError);
+        }
+        const passwordHash = await bcrypt.hash(dto.password, 12);
+        await this.masterUserRepo.save(this.masterUserRepo.create({
+            email: normalizedEmail,
+            passwordHash,
+            passwordHistory: [],
+            isActive: true,
+            status: master_user_entity_1.MasterUserStatus.ACTIVE,
+            deletedAt: null,
+        }));
+        await this.productInfoService.ensureDemoLicenseForBootstrap();
+        await this.safeAudit({
+            actorType: audit_log_entity_1.AuditActorType.SYSTEM,
+            actorEmail: normalizedEmail,
+            action: 'MASTER_BOOTSTRAP_REGISTER',
+            resourceType: 'MASTER_USER',
+            message: '최초 마스터 관리자 등록',
+            ipAddress: context.ipAddress ?? null,
+            userAgent: context.userAgent ?? null,
+        });
+        await this.safeAudit({
+            actorType: audit_log_entity_1.AuditActorType.SYSTEM,
+            actorEmail: normalizedEmail,
+            action: 'LICENSE_DEMO_AUTO_CREATE',
+            resourceType: 'LICENSE',
+            message: '최초 관리자 등록 시 데모 라이선스 자동 생성',
+            ipAddress: context.ipAddress ?? null,
+            userAgent: context.userAgent ?? null,
+        });
+        return { success: true, demoLicenseCreated: true };
+    }
+    async getPublicLicenseStatus() {
+        const warning = await this.productInfoService.getLicenseWarning();
+        if (!warning) {
+            return { daysRemaining: null, expiresAt: null };
+        }
+        return warning;
+    }
+    computeExpiryWarning(expiresAt) {
+        if (!expiresAt) {
+            return null;
+        }
+        const nowMs = Date.now();
+        const expiresMs = expiresAt.getTime();
+        const diffDays = Math.ceil((expiresMs - nowMs) / (1000 * 60 * 60 * 24));
+        if (diffDays > 30) {
+            return null;
+        }
+        return {
+            daysRemaining: Math.max(0, diffDays),
+            expiresAt: expiresAt.toISOString(),
+        };
+    }
+    async getPublicTenantExpiryStatus(tenantSlug) {
+        const slug = tenantSlug?.trim();
+        if (!slug) {
+            return { daysRemaining: null, expiresAt: null };
+        }
+        const tenant = await this.tenantRepo.findOne({
+            where: { slug, status: 'ACTIVE' },
+        });
+        if (!tenant) {
+            return { daysRemaining: null, expiresAt: null };
+        }
+        const warning = this.computeExpiryWarning(tenant.expiresAt);
+        if (!warning) {
+            return { daysRemaining: null, expiresAt: null };
+        }
+        return warning;
     }
     async loginAsMaster(dto, context) {
         const policy = await this.getMasterAuthPolicy();
@@ -282,18 +364,30 @@ let AuthService = class AuthService {
             accessToken: session.accessToken,
             authSettings: policy,
             sessionExpiresAt: session.sessionExpiresAt,
+            licenseWarning: await this.productInfoService.getLicenseWarning(),
         };
     }
     async loginAsTenant(dto, context) {
+        const isMultiTenantEnabled = await this.isMultiTenantEnabled();
+        const requestedTenantSlug = dto.tenantSlug?.trim();
+        if (isMultiTenantEnabled && !requestedTenantSlug) {
+            throw new common_1.UnauthorizedException('멀티테넌트 모드에서는 tenantSlug가 필요합니다.');
+        }
+        const resolvedTenantSlug = isMultiTenantEnabled
+            ? requestedTenantSlug
+            : system_tenant_constants_1.SYSTEM_TENANT_SLUG;
+        if (!isMultiTenantEnabled && requestedTenantSlug && requestedTenantSlug !== system_tenant_constants_1.SYSTEM_TENANT_SLUG) {
+            throw new common_1.UnauthorizedException('멀티테넌트가 비활성화된 상태에서는 system 테넌트만 로그인할 수 있습니다.');
+        }
         const loginId = this.normalizeLoginId(dto.email);
         const tenant = await this.tenantRepo.findOne({
-            where: { slug: dto.tenantSlug, status: 'ACTIVE' },
+            where: { slug: resolvedTenantSlug, status: 'ACTIVE' },
         });
         if (!tenant) {
             await this.safeAudit({
                 actorType: audit_log_entity_1.AuditActorType.TENANT,
                 actorEmail: loginId,
-                tenantSlug: dto.tenantSlug,
+                tenantSlug: resolvedTenantSlug,
                 action: 'TENANT_LOGIN_FAILED',
                 resourceType: 'AUTH',
                 message: '테넌트 로그인 실패: 테넌트 없음 또는 비활성',
@@ -370,6 +464,7 @@ let AuthService = class AuthService {
             brandingConfig: settings?.brandingConfig ?? null,
             authSettings: policy,
             sessionExpiresAt: session.sessionExpiresAt,
+            tenantWarning: this.computeExpiryWarning(tenant.expiresAt),
         };
     }
     async extendSession(authHeader) {
@@ -384,30 +479,12 @@ let AuthService = class AuthService {
         catch {
             throw new common_1.UnauthorizedException('유효하지 않은 토큰입니다.');
         }
-        const identity = this.buildSessionIdentity(payload);
         if (!payload.jti) {
             throw new common_1.UnauthorizedException('세션 정보가 없는 토큰입니다.');
         }
-        const qb = this.sessionRepo
-            .createQueryBuilder('session')
-            .where('session.jti = :jti', { jti: payload.jti })
-            .andWhere('session.scope = :scope', { scope: identity.scope })
-            .andWhere('session.account_id = :accountId', { accountId: identity.accountId })
-            .andWhere('session.is_revoked = :isRevoked', { isRevoked: false });
-        if (identity.tenantSlug) {
-            qb.andWhere('session.tenant_slug = :tenantSlug', { tenantSlug: identity.tenantSlug });
-        }
-        else {
-            qb.andWhere('session.tenant_slug IS NULL');
-        }
-        const session = await qb.getOne();
-        if (!session) {
+        const sessionValid = await this.sessionStore.exists(payload.jti);
+        if (!sessionValid) {
             throw new common_1.UnauthorizedException('세션이 만료되었거나 유효하지 않습니다.');
-        }
-        if (session.expiresAt && session.expiresAt.getTime() <= Date.now()) {
-            session.isRevoked = true;
-            await this.sessionRepo.save(session);
-            throw new common_1.UnauthorizedException('세션이 만료되었습니다. 다시 로그인해 주세요.');
         }
         let policy;
         if (payload.isMaster) {
@@ -423,25 +500,20 @@ let AuthService = class AuthService {
             }
             policy = await this.getTenantAuthPolicyByTenantId(tenant.id);
         }
-        const now = new Date();
-        session.lastActivityAt = now;
         if (policy.autoLogoutTimeoutMinutes === 0) {
-            await this.sessionRepo.save(session);
             return {
                 accessToken: token,
                 sessionExpiresAt: null,
                 authSettings: policy,
             };
         }
-        const expiresAt = new Date(now.getTime() + policy.autoLogoutTimeoutMinutes * 60_000);
-        session.expiresAt = expiresAt;
-        await this.sessionRepo.save(session);
-        const newAccessToken = this.jwtService.sign(payload, {
-            expiresIn: this.sessionExpiresIn(policy),
-        });
+        const ttl = this.sessionExpiresIn(policy);
+        await this.sessionStore.extend(payload.jti, ttl);
+        const { iat: _iat, exp: _exp, ...freshPayload } = payload;
+        const newAccessToken = this.jwtService.sign(freshPayload, { expiresIn: ttl });
         return {
             accessToken: newAccessToken,
-            sessionExpiresAt: expiresAt.toISOString(),
+            sessionExpiresAt: new Date(Date.now() + ttl * 1000).toISOString(),
             authSettings: policy,
         };
     }
@@ -469,12 +541,11 @@ let AuthService = class AuthService {
             return { success: true };
         }
         if (payload.jti) {
-            await this.sessionRepo
-                .createQueryBuilder()
-                .update(auth_session_entity_1.AuthSession)
-                .set({ isRevoked: true })
-                .where('jti = :jti', { jti: payload.jti })
-                .execute();
+            await this.sessionStore.del(payload.jti);
+            const setKey = payload.isMaster
+                ? `sessions:master:${payload.sub}`
+                : `sessions:tenant:${payload.tenantSlug ?? payload.tenantId}:${payload.sub}`;
+            await this.sessionStore.removeFromSet(setKey, payload.jti);
         }
         await this.safeAudit({
             actorType: payload.isMaster ? audit_log_entity_1.AuditActorType.MASTER : audit_log_entity_1.AuditActorType.TENANT,
@@ -499,15 +570,15 @@ exports.AuthService = AuthService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(tenant_settings_entity_1.TenantSettings)),
     __param(3, (0, typeorm_1.InjectRepository)(master_auth_settings_entity_1.MasterAuthSettings)),
     __param(4, (0, typeorm_1.InjectRepository)(auth_user_security_state_entity_1.AuthUserSecurityState)),
-    __param(5, (0, typeorm_1.InjectRepository)(auth_session_entity_1.AuthSession)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         tenant_connection_service_1.TenantConnectionService,
         jwt_1.JwtService,
-        audit_log_service_1.AuditLogService])
+        audit_log_service_1.AuditLogService,
+        product_info_service_1.ProductInfoService,
+        session_store_service_1.SessionStoreService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

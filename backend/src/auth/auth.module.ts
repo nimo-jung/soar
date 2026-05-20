@@ -11,7 +11,8 @@ import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
 import { MasterAuthSettings } from './entities/master-auth-settings.entity';
 import { AuthUserSecurityState } from './entities/auth-user-security-state.entity';
-import { AuthSession } from './entities/auth-session.entity';
+import { License } from '../admin/product-info/entities/license.entity';
+import { ProductInfoService } from '../admin/product-info/product-info.service';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { AuthSession } from './entities/auth-session.entity';
       AuditLog,
       MasterAuthSettings,
       AuthUserSecurityState,
-      AuthSession,
+      License,
     ]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
@@ -33,6 +34,6 @@ import { AuthSession } from './entities/auth-session.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuditLogService],
+  providers: [AuthService, AuditLogService, ProductInfoService],
 })
 export class AuthModule {}

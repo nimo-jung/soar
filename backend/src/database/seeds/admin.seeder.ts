@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { MasterUser, MasterUserStatus } from '../../admin/master-users/entities/master-user.entity';
+import AdminDataSource from '../admin-data-source';
 
 /**
  * AdminSeeder: soar_admin DB 초기 데이터 삽입
@@ -35,4 +36,25 @@ export async function runAdminSeed(dataSource: DataSource): Promise<void> {
   console.log('[Seed] 마스터 관리자 계정이 생성되었습니다.');
   console.log(`[Seed] Email: ${process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io'}`);
   console.log('[Seed] 운영 환경에서는 반드시 비밀번호를 변경하세요.');
+}
+
+async function runAdminSeedCli(): Promise<void> {
+  if (!AdminDataSource.isInitialized) {
+    await AdminDataSource.initialize();
+  }
+
+  try {
+    await runAdminSeed(AdminDataSource);
+  } finally {
+    if (AdminDataSource.isInitialized) {
+      await AdminDataSource.destroy();
+    }
+  }
+}
+
+if (require.main === module) {
+  runAdminSeedCli().catch((error) => {
+    console.error('[Seed] Admin seed 실행 실패:', error);
+    process.exit(1);
+  });
 }

@@ -1,10 +1,9 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { DataSource } from 'typeorm';
+import { SessionStoreService } from '../session/session-store.service';
 export declare class TenantGuard implements CanActivate {
     private readonly jwtService;
-    private readonly dataSource;
-    constructor(jwtService: JwtService, dataSource: DataSource);
-    private assertActiveSession;
+    private readonly sessionStore;
+    constructor(jwtService: JwtService, sessionStore: SessionStoreService);
     canActivate(context: ExecutionContext): Promise<boolean>;
 }

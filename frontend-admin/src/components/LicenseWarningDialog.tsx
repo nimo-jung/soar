@@ -1,0 +1,65 @@
+import React, { useEffect, useState } from 'react';
+import { Dialog } from 'primereact/dialog';
+import { Button } from 'primereact/button';
+import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '../store/auth.store';
+import { formatDateOnly } from '../utils/date';
+
+const SESSION_KEY = 'license_warning_shown';
+
+const LicenseWarningDialog: React.FC = () => {
+  const { t } = useTranslation();
+  const licenseWarning = useAuthStore((s) => s.licenseWarning);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!licenseWarning) return;
+    if (sessionStorage.getItem(SESSION_KEY) === 'true') return;
+
+    setVisible(true);
+  }, [hydrated, licenseWarning]);
+
+  const handleConfirm = () => {
+    sessionStorage.setItem(SESSION_KEY, 'true');
+    setVisible(false);
+  };
+
+  if (!licenseWarning) return null;
+
+  const footer = (
+    <Button
+      label={t('common.confirm')}
+      icon="pi pi-check"
+      onClick={handleConfirm}
+      autoFocus
+    />
+  );
+
+  return (
+    <Dialog
+      visible={visible}
+      header={
+        <span className="flex align-items-center gap-2">
+          <i className="pi pi-exclamation-triangle text-yellow-400" />
+          {t('licenseWarning.dialogTitle')}
+        </span>
+      }
+      footer={footer}
+      onHide={handleConfirm}
+      style={{ width: '30rem' }}
+      modal
+      closable={false}
+    >
+      <p className="m-0 line-height-3">
+        {t('licenseWarning.dialogBody', {
+          days: licenseWarning.daysRemaining,
+          date: formatDateOnly(licenseWarning.expiresAt),
+        })}
+      </p>
+    </Dialog>
+  );
+};
+
+export default LicenseWarningDialog;

@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, Max, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class UpdateAuthPolicyDto {
   @ApiProperty({ example: 3, minimum: 1, maximum: 5 })
@@ -25,4 +25,9 @@ export class UpdateAuthPolicyDto {
   @Min(0)
   @Max(30)
   autoLogoutTimeoutMinutes: number;
+
+  @ApiPropertyOptional({ description: '멀티테넌트 기능 활성화 여부', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isMultiTenantEnabled?: boolean;
 }

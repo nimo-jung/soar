@@ -39,8 +39,16 @@ api.interceptors.response.use(
     const status = err.response?.status as number | undefined;
 
     if (status === 401) {
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
+      // 인증 요청 자체(로그인·부트스트랩)가 실패한 경우 인터셉터가 개입하지 않는다.
+      // 해당 핸들러의 catch 블록에서 직접 에러 메시지를 처리한다.
+      const requestUrl = (err.config?.url as string | undefined) ?? '';
+      const isAuthRequest = requestUrl.includes('/auth/master/login')
+        || requestUrl.includes('/auth/master/bootstrap')
+        || requestUrl.includes('/auth/tenant/login');
+      if (!isAuthRequest) {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+      }
       return Promise.reject(err);
     }
 

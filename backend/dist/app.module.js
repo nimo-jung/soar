@@ -10,6 +10,7 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const database_module_1 = require("./common/database/database.module");
+const redis_module_1 = require("./common/redis/redis.module");
 const admin_module_1 = require("./admin/admin.module");
 const tenant_module_1 = require("./tenant/tenant.module");
 const auth_module_1 = require("./auth/auth.module");
@@ -21,6 +22,7 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true, envFilePath: '../.env' }),
             database_module_1.DatabaseModule,
+            redis_module_1.RedisModule,
             auth_module_1.AuthModule,
             admin_module_1.AdminModule,
             tenant_module_1.TenantModule,

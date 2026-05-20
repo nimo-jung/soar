@@ -20,7 +20,8 @@ const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
 const master_auth_settings_entity_1 = require("./entities/master-auth-settings.entity");
 const auth_user_security_state_entity_1 = require("./entities/auth-user-security-state.entity");
-const auth_session_entity_1 = require("./entities/auth-session.entity");
+const license_entity_1 = require("../admin/product-info/entities/license.entity");
+const product_info_service_1 = require("../admin/product-info/product-info.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -34,7 +35,7 @@ exports.AuthModule = AuthModule = __decorate([
                 audit_log_entity_1.AuditLog,
                 master_auth_settings_entity_1.MasterAuthSettings,
                 auth_user_security_state_entity_1.AuthUserSecurityState,
-                auth_session_entity_1.AuthSession,
+                license_entity_1.License,
             ]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
@@ -45,7 +46,7 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, audit_log_service_1.AuditLogService],
+        providers: [auth_service_1.AuthService, audit_log_service_1.AuditLogService, product_info_service_1.ProductInfoService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

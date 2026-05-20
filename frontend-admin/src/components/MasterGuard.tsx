@@ -4,6 +4,12 @@ import { useAuthStore } from '../store/auth.store';
 
 const MasterGuard: React.FC = () => {
   const token = useAuthStore((s) => s.accessToken);
+  const hydrated = useAuthStore((s) => s.hydrated);
+
+  if (!hydrated) {
+    return null;
+  }
+
   return token ? <Outlet /> : <Navigate to="/login" replace />;
 };
 

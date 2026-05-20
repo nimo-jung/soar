@@ -1,12 +1,14 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Not, Repository } from 'typeorm';
 import { CreateMasterUserDto } from './dto/create-master-user.dto';
 import { UpdateMasterUserDto } from './dto/update-master-user.dto';
 import { MasterUser, MasterUserStatus } from './entities/master-user.entity';
+import { getMasterUserPasswordValidationError } from './password-policy';
 
 const MAX_MASTER_USERS = 10;
+const PASSWORD_HISTORY_LIMIT = 5;
 
 @Injectable()
 export class MasterUsersService {
@@ -44,15 +46,41 @@ export class MasterUsersService {
     }
   }
 
+  private async ensurePasswordNotReused(user: MasterUser, plainPassword: string): Promise<void> {
+    const currentMatched = await bcrypt.compare(plainPassword, user.passwordHash);
+    if (currentMatched) {
+      throw new BadRequestException('현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.');
+    }
+
+    const history = (user.passwordHistory ?? []).slice(0, PASSWORD_HISTORY_LIMIT);
+    for (const previousHash of history) {
+      const matched = await bcrypt.compare(plainPassword, previousHash);
+      if (matched) {
+        throw new BadRequestException('최근 사용한 비밀번호는 재사용할 수 없습니다.');
+      }
+    }
+  }
+
+  private buildNextPasswordHistory(user: MasterUser): string[] {
+    const history = [user.passwordHash, ...(user.passwordHistory ?? [])];
+    return history.slice(0, PASSWORD_HISTORY_LIMIT);
+  }
+
   async create(dto: CreateMasterUserDto): Promise<MasterUser> {
     await this.ensureEmailIsUnique(dto.email);
     await this.ensureActiveQuota();
+
+    const passwordError = getMasterUserPasswordValidationError(dto.password, dto.email);
+    if (passwordError) {
+      throw new BadRequestException(passwordError);
+    }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
     const entity = this.masterUserRepo.create({
       email: dto.email,
       passwordHash,
+      passwordHistory: [],
       isActive: dto.isActive ?? true,
       status: MasterUserStatus.ACTIVE,
       deletedAt: null,
@@ -70,6 +98,16 @@ export class MasterUsersService {
     }
 
     if (dto.password) {
+      const passwordError = getMasterUserPasswordValidationError(dto.password, dto.email ?? user.email);
+      if (passwordError) {
+        throw new BadRequestException(passwordError);
+      }
+
+      await this.ensurePasswordNotReused(user, dto.password);
+
+      const nextHistory = this.buildNextPasswordHistory(user);
+      user.passwordHistory = nextHistory;
+
       user.passwordHash = await bcrypt.hash(dto.password, 12);
     }
 

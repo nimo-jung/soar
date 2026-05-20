@@ -35,6 +35,14 @@ interface TierDeletionCheckResponse {
   reason: string | null;
 }
 
+const formatLimit = (value: number, unit: string, unlimitedLabel: string): string => {
+  if (value === 0) {
+    return unlimitedLabel;
+  }
+
+  return `${value}${unit}`;
+};
+
 type TierFormErrors = {
   code?: string;
   name?: string;
@@ -85,8 +93,8 @@ const TenantTiersPage: React.FC = () => {
   const [form, setForm] = useState({
     code: 'LITE' as TierCode,
     name: 'Lite',
-    dailyLogQuotaGb: 1,
-    maxUsers: 1,
+    dailyLogQuotaGb: 0,
+    maxUsers: 0,
     description: '',
     isActive: true,
   });
@@ -215,8 +223,8 @@ const TenantTiersPage: React.FC = () => {
     setForm({
       code: 'LITE',
       name: t('tenants.tiers.liteName'),
-      dailyLogQuotaGb: 1,
-      maxUsers: 1,
+      dailyLogQuotaGb: 0,
+      maxUsers: 0,
       description: '',
       isActive: true,
     });
@@ -246,10 +254,10 @@ const TenantTiersPage: React.FC = () => {
     if (!form.name.trim()) {
       nextErrors.name = t('tenants.tiers.validation.nameRequired');
     }
-    if (!Number.isFinite(form.dailyLogQuotaGb) || form.dailyLogQuotaGb < 1) {
+    if (!Number.isFinite(form.dailyLogQuotaGb) || form.dailyLogQuotaGb < 0) {
       nextErrors.dailyLogQuotaGb = t('tenants.tiers.validation.dailyLogQuotaGbRequired');
     }
-    if (!Number.isFinite(form.maxUsers) || form.maxUsers < 1) {
+    if (!Number.isFinite(form.maxUsers) || form.maxUsers < 0) {
       nextErrors.maxUsers = t('tenants.tiers.validation.maxUsersRequired');
     }
     if (!form.description.trim()) {
@@ -459,10 +467,20 @@ const TenantTiersPage: React.FC = () => {
             <Column field="name" header={t('tenants.tiers.name')} style={{ minWidth: '10rem' }} />
           )}
           {isFieldVisible('dailyLogQuotaGb') && (
-            <Column field="dailyLogQuotaGb" header={t('tenants.tiers.dailyLogQuotaGb')} style={{ width: '12rem' }} />
+            <Column
+              field="dailyLogQuotaGb"
+              header={t('tenants.tiers.dailyLogQuotaGb')}
+              style={{ width: '12rem' }}
+              body={(row: TenantTier) => formatLimit(row.dailyLogQuotaGb, 'GB', t('tenants.tiers.unlimited'))}
+            />
           )}
           {isFieldVisible('maxUsers') && (
-            <Column field="maxUsers" header={t('tenants.tiers.maxUsers')} style={{ width: '9rem' }} />
+            <Column
+              field="maxUsers"
+              header={t('tenants.tiers.maxUsers')}
+              style={{ width: '9rem' }}
+              body={(row: TenantTier) => formatLimit(row.maxUsers, '', t('tenants.tiers.unlimited'))}
+            />
           )}
           {isFieldVisible('description') && (
             <Column field="description" header={t('tenants.tiers.description')} style={{ minWidth: '18rem' }} />
@@ -580,7 +598,7 @@ const TenantTiersPage: React.FC = () => {
                 className="w-full"
                 inputClassName="w-full p-inputtext-sm"
                 useGrouping={false}
-                min={1}
+                min={0}
                 max={10240}
                 showButtons 
                 />
@@ -602,7 +620,7 @@ const TenantTiersPage: React.FC = () => {
                 className="w-full"
                 inputClassName="w-full p-inputtext-sm"
                 useGrouping={false}
-                min={1}
+                min={0}
                 max={100}
                 showButtons
                 />

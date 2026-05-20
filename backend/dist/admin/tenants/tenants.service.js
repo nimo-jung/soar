@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const tenant_entity_1 = require("./entities/tenant.entity");
 const tenant_settings_entity_1 = require("./entities/tenant-settings.entity");
 const tenant_tier_entity_1 = require("./entities/tenant-tier.entity");
+const system_tenant_constants_1 = require("./constants/system-tenant.constants");
 let TenantsService = class TenantsService {
     tenantRepo;
     settingsRepo;
@@ -86,6 +87,9 @@ let TenantsService = class TenantsService {
         return items.join(',');
     }
     async create(dto) {
+        if (dto.slug === system_tenant_constants_1.SYSTEM_TENANT_SLUG) {
+            throw new common_1.ConflictException('system 슬러그는 예약되어 있습니다.');
+        }
         const existing = await this.tenantRepo.findOne({ where: { slug: dto.slug } });
         if (existing) {
             throw new common_1.ConflictException(`슬러그 '${dto.slug}'는 이미 사용 중입니다.`);
@@ -139,6 +143,9 @@ let TenantsService = class TenantsService {
     }
     async update(id, dto) {
         const tenant = await this.findOne(id);
+        if (tenant.slug === system_tenant_constants_1.SYSTEM_TENANT_SLUG && dto.status && dto.status !== tenant_entity_1.TenantStatus.ACTIVE) {
+            throw new common_1.BadRequestException('system 테넌트는 비활성화하거나 삭제 상태로 변경할 수 없습니다.');
+        }
         if (dto.tierId) {
             const tier = await this.findTierForTenantById(dto.tierId);
             if (!tier) {
@@ -174,6 +181,9 @@ let TenantsService = class TenantsService {
     }
     async softDelete(id) {
         const tenant = await this.findOne(id);
+        if (tenant.slug === system_tenant_constants_1.SYSTEM_TENANT_SLUG) {
+            throw new common_1.BadRequestException('system 테넌트는 삭제할 수 없습니다.');
+        }
         tenant.status = tenant_entity_1.TenantStatus.DELETED;
         await this.tenantRepo.save(tenant);
     }
@@ -241,7 +251,7 @@ let TenantsService = class TenantsService {
         };
         Object.assign(tier, normalizedDto);
         const savedTier = await this.tierRepo.save(tier);
-        if (dto.dailyLogQuotaGb) {
+        if (dto.dailyLogQuotaGb !== undefined) {
             const tenants = await this.tenantRepo.find({ where: { tierId: tier.id } });
             if (tenants.length > 0) {
                 const tenantIds = tenants.map((tenant) => tenant.id);

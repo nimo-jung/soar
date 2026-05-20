@@ -7,9 +7,11 @@ import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import api from '../../api';
 import { useAuthStore } from '../../store/auth.store';
+import type { TenantWarning } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import { parseJwt } from '../../utils/jwt';
 import { AuthPolicy } from '../../types/auth-policy';
+import { formatDateOnly } from '../../utils/date';
 
 interface TenantJwtPayload {
   sub: number;
@@ -29,6 +31,27 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tenantWarning, setTenantWarning] = useState<TenantWarning | null>(null);
+
+  const checkTenantExpiry = async (slug: string) => {
+    const trimmed = slug.trim();
+    if (!trimmed) {
+      setTenantWarning(null);
+      return;
+    }
+    try {
+      const res = await api.get<{ daysRemaining: number | null; expiresAt: string | null }>(
+        `/auth/tenant/expiry-status?tenantSlug=${encodeURIComponent(trimmed)}`,
+      );
+      if (res.data.daysRemaining !== null && res.data.expiresAt !== null) {
+        setTenantWarning({ daysRemaining: res.data.daysRemaining, expiresAt: res.data.expiresAt });
+      } else {
+        setTenantWarning(null);
+      }
+    } catch {
+      // 만료 상태 조회 실패는 로그인 흐름에 영향을 주지 않는다.
+    }
+  };
 
   const handleLogin = async () => {
     if (!tenantSlug || !email || !password) {
@@ -38,7 +61,12 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post<{ accessToken: string; brandingConfig: Record<string, string> | null; authSettings: AuthPolicy }>(
+      const res = await api.post<{
+        accessToken: string;
+        brandingConfig: Record<string, string> | null;
+        authSettings: AuthPolicy;
+        tenantWarning: TenantWarning | null;
+      }>(
         '/auth/tenant/login',
         { tenantSlug, email, password },
       );
@@ -57,6 +85,7 @@ const LoginPage: React.FC = () => {
         res.data.accessToken,
         { sub: payload.sub, tenantId: payload.tenantId, role: payload.role },
         res.data.authSettings,
+        res.data.tenantWarning,
       );
       applyBranding(res.data.brandingConfig);
       navigate('/dashboard');
@@ -179,14 +208,23 @@ const LoginPage: React.FC = () => {
 
           <div className="login-form" onKeyDown={handleKeyDown}>
             {error && <Message severity="error" text={error} className="w-full" />}
+            {tenantWarning && (
+              <Message
+                severity="warn"
+                className="w-full"
+                text={t('auth.tenantExpirySoon', {
+                  days: tenantWarning.daysRemaining,
+                  date: formatDateOnly(tenantWarning.expiresAt),
+                })}
+              />
+            )}
 
             <div className="field">
               <label htmlFor="tenant-slug">{t('auth.tenantSlug')}</label>
               <InputText
                 id="tenant-slug"
                 value={tenantSlug}
-                onChange={(e) => setTenantSlug(e.target.value)}
-                className="w-full"
+                onChange={(e) => setTenantSlug(e.target.value)}              onBlur={(e) => void checkTenantExpiry(e.target.value)}                className="w-full"
                 placeholder={t('auth.tenantSlugPlaceholder')}
                 autoComplete="organization"
               />

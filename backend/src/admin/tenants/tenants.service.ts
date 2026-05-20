@@ -8,6 +8,7 @@ import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
+import { SYSTEM_TENANT_SLUG } from './constants/system-tenant.constants';
 
 export interface TierDeletionStatus {
   canDelete: boolean;
@@ -97,6 +98,10 @@ export class TenantsService {
   }
 
   async create(dto: CreateTenantDto): Promise<Tenant> {
+    if (dto.slug === SYSTEM_TENANT_SLUG) {
+      throw new ConflictException('system 슬러그는 예약되어 있습니다.');
+    }
+
     const existing = await this.tenantRepo.findOne({ where: { slug: dto.slug } });
     if (existing) {
       throw new ConflictException(`슬러그 '${dto.slug}'는 이미 사용 중입니다.`);
@@ -160,6 +165,10 @@ export class TenantsService {
   async update(id: number, dto: UpdateTenantDto): Promise<Tenant> {
     const tenant = await this.findOne(id);
 
+    if (tenant.slug === SYSTEM_TENANT_SLUG && dto.status && dto.status !== TenantStatus.ACTIVE) {
+      throw new BadRequestException('system 테넌트는 비활성화하거나 삭제 상태로 변경할 수 없습니다.');
+    }
+
     if (dto.tierId) {
       const tier = await this.findTierForTenantById(dto.tierId);
       if (!tier) {
@@ -204,6 +213,11 @@ export class TenantsService {
 
   async softDelete(id: number): Promise<void> {
     const tenant = await this.findOne(id);
+
+    if (tenant.slug === SYSTEM_TENANT_SLUG) {
+      throw new BadRequestException('system 테넌트는 삭제할 수 없습니다.');
+    }
+
     tenant.status = TenantStatus.DELETED;
     await this.tenantRepo.save(tenant);
   }
@@ -293,7 +307,7 @@ export class TenantsService {
     Object.assign(tier, normalizedDto);
     const savedTier = await this.tierRepo.save(tier);
 
-    if (dto.dailyLogQuotaGb) {
+    if (dto.dailyLogQuotaGb !== undefined) {
       const tenants = await this.tenantRepo.find({ where: { tierId: tier.id } });
       if (tenants.length > 0) {
         const tenantIds = tenants.map((tenant) => tenant.id);

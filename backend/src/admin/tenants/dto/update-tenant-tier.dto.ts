@@ -9,13 +9,13 @@ export class UpdateTenantTierDto {
 
   @ApiPropertyOptional({ description: '하루 로그 저장 용량 한도(GB)' })
   @IsInt()
-  @Min(1)
+  @Min(0)
   @IsOptional()
   dailyLogQuotaGb?: number;
 
   @ApiPropertyOptional({ description: '테넌트 사용자 수 한도' })
   @IsInt()
-  @Min(1)
+  @Min(0)
   @IsOptional()
   maxUsers?: number;
 

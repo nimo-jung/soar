@@ -43,6 +43,14 @@ export class MasterAuthSettings {
   })
   autoLogoutTimeoutMinutes: number;
 
+  @Column({
+    name: 'is_multi_tenant_enabled',
+    type: 'boolean',
+    default: false,
+    comment: '멀티테넌트 기능 활성화 여부',
+  })
+  isMultiTenantEnabled: boolean;
+
   @CreateDateColumn({ comment: '생성 일시' })
   createdAt: Date;
 

@@ -116,6 +116,7 @@ services:
       start_period: 30s
 
   redpanda-console:
+    profiles: [dev]
     image: redpandadata/console:v2.7.2
     container_name: soar-redpanda-console
     entrypoint: /bin/sh
@@ -183,6 +184,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules          # 호스트 node_modules와 충돌 방지
+      - ./product.dat:/app/product.dat:ro  # 제품 정보 파일 (읽기 전용)
     networks:
       - soar-network
     depends_on:
@@ -229,6 +231,8 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
     ports:
       - "${PORT_BACKEND:-3000}:3000"
+    volumes:
+      - /home1/soar/product.dat:/app/product.dat:ro  # 제품 정보 파일 (읽기 전용)
     networks:
       - soar-network
     depends_on:

@@ -1,0 +1,8 @@
+# SOAR Product Information
+# 이 파일은 제품 정보를 포함합니다. 배포 시 빌드 시스템에서 자동 생성됩니다.
+# 수동 편집 시 key=value 형식을 유지하세요.
+
+productName=SOAR Platform
+productVersion=1.0.0
+releaseVersion=1.0.0-rc.1
+buildInfo=20260520.001

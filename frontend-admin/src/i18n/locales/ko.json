@@ -10,6 +10,7 @@
     "create": "생성",
     "save": "저장",
     "cancel": "취소",
+    "confirm": "확인",
     "register": "등록",
     "active": "활성",
     "inactive": "비활성",
@@ -33,6 +34,7 @@
     "systemManagement": "시스템 설정",
     "userManagement": "관리자 설정",
     "authSettings": "인증 설정",
+    "productInfo": "제품 정보",
     "masterAdmin": "Master Admin"
   },
   "auth": {
@@ -41,7 +43,51 @@
     "emailPlaceholder": "admin@soar.io",
     "submit": "로그인",
     "errorEmpty": "이메일과 비밀번호를 입력하세요.",
-    "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다."
+    "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "licenseExpirySoon": "라이선스 만료 임박: {{days}}일 후 만료됩니다. (만료일: {{date}}) 제품 정보 페이지에서 라이선스를 업데이트하세요.",
+    "bootstrap": {
+      "notice": "최초 관리자 계정이 없어 초기 등록이 필요합니다.",
+      "submit": "최초 관리자 등록",
+      "confirmPassword": "비밀번호 확인",
+      "errorEmpty": "이메일, 비밀번호, 비밀번호 확인을 모두 입력하세요.",
+      "errorPasswordConfirm": "비밀번호와 비밀번호 확인이 일치하지 않습니다.",
+      "passwordPolicy": "비밀번호는 공백 없이 영문/숫자/특수문자 조합으로 10자 이상(2종류 이상) 또는 8자 이상(3종류 이상)이어야 하며, 연속/반복 문자 3자리 이상을 포함할 수 없습니다.",
+      "registered": "최초 관리자 등록이 완료되었습니다. 이제 로그인할 수 있습니다.",
+      "registerFailed": "최초 관리자 등록 중 오류가 발생했습니다.",
+      "noticeDialogTitle": "라이선스 안내",
+      "noticeDialogBody": "최초 관리자 계정 초기 등록 시, 자동으로 라이선스가 데모용으로 저장되니 정식 라이선스로 업데이트하시기 바랍니다."
+    }
+  },
+  "productInfo": {
+    "title": "제품 정보",
+    "subtitle": "릴리즈 정보와 라이선스 정보를 조회하고 라이선스 파일을 업로드하여 갱신합니다.",
+    "loadFailed": "제품 정보를 조회하지 못했습니다.",
+    "product": {
+      "title": "릴리즈 정보",
+      "productName": "제품명",
+      "productVersion": "제품버전",
+      "releaseVersion": "릴리즈버전",
+      "buildInfo": "빌드정보",
+      "readOnly": "제품 정보는 product.dat 파일에서 읽어오며 화면에서 수정할 수 없습니다."
+    },
+    "license": {
+      "title": "라이선스 정보",
+      "licenseKey": "라이선스 키",
+      "expiresAt": "만료일시",
+      "nicMacAddress": "NIC MAC 주소",
+      "createdAt": "등록일시",
+      "updatedAt": "수정일시",
+      "empty": "등록된 라이선스 정보가 없습니다."
+    },
+    "upload": {
+      "button": "라이선스 업데이트",
+      "dialogTitle": "라이선스 파일 업로드",
+      "help": "라이선스 파일(JSON 또는 key=value 텍스트)을 업로드하세요. 필수 항목: licenseKey, expiresAt, nicMacAddress(선택)",
+      "submit": "적용",
+      "fileRequired": "업로드할 라이선스 파일을 선택하세요.",
+      "success": "라이선스 정보가 업데이트되었습니다.",
+      "failed": "라이선스 업데이트에 실패했습니다."
+    }
   },
   "tenants": {
     "title": "테넌트 관리",
@@ -133,6 +179,7 @@
       "name": "등급명",
       "dailyLogQuotaGb": "일일 로그 용량(GB)",
       "maxUsers": "사용자 수",
+      "unlimited": "무제한",
       "description": "설명",
       "empty": "등록된 등급이 없습니다.",
       "liteName": "라이트",
@@ -141,8 +188,8 @@
       "validation": {
         "codeRequired": "등급 코드는 필수입니다.",
         "nameRequired": "등급명은 필수입니다.",
-        "dailyLogQuotaGbRequired": "일일 로그 용량은 1 이상으로 입력하세요.",
-        "maxUsersRequired": "사용자 수는 1 이상으로 입력하세요.",
+        "dailyLogQuotaGbRequired": "일일 로그 용량은 0 이상으로 입력하세요. (0=무제한)",
+        "maxUsersRequired": "사용자 수는 0 이상으로 입력하세요. (0=무제한)",
         "descriptionRequired": "설명은 필수입니다."
       },
       "delete": {
@@ -293,6 +340,10 @@
     "remainingLabel": "남은 시간: {{time}}",
     "extendSession": "로그인 연장",
     "logoutNow": "지금 로그아웃"
+  },
+  "licenseWarning": {
+    "dialogTitle": "라이선스 만료 경고",
+    "dialogBody": "라이선스가 {{days}}일 후 만료됩니다.\n만료일: {{date}}\n\n제품 정보 페이지에서 라이선스를 업데이트하시기 바랍니다."
   },
   "serverError": {
     "title": "서버 연결에 문제가 발생했습니다",

@@ -10,6 +10,7 @@
     "create": "Create",
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "register": "Register",
     "active": "Active",
     "inactive": "Inactive",
@@ -43,6 +44,7 @@
     "submit": "Sign In",
     "errorEmpty": "Please fill in all fields.",
     "errorInvalid": "Please check your login credentials.",
+    "tenantExpirySoon": "⚠ Subscription Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please contact your administrator to renew the subscription.",
     "tagline": "Correlate distributed security events in real time with an AI engine.\nTrigger automated response playbooks the moment threats are detected.",
     "aiPanel": {
       "title": "AI Inference Status",
@@ -126,6 +128,10 @@
       "label": "Auto logout timeout (minutes)",
       "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
     }
+  },
+  "tenantWarning": {
+    "dialogTitle": "Subscription Expiry Warning",
+    "dialogBody": "Your tenant subscription will expire in {{days}} day(s).\nExpiry date: {{date}}\n\nPlease contact your administrator to renew the subscription."
   },
   "sessionTimeout": {
     "dialogTitle": "Session About To Expire",

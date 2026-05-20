@@ -133,6 +133,14 @@ const getDefaultExpiresAt = () => {
   return date;
 };
 
+const formatTierLimit = (value: number, unit: string, unlimitedLabel: string): string => {
+  if (value === 0) {
+    return unlimitedLabel;
+  }
+
+  return `${value}${unit}`;
+};
+
 const TenantsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const rowMenusRef = React.useRef<Record<number, Menu | null>>({});
@@ -430,10 +438,10 @@ const TenantsPage: React.FC = () => {
   const tierOptions = useMemo(
     () =>
       tiers.map((tier) => ({
-        label: `${tier.name} (${tier.code} · ${tier.dailyLogQuotaGb}GB / ${tier.maxUsers})`,
+        label: `${tier.name} (${tier.code} · ${formatTierLimit(tier.dailyLogQuotaGb, 'GB', t('tenants.tiers.unlimited'))} / ${formatTierLimit(tier.maxUsers, '', t('tenants.tiers.unlimited'))})`,
         value: tier.id,
       })),
-    [tiers],
+    [tiers, t],
   );
 
   const isFieldVisible = (field: TenantVisibleField) => visibleFields.includes(field);

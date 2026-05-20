@@ -23,6 +23,13 @@ export class MasterUser {
   passwordHash: string;
 
   @Column({
+    type: 'json',
+    nullable: true,
+    comment: '최근 비밀번호 해시 이력 (재사용 방지용)',
+  })
+  passwordHistory: string[] | null;
+
+  @Column({
     type: 'enum',
     enum: MasterUserStatus,
     default: MasterUserStatus.ACTIVE,

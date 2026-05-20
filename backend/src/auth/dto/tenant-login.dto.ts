@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TenantLoginDto {
@@ -11,7 +11,8 @@ export class TenantLoginDto {
   @MinLength(8)
   password: string;
 
-  @ApiProperty({ description: '테넌트 슬러그', example: 'acme-corp' })
+  @ApiProperty({ description: '테넌트 슬러그 (단일 테넌트 모드에서는 생략 가능)', example: 'acme-corp', required: false })
+  @IsOptional()
   @IsString()
-  tenantSlug: string;
+  tenantSlug?: string;
 }

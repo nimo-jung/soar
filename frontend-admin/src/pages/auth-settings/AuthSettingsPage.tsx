@@ -68,7 +68,7 @@ const AuthSettingsPage: React.FC = () => {
 
   return (
     <div className="">
-      <div className="card p-4" style={{ maxWidth: '760px' }}>
+      <div className="card" style={{ maxWidth: '760px' }}>
         <div className="page-header mb-4">
           <div>
             <h1 className="m-0">{t('authSettings.title')}</h1>

@@ -2,20 +2,44 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
+import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
     private getRequestContext;
+    getLicenseStatus(): Promise<{
+        daysRemaining: number | null;
+        expiresAt: string | null;
+    }>;
+    getTenantExpiryStatus(tenantSlug: string | undefined): Promise<{
+        daysRemaining: number | null;
+        expiresAt: string | null;
+    }>;
     masterLogin(dto: LoginDto, req: Request): Promise<{
         accessToken: string;
         authSettings: import("./auth-policy.constants").AuthPolicy;
         sessionExpiresAt: string | null;
+        licenseWarning: {
+            daysRemaining: number;
+            expiresAt: string;
+        } | null;
+    }>;
+    masterBootstrap(dto: BootstrapMasterDto, req: Request): Promise<{
+        success: true;
+        demoLicenseCreated: boolean;
+    }>;
+    masterBootstrapStatus(): Promise<{
+        requiresBootstrap: boolean;
     }>;
     tenantLogin(dto: TenantLoginDto, req: Request): Promise<{
         accessToken: string;
         brandingConfig: Record<string, string> | null;
         authSettings: import("./auth-policy.constants").AuthPolicy;
         sessionExpiresAt: string | null;
+        tenantWarning: {
+            daysRemaining: number;
+            expiresAt: string;
+        } | null;
     }>;
     logout(authorization: string | undefined, req: Request): Promise<{
         success: true;

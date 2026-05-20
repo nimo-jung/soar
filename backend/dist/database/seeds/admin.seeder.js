@@ -32,10 +32,14 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runAdminSeed = runAdminSeed;
 const bcrypt = __importStar(require("bcrypt"));
 const master_user_entity_1 = require("../../admin/master-users/entities/master-user.entity");
+const admin_data_source_1 = __importDefault(require("../admin-data-source"));
 async function runAdminSeed(dataSource) {
     const masterUserRepo = dataSource.getRepository(master_user_entity_1.MasterUser);
     const existing = await masterUserRepo.findOne({
@@ -57,5 +61,24 @@ async function runAdminSeed(dataSource) {
     console.log('[Seed] 마스터 관리자 계정이 생성되었습니다.');
     console.log(`[Seed] Email: ${process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io'}`);
     console.log('[Seed] 운영 환경에서는 반드시 비밀번호를 변경하세요.');
+}
+async function runAdminSeedCli() {
+    if (!admin_data_source_1.default.isInitialized) {
+        await admin_data_source_1.default.initialize();
+    }
+    try {
+        await runAdminSeed(admin_data_source_1.default);
+    }
+    finally {
+        if (admin_data_source_1.default.isInitialized) {
+            await admin_data_source_1.default.destroy();
+        }
+    }
+}
+if (require.main === module) {
+    runAdminSeedCli().catch((error) => {
+        console.error('[Seed] Admin seed 실행 실패:', error);
+        process.exit(1);
+    });
 }
 //# sourceMappingURL=admin.seeder.js.map
