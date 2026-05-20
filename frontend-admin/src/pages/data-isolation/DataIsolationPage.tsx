@@ -31,12 +31,6 @@ type IsolationSummary = {
   checkedAt: string;
 };
 
-const RISK_SEVERITY_MAP: Record<RiskLevel, 'success' | 'warning' | 'danger'> = {
-  OK: 'success',
-  WARN: 'warning',
-  CRITICAL: 'danger',
-};
-
 const DataIsolationPage: React.FC = () => {
   const { t } = useTranslation();
   const toast = useRef<Toast>(null);
@@ -62,7 +56,8 @@ const DataIsolationPage: React.FC = () => {
   const riskBody = (row: IsolationTenantStat) => (
     <Tag
       value={t(`dataIsolation.risk.${row.riskLevel}`)}
-      severity={RISK_SEVERITY_MAP[row.riskLevel]}
+      rounded
+      className={`tenant-status-tag isolation-risk-tag isolation-risk-${row.riskLevel.toLowerCase()}`}
     />
   );
 
@@ -109,10 +104,15 @@ const DataIsolationPage: React.FC = () => {
             </div>
           </div>
 
-          <Card title={t('dataIsolation.table.title')} className="admin-card">
-            <small className="block mb-3 text-color-secondary">
-              {t('dataIsolation.checkedAt', { checkedAt: formatDateTimeSeconds(data.checkedAt) })}
-            </small>
+          <div className="admin-table-shell">
+            <div className="admin-table-toolbar">
+              <div className="tenants-toolbar-left">
+                <span className="text-sm font-semibold text-color-secondary">{t('dataIsolation.table.title')}</span>
+              </div>
+              <small className="text-color-secondary">
+                {t('dataIsolation.checkedAt', { checkedAt: formatDateTimeSeconds(data.checkedAt) })}
+              </small>
+            </div>
             <CommonDataTable
               value={data.tenants}
               loading={loading}
@@ -150,7 +150,7 @@ const DataIsolationPage: React.FC = () => {
                 sortable
               />
             </CommonDataTable>
-          </Card>
+          </div>
         </>
       )}
     </div>

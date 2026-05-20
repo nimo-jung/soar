@@ -43,6 +43,9 @@
     "productInfo": "Product Info",
     "masterAdmin": "Master Admin"
   },
+  "layout": {
+    "brandSubtext": "Master Console"
+  },
   "auth": {
     "title": "SOAR Master Admin",
     "badge": "Master Control",
@@ -369,7 +372,10 @@
     "actions": {
       "collectUsage": "Run Usage Collection",
       "refresh": "Refresh",
-      "exportCsv": "Export CSV"
+      "exportCsv": "Export CSV",
+      "filter": "Filter",
+      "applyFilters": "Apply Filters",
+      "resetFilters": "Reset"
     },
     "filters": {
       "tenant": "Tenant",
@@ -377,7 +383,8 @@
       "from": "From",
       "to": "To",
       "allTenants": "All Tenants",
-      "allTiers": "All Tiers"
+      "allTiers": "All Tiers",
+      "dialogTitle": "Search Filters"
     },
     "summary": {
       "totalLogCount": "Total Log Count",
@@ -409,7 +416,10 @@
   "monitoring": {
     "title": "Platform Monitoring",
     "actions": {
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "filter": "Filter",
+      "applyFilters": "Apply Filters",
+      "resetFilters": "Reset"
     },
     "filters": {
       "tenant": "Tenant",
@@ -417,7 +427,8 @@
       "from": "From",
       "to": "To",
       "allTenants": "All Tenants",
-      "allSeverities": "All Severities"
+      "allSeverities": "All Severities",
+      "dialogTitle": "Search Filters"
     },
     "cards": {
       "ingestErrorRate": "Ingest Error Rate",

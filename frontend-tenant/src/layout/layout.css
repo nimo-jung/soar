@@ -6,9 +6,29 @@
 
 /* ── CSS custom property defaults ────────────────────────────── */
 :root {
-    --brand-primary: var(--primary-color);
-    --brand-gradient-from: #6366f1;
-    --brand-gradient-to: #312e81;
+    --ca-bg-app: #11151d;
+    --ca-bg-surface: #1a2230;
+    --ca-bg-elevated: #202938;
+    --ca-text-primary: #eef3f9;
+    --ca-text-secondary: #a6b2c2;
+    --ca-border: #2c3a4e;
+    --ca-border-chrome: #c8d1dc;
+    --ca-accent-a: #34d3c3;
+    --ca-accent-b: #8b90ff;
+
+    --brand-primary: var(--ca-accent-a);
+    --brand-gradient-from: var(--ca-accent-a);
+    --brand-gradient-to: var(--ca-accent-b);
+    --primary-color: var(--ca-accent-a);
+    --primary-400: var(--ca-accent-a);
+    --primary-500: var(--ca-accent-a);
+    --surface-ground: var(--ca-bg-app);
+    --surface-section: var(--ca-bg-surface);
+    --surface-card: var(--ca-bg-surface);
+    --surface-overlay: var(--ca-bg-elevated);
+    --surface-border: var(--ca-border);
+    --text-color: var(--ca-text-primary);
+    --text-color-secondary: var(--ca-text-secondary);
 }
 
 html,
@@ -20,6 +40,11 @@ body,
 
 body {
     overflow-x: hidden;
+    background: radial-gradient(circle at 90% -12%, rgba(124, 131, 255, 0.2), transparent 38%),
+        radial-gradient(circle at 10% 0%, rgba(45, 212, 191, 0.18), transparent 32%),
+        var(--ca-bg-app);
+    color: var(--ca-text-primary);
+    font-family: 'Space Grotesk', 'Pretendard', 'Inter', 'Segoe UI', sans-serif;
 }
 
 /* ── Root wrapper ─────────────────────────────────────────────── */
@@ -43,7 +68,7 @@ body {
     overflow: hidden;
     user-select: none;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background-color: var(--surface-overlay);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ca-bg-elevated) 92%, #ffffff 8%), var(--ca-bg-elevated));
     border-right: 1px solid var(--surface-border);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
 }
@@ -61,6 +86,7 @@ body {
     padding: 1.5rem 1.5rem 1.25rem;
     border-bottom: 1px solid var(--surface-border);
     flex-shrink: 0;
+    background: linear-gradient(90deg, rgba(200, 209, 220, 0.15), transparent 60%);
 }
 
 .layout-sidebar-header .brand-logo {
@@ -164,8 +190,8 @@ body {
 .layout-menu li > a.active-route {
     background: linear-gradient(
         135deg,
-        color-mix(in srgb, var(--brand-primary) 20%, transparent),
-        color-mix(in srgb, var(--brand-primary) 8%, transparent)
+        color-mix(in srgb, var(--ca-accent-a) 26%, transparent),
+        color-mix(in srgb, var(--ca-accent-b) 20%, transparent)
     );
     color: var(--brand-primary);
     font-weight: 600;
@@ -277,7 +303,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
-    background-color: var(--surface-card);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ca-bg-surface) 93%, #ffffff 7%), var(--ca-bg-surface));
     border-bottom: 1px solid var(--surface-border);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     gap: 1rem;
@@ -392,6 +418,7 @@ body {
     cursor: pointer;
     border: 1px solid var(--surface-border);
     transition: background-color 0.15s ease;
+    background: linear-gradient(135deg, rgba(200, 209, 220, 0.1), transparent 65%);
 }
 
 .topbar-profile:hover { background-color: var(--surface-hover); }
@@ -473,6 +500,8 @@ body {
     border-radius: 10px;
     padding-left: 0.9rem;
     padding-right: 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--ca-border-chrome) 42%, transparent 58%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ca-accent-a) 36%, transparent), color-mix(in srgb, var(--ca-accent-b) 30%, transparent));
 }
 
 .tenant-card,
@@ -481,6 +510,8 @@ body {
     border: 1px solid color-mix(in srgb, var(--surface-border) 80%, transparent 20%);
     border-radius: 14px;
     overflow: hidden;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ca-bg-elevated) 93%, #ffffff 7%), var(--ca-bg-surface));
+    box-shadow: 0 12px 34px rgba(3, 8, 20, 0.34);
 }
 
 .tenant-table-shell {
@@ -504,17 +535,37 @@ body {
 }
 
 .tenant-table .p-datatable-thead > tr > th {
-    background: color-mix(in srgb, var(--surface-ground) 86%, var(--surface-card) 14%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ca-border-chrome) 16%, var(--ca-bg-elevated)), var(--ca-bg-elevated));
     color: var(--text-color-secondary);
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    padding-top: 0.86rem;
+    padding-bottom: 0.86rem;
     border-width: 0 0 1px;
 }
 
 .tenant-table .p-datatable-tbody > tr > td {
     border-width: 0 0 1px;
     border-color: color-mix(in srgb, var(--surface-border) 80%, transparent 20%);
+    padding-top: 0.24rem;
+    padding-bottom: 0.24rem;
+    font-size: 0.84rem;
+}
+
+.tenant-table .p-datatable-tbody > tr {
+    height: 2.65rem;
+}
+
+.tenant-table.p-datatable-sm .p-datatable-thead > tr > th {
+    font-size: 0.7rem;
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+}
+
+.tenant-table.p-datatable-sm .p-datatable-tbody > tr > td {
+    padding-top: 0.56rem;
+    padding-bottom: 0.56rem;
 }
 
 .tenant-table .p-datatable-tbody > tr:last-child > td {
@@ -529,6 +580,62 @@ body {
     border: 0;
     border-top: 1px solid color-mix(in srgb, var(--surface-border) 75%, transparent 25%);
     background: transparent;
+}
+
+/* ── Chrome Aurora component refinement layer ─────────────────── */
+.layout-wrapper .p-button {
+    border-radius: 10px;
+    min-height: 2.25rem;
+    font-weight: 600;
+}
+
+.layout-wrapper .p-button.p-button-outlined {
+    border-color: color-mix(in srgb, var(--ca-border-chrome) 34%, var(--ca-border) 66%);
+    color: var(--ca-text-primary);
+}
+
+.layout-wrapper .p-button.p-button-text {
+    color: var(--ca-text-secondary);
+}
+
+.layout-wrapper .p-inputtext,
+.layout-wrapper .p-dropdown,
+.layout-wrapper .p-multiselect,
+.layout-wrapper .p-password-input,
+.layout-wrapper .p-inputnumber-input,
+.layout-wrapper .p-inputtextarea {
+    background: color-mix(in srgb, var(--ca-bg-elevated) 90%, #ffffff 10%);
+    border: 1px solid var(--ca-border);
+    color: var(--ca-text-primary);
+    border-radius: 10px;
+}
+
+.layout-wrapper .p-inputtext:enabled:focus,
+.layout-wrapper .p-dropdown:not(.p-disabled).p-focus,
+.layout-wrapper .p-multiselect:not(.p-disabled).p-focus,
+.layout-wrapper .p-password-input:enabled:focus,
+.layout-wrapper .p-inputnumber-input:enabled:focus,
+.layout-wrapper .p-inputtextarea:enabled:focus {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ca-accent-b) 28%, transparent 72%);
+    border-color: color-mix(in srgb, var(--ca-accent-a) 52%, var(--ca-border) 48%);
+}
+
+.layout-wrapper .p-dialog .p-dialog-header,
+.layout-wrapper .p-dialog .p-dialog-content,
+.layout-wrapper .p-dialog .p-dialog-footer {
+    background: var(--ca-bg-surface);
+    border-color: var(--ca-border);
+}
+
+.layout-wrapper .p-dialog {
+    border: 1px solid var(--ca-border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.layout-wrapper .p-tag {
+    border-radius: 999px;
+    font-weight: 700;
 }
 
 .common-data-table .p-datatable-tbody > tr.p-datatable-emptymessage > td {

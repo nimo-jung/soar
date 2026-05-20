@@ -112,7 +112,7 @@ const ProductInfoPage: React.FC = () => {
           <Button
             type="button"
             icon="pi pi-refresh"
-            severity="secondary"
+            label={t('common.refresh')}
             outlined
             onClick={() => {
               void loadData();
@@ -123,6 +123,7 @@ const ProductInfoPage: React.FC = () => {
             type="button"
             icon="pi pi-upload"
             label={t('productInfo.upload.button')}
+            outlined
             onClick={handleOpenUploadDialog}
           />
         </div>
@@ -133,7 +134,7 @@ const ProductInfoPage: React.FC = () => {
 
       <div className="grid">
         <div className="col-12 lg:col-6">
-          <Card title={t('productInfo.product.title')} className="admin-card">
+          <Card title={t('productInfo.product.title')} className="admin-card monitoring-panel-card">
             <div className="flex flex-column gap-3">
               <div><strong>{t('productInfo.product.productName')}:</strong> {data.product.productName}</div>
               <div><strong>{t('productInfo.product.productVersion')}:</strong> {data.product.productVersion}</div>
@@ -145,7 +146,7 @@ const ProductInfoPage: React.FC = () => {
         </div>
 
         <div className="col-12 lg:col-6">
-          <Card title={t('productInfo.license.title')} className="admin-card">
+          <Card title={t('productInfo.license.title')} className="admin-card monitoring-panel-card">
             {data.license ? (
               <div className="flex flex-column gap-3">
                 <div><strong>{t('productInfo.license.licenseKey')}:</strong> {data.license.licenseKey}</div>

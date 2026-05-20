@@ -236,8 +236,8 @@ const MasterUsersPage: React.FC = () => {
         <Button
           label={t('masterUsers.createBtn')}
           icon="pi pi-user-plus"
+          outlined
           onClick={openCreateDialog}
-          className="admin-primary-action"
           disabled={!canCreate}
           tooltip={!canCreate ? t('masterUsers.limitReached') : undefined}
           tooltipOptions={{ position: 'left' }}

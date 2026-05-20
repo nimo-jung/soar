@@ -365,8 +365,8 @@ const TenantTiersPage: React.FC = () => {
         <Button
           label={t('tenants.tiers.createBtn')}
           icon="pi pi-plus"
+          outlined
           onClick={openCreateDialog}
-          className="admin-primary-action"
         />
       </div>
 

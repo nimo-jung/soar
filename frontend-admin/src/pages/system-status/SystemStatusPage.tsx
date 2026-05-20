@@ -159,6 +159,7 @@ const SystemStatusPage: React.FC = () => {
           <Button
             icon="pi pi-play"
             label={t('systemStatus.checkNow')}
+            outlined
             loading={checking}
             onClick={() => { void handleCheck(); }}
           />

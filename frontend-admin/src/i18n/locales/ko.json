@@ -43,6 +43,9 @@
     "productInfo": "제품 정보",
     "masterAdmin": "Master Admin"
   },
+  "layout": {
+    "brandSubtext": "Master Console"
+  },
   "auth": {
     "title": "SOAR Master Admin",
     "badge": "Master Control",
@@ -369,7 +372,10 @@
     "actions": {
       "collectUsage": "사용량 집계 실행",
       "refresh": "새로고침",
-      "exportCsv": "CSV 내보내기"
+      "exportCsv": "CSV 내보내기",
+      "filter": "필터",
+      "applyFilters": "필터 적용",
+      "resetFilters": "초기화"
     },
     "filters": {
       "tenant": "테넌트",
@@ -377,7 +383,8 @@
       "from": "시작일",
       "to": "종료일",
       "allTenants": "전체 테넌트",
-      "allTiers": "전체 등급"
+      "allTiers": "전체 등급",
+      "dialogTitle": "검색 필터"
     },
     "summary": {
       "totalLogCount": "총 로그 건수",
@@ -409,7 +416,10 @@
   "monitoring": {
     "title": "플랫폼 모니터링",
     "actions": {
-      "refresh": "새로고침"
+      "refresh": "새로고침",
+      "filter": "필터",
+      "applyFilters": "필터 적용",
+      "resetFilters": "초기화"
     },
     "filters": {
       "tenant": "테넌트",
@@ -417,7 +427,8 @@
       "from": "시작일",
       "to": "종료일",
       "allTenants": "전체 테넌트",
-      "allSeverities": "전체 심각도"
+      "allSeverities": "전체 심각도",
+      "dialogTitle": "검색 필터"
     },
     "cards": {
       "ingestErrorRate": "수집 실패율",

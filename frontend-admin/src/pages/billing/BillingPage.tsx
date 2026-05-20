@@ -6,6 +6,7 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
+import { Dialog } from 'primereact/dialog';
 import CommonDataTable from '../../components/CommonDataTable';
 import api from '../../api';
 import { formatDateTimeSeconds } from '../../utils/date';
@@ -59,6 +60,13 @@ type PricingPolicyResponse = {
   items: PricingPolicyRow[];
 };
 
+type BillingFilters = {
+  tenantId: number | null;
+  tierCode: string;
+  from: string;
+  to: string;
+};
+
 const BillingPage: React.FC = () => {
   const { t } = useTranslation();
   const [rows, setRows] = useState<BillingRow[]>([]);
@@ -74,6 +82,11 @@ const BillingPage: React.FC = () => {
   const [tierCode, setTierCode] = useState<string>('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [draftTenantId, setDraftTenantId] = useState<number | null>(null);
+  const [draftTierCode, setDraftTierCode] = useState<string>('');
+  const [draftFrom, setDraftFrom] = useState('');
+  const [draftTo, setDraftTo] = useState('');
   const [pricingPolicies, setPricingPolicies] = useState<PricingPolicyRow[]>([]);
   const [loadingPricing, setLoadingPricing] = useState(false);
   const [savingPricing, setSavingPricing] = useState(false);
@@ -88,20 +101,29 @@ const BillingPage: React.FC = () => {
     [t],
   );
 
+  const activeFilterCount = useMemo(
+    () => [tenantId !== null, tierCode !== '', from !== '', to !== ''].filter(Boolean).length,
+    [tenantId, tierCode, from, to],
+  );
+
   const loadTenants = async () => {
     const res = await api.get<TenantDto[]>('/admin/tenants');
     setTenantOptions(res.data.map((tenant) => ({ label: tenant.name, value: tenant.id })));
   };
 
-  const loadUsage = async (nextPage = page, nextLimit = limit) => {
+  const loadUsage = async (
+    nextPage = page,
+    nextLimit = limit,
+    filters: BillingFilters = { tenantId, tierCode, from, to },
+  ) => {
     setLoading(true);
     try {
       const res = await api.get<UsageResponse>('/admin/billing/usage', {
         params: {
-          tenantId: tenantId ?? undefined,
-          tierCode: tierCode || undefined,
-          from: from || undefined,
-          to: to || undefined,
+          tenantId: filters.tenantId ?? undefined,
+          tierCode: filters.tierCode || undefined,
+          from: filters.from || undefined,
+          to: filters.to || undefined,
           page: nextPage,
           limit: nextLimit,
         },
@@ -208,8 +230,40 @@ const BillingPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    void loadUsage(1, limit);
-  }, [tenantId, tierCode, from, to]);
+    void loadUsage(1, 10);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openFilterDialog = () => {
+    setDraftTenantId(tenantId);
+    setDraftTierCode(tierCode);
+    setDraftFrom(from);
+    setDraftTo(to);
+    setShowFilterDialog(true);
+  };
+
+  const applyFilters = () => {
+    const nextFilters: BillingFilters = {
+      tenantId: draftTenantId,
+      tierCode: draftTierCode,
+      from: draftFrom,
+      to: draftTo,
+    };
+
+    setTenantId(draftTenantId);
+    setTierCode(draftTierCode);
+    setFrom(draftFrom);
+    setTo(draftTo);
+    setShowFilterDialog(false);
+    void loadUsage(1, limit, nextFilters);
+  };
+
+  const resetFilters = () => {
+    setDraftTenantId(null);
+    setDraftTierCode('');
+    setDraftFrom('');
+    setDraftTo('');
+  };
 
   return (
     <div className="admin-page">
@@ -218,8 +272,26 @@ const BillingPage: React.FC = () => {
         <div className="admin-actions-row">
           <Button
             type="button"
+            icon="pi pi-filter"
+            label={activeFilterCount > 0 ? `${t('billing.actions.filter')} (${activeFilterCount})` : t('billing.actions.filter')}
+            outlined
+            onClick={openFilterDialog}
+          />
+          <Button
+            type="button"
+            icon="pi pi-refresh"
+            label={t('billing.actions.refresh')}
+            outlined
+            loading={loading}
+            onClick={() => {
+              void loadUsage(1, limit);
+            }}
+          />
+          <Button
+            type="button"
             icon="pi pi-database"
             label={t('billing.actions.collectUsage')}
+            outlined
             loading={collecting}
             onClick={() => {
               void handleCollectUsage();
@@ -227,17 +299,9 @@ const BillingPage: React.FC = () => {
           />
           <Button
             type="button"
-            icon="pi pi-refresh"
-            label={t('billing.actions.refresh')}
-            outlined
-            onClick={() => {
-              void loadUsage(1, limit);
-            }}
-          />
-          <Button
-            type="button"
             icon="pi pi-download"
             label={t('billing.actions.exportCsv')}
+            outlined
             loading={exporting}
             onClick={() => {
               void handleExport();
@@ -246,37 +310,59 @@ const BillingPage: React.FC = () => {
         </div>
       </div>
 
-      <Card className="mb-3 admin-card">
-        <div className="grid">
-          <div className="col-12 md:col-3">
+      <Dialog
+        header={t('billing.filters.dialogTitle')}
+        visible={showFilterDialog}
+        style={{ width: '520px' }}
+        onHide={() => setShowFilterDialog(false)}
+        footer={(
+          <div className="flex justify-content-end gap-2">
+            <Button
+              type="button"
+              icon="pi pi-eraser"
+              label={t('billing.actions.resetFilters')}
+              outlined
+              onClick={resetFilters}
+            />
+            <Button
+              type="button"
+              icon="pi pi-check"
+              label={t('billing.actions.applyFilters')}
+              onClick={applyFilters}
+            />
+          </div>
+        )}
+      >
+        <div className="grid pt-2">
+          <div className="col-12">
             <label className="admin-form-label">{t('billing.filters.tenant')}</label>
             <Dropdown
-              value={tenantId}
+              value={draftTenantId}
               options={[{ label: t('billing.filters.allTenants'), value: null }, ...tenantOptions]}
-              onChange={(e) => setTenantId(e.value as number | null)}
+              onChange={(e) => setDraftTenantId(e.value as number | null)}
               className="w-full"
               placeholder={t('billing.filters.allTenants')}
             />
           </div>
-          <div className="col-12 md:col-3">
+          <div className="col-12">
             <label className="admin-form-label">{t('billing.filters.tier')}</label>
             <Dropdown
-              value={tierCode}
+              value={draftTierCode}
               options={tierOptions}
-              onChange={(e) => setTierCode(String(e.value ?? ''))}
+              onChange={(e) => setDraftTierCode(String(e.value ?? ''))}
               className="w-full"
             />
           </div>
-          <div className="col-12 md:col-3">
+          <div className="col-12 md:col-6">
             <label className="admin-form-label">{t('billing.filters.from')}</label>
-            <InputText type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full" />
+            <InputText type="date" value={draftFrom} onChange={(e) => setDraftFrom(e.target.value)} className="w-full" />
           </div>
-          <div className="col-12 md:col-3">
+          <div className="col-12 md:col-6">
             <label className="admin-form-label">{t('billing.filters.to')}</label>
-            <InputText type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full" />
+            <InputText type="date" value={draftTo} onChange={(e) => setDraftTo(e.target.value)} className="w-full" />
           </div>
         </div>
-      </Card>
+      </Dialog>
 
       <div className="grid mb-3">
         <div className="col-12 md:col-4">
@@ -296,7 +382,12 @@ const BillingPage: React.FC = () => {
         </div>
       </div>
 
-      <Card title={t('billing.table.title')} className="admin-card">
+      <div className="admin-table-shell">
+        <div className="admin-table-toolbar">
+          <div className="tenants-toolbar-left">
+            <span className="text-sm font-semibold text-color-secondary">{t('billing.table.title')}</span>
+          </div>
+        </div>
         <CommonDataTable
           value={rows}
           loading={loading}
@@ -318,20 +409,26 @@ const BillingPage: React.FC = () => {
           <Column field="storageUsedGb" header={t('billing.table.storageUsedGb')} body={(row: BillingRow) => row.storageUsedGb.toFixed(2)} />
           <Column field="logCount" header={t('billing.table.logCount')} />
         </CommonDataTable>
-      </Card>
+      </div>
 
-      <Card title={t('billing.pricing.title')} className="mt-3 admin-card">
-        <div className="flex justify-content-end mb-3">
-          <Button
-            type="button"
-            icon="pi pi-save"
-            label={t('billing.pricing.save')}
-            loading={savingPricing}
-            disabled={loadingPricing || pricingPolicies.length === 0}
-            onClick={() => {
-              void handleSavePricingPolicies();
-            }}
-          />
+      <div className="admin-table-shell mt-3">
+        <div className="admin-table-toolbar">
+          <div className="tenants-toolbar-left">
+            <span className="text-sm font-semibold text-color-secondary">{t('billing.pricing.title')}</span>
+          </div>
+          <div className="admin-actions-row">
+            <Button
+              type="button"
+              icon="pi pi-save"
+              label={t('billing.pricing.save')}
+              outlined
+              loading={savingPricing}
+              disabled={loadingPricing || pricingPolicies.length === 0}
+              onClick={() => {
+                void handleSavePricingPolicies();
+              }}
+            />
+          </div>
         </div>
         <CommonDataTable value={pricingPolicies} loading={loadingPricing} className="admin-table">
           <Column field="tierCode" header={t('billing.pricing.columns.tierCode')} />
@@ -422,7 +519,7 @@ const BillingPage: React.FC = () => {
             )}
           />
         </CommonDataTable>
-      </Card>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
-import { Card } from 'primereact/card';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
@@ -145,10 +144,15 @@ const ThreatIntelPage: React.FC = () => {
       <Toast ref={toast} />
       <div className="admin-page-header">
         <h1>{t('threatIntel.title')}</h1>
-        <Button className="admin-primary-action" label={t('threatIntel.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
+        <Button outlined label={t('threatIntel.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
       </div>
 
-      <Card className="admin-card">
+        <div className="admin-table-shell">
+          <div className="admin-table-toolbar">
+            <div className="tenants-toolbar-left">
+              <span className="text-sm font-semibold text-color-secondary">{t('threatIntel.title')}</span>
+            </div>
+          </div>
         <CommonDataTable value={feeds} loading={loading} paginator rows={10} className="admin-table p-datatable-sm">
         <Column field="feedType" header={t('threatIntel.table.type')} />
         <Column field="indicator" header={t('threatIntel.table.indicator')} />
@@ -175,7 +179,7 @@ const ThreatIntelPage: React.FC = () => {
         />
         <Column header={t('common.actions')} body={actionBody} style={{ minWidth: '220px' }} />
         </CommonDataTable>
-      </Card>
+        </div>
 
       <Dialog
         header={t('threatIntel.dialog.title')}

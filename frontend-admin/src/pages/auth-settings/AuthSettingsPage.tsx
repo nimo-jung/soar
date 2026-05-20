@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
+import { Card } from 'primereact/card';
 import { InputNumber } from 'primereact/inputnumber';
 import { Message } from 'primereact/message';
 import { useTranslation } from 'react-i18next';
@@ -68,23 +69,19 @@ const AuthSettingsPage: React.FC = () => {
 
   return (
     <div className="admin-page">
-      <div className="admin-card p-4" style={{ maxWidth: '760px' }}>
-        <div className="admin-page-header mb-4">
-          <div>
-            <h1 className="admin-page-title">{t('authSettings.title')}</h1>
-            <p className="admin-page-subtitle">{t('authSettings.description')}</p>
-          </div>
+      <div className="admin-page-header">
+        <div>
+          <h1 className="admin-page-title">{t('authSettings.title')}</h1>
+          <p className="admin-page-subtitle">{t('authSettings.description')}</p>
         </div>
+      </div>
+      {error && <Message severity="error" text={error} className="w-full mb-3" />}
+      {success && <Message severity="success" text={success} className="w-full mb-3" />}
 
-        {error && <Message severity="error" text={error} className="w-full mb-3" />}
-        {success && <Message severity="success" text={success} className="w-full mb-3" />}
-
-        <div className="admin-card p-4">
-          <div className="grid">
-            <div className="col-12">
-            <label htmlFor="max-login-failures" className="admin-form-label">
-              {t('authSettings.maxLoginFailures.label')}
-            </label>
+      <Card className="admin-card monitoring-panel-card" style={{ maxWidth: '760px' }}>
+        <div className="grid">
+          <div className="col-12">
+            <label htmlFor="max-login-failures" className="admin-form-label">{t('authSettings.maxLoginFailures.label')}</label>
             <InputNumber
               id="max-login-failures"
               value={form.maxLoginFailures}
@@ -98,10 +95,8 @@ const AuthSettingsPage: React.FC = () => {
             <small className="text-color-secondary">{t('authSettings.maxLoginFailures.help')}</small>
           </div>
 
-            <div className="col-12">
-            <label htmlFor="lock-minutes" className="admin-form-label">
-              {t('authSettings.lockMinutes.label')}
-            </label>
+          <div className="col-12">
+            <label htmlFor="lock-minutes" className="admin-form-label">{t('authSettings.lockMinutes.label')}</label>
             <InputNumber
               id="lock-minutes"
               value={form.lockMinutes}
@@ -115,10 +110,8 @@ const AuthSettingsPage: React.FC = () => {
             <small className="text-color-secondary">{t('authSettings.lockMinutes.help')}</small>
           </div>
 
-            <div className="col-12">
-            <label htmlFor="max-concurrent-sessions" className="admin-form-label">
-              {t('authSettings.maxConcurrentSessions.label')}
-            </label>
+          <div className="col-12">
+            <label htmlFor="max-concurrent-sessions" className="admin-form-label">{t('authSettings.maxConcurrentSessions.label')}</label>
             <InputNumber
               id="max-concurrent-sessions"
               value={form.maxConcurrentSessions}
@@ -132,10 +125,8 @@ const AuthSettingsPage: React.FC = () => {
             <small className="text-color-secondary">{t('authSettings.maxConcurrentSessions.help')}</small>
           </div>
 
-            <div className="col-12">
-            <label htmlFor="auto-logout-timeout" className="admin-form-label">
-              {t('authSettings.autoLogoutTimeoutMinutes.label')}
-            </label>
+          <div className="col-12">
+            <label htmlFor="auto-logout-timeout" className="admin-form-label">{t('authSettings.autoLogoutTimeoutMinutes.label')}</label>
             <InputNumber
               id="auto-logout-timeout"
               value={form.autoLogoutTimeoutMinutes}
@@ -150,19 +141,18 @@ const AuthSettingsPage: React.FC = () => {
           </div>
         </div>
 
-          <div className="flex justify-content-end mt-4">
-            <Button
-              label={t('common.save')}
-              icon="pi pi-save"
-              onClick={() => {
-                void handleSave();
-              }}
-              loading={saving}
-              disabled={loading}
-            />
-          </div>
+        <div className="flex justify-content-end mt-4">
+          <Button
+            label={t('common.save')}
+            icon="pi pi-save"
+            onClick={() => {
+              void handleSave();
+            }}
+            loading={saving}
+            disabled={loading}
+          />
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

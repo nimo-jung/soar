@@ -701,8 +701,8 @@ const TenantsPage: React.FC = () => {
         <Button
           label={t('tenants.createBtn')}
           icon="pi pi-plus"
+          outlined
           onClick={openCreateDialog}
-          className="admin-primary-action"
         />
       </div>
       <div className="tenant-summary-grid mb-3">

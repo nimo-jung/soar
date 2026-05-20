@@ -102,8 +102,13 @@ const AdminLayout: React.FC = () => {
       {/* ── Sidebar ── */}
       <div className="layout-sidebar">
         <div className="layout-sidebar-logo">
-          <i className="pi pi-shield" style={{ fontSize: '1.5rem', color: 'var(--primary-color)' }} />
-          <span>SOAR Admin</span>
+          <div className="layout-sidebar-logo-icon">
+            <i className="pi pi-shield" style={{ fontSize: '1.15rem', color: 'var(--primary-color)' }} />
+          </div>
+          <div className="layout-sidebar-logo-copy">
+            <span>SOAR Admin</span>
+            <small>{t('layout.brandSubtext')}</small>
+          </div>
         </div>
 
         <ul className="layout-menu">
@@ -136,6 +141,7 @@ const AdminLayout: React.FC = () => {
                       className={({ isActive }) => (isActive ? 'active-route' : '')}
                       onClick={() => setMobileActive(false)}
                     >
+                      <i className={item.icon} />
                       <span>{t(item.labelKey)}</span>
                     </NavLink>
                   </li>
@@ -172,8 +178,8 @@ const AdminLayout: React.FC = () => {
             </div>
           </div>
           <div className="layout-topbar-actions">
-            <LanguageSwitcher />
             <span className="topbar-label">{t('nav.masterAdmin')}</span>
+            <LanguageSwitcher />
           </div>
         </div>
 

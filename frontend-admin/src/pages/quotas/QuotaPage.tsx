@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputNumber } from 'primereact/inputnumber';
@@ -80,13 +79,19 @@ const QuotaPage: React.FC = () => {
   };
 
   const actionBody = (row: QuotaRow) => (
-    <Button
-      size="small"
-      icon="pi pi-pencil"
-      label={t('common.edit')}
-      outlined
-      onClick={() => openEdit(row)}
-    />
+    <div className="tier-action-stack">
+      <Button
+        type="button"
+        icon="pi pi-pencil"
+        text
+        rounded
+        size="small"
+        aria-label={t('common.edit')}
+        tooltip={t('common.edit')}
+        tooltipOptions={{ position: 'top' }}
+        onClick={() => openEdit(row)}
+      />
+    </div>
   );
 
   const zeroLabel = (value: number) =>
@@ -95,18 +100,26 @@ const QuotaPage: React.FC = () => {
   return (
     <div className="admin-page">
       <Toast ref={toast} />
-      <div className="admin-page-header">
+      <div className="admin-page-header page-header">
         <h1>{t('quota.title')}</h1>
-        <Button
-          type="button"
-          icon="pi pi-refresh"
-          label={t('common.refresh')}
-          outlined
-          onClick={() => { void load(); }}
-        />
+        <div className="admin-actions-row">
+          <Button
+            type="button"
+            icon="pi pi-refresh"
+            label={t('common.refresh')}
+            outlined
+            loading={loading}
+            onClick={() => { void load(); }}
+          />
+        </div>
       </div>
 
-      <Card className="admin-card">
+      <div className="admin-table-shell">
+        <div className="admin-table-toolbar">
+          <div className="tenants-toolbar-left">
+            <span className="text-sm font-semibold text-color-secondary">{t('quota.title')}</span>
+          </div>
+        </div>
         <CommonDataTable
           value={rows}
           loading={loading}
@@ -140,9 +153,15 @@ const QuotaPage: React.FC = () => {
             header={t('quota.table.updatedAt')}
             body={(row: QuotaRow) => formatDateTimeSeconds(row.updatedAt)}
           />
-          <Column header={t('common.actions')} body={actionBody} style={{ width: '120px' }} />
+          <Column
+            header={t('common.actions')}
+            body={actionBody}
+            style={{ width: '5.2rem' }}
+            bodyClassName="text-center"
+            headerClassName="text-center"
+          />
         </CommonDataTable>
-      </Card>
+      </div>
 
       <Dialog
         header={t('quota.dialog.title', { name: editTarget?.tenantName })}
