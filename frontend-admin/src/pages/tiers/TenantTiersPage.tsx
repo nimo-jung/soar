@@ -278,7 +278,14 @@ const TenantTiersPage: React.FC = () => {
       };
 
       if (editingTier) {
-        await api.patch(`/admin/tenants/tiers/${editingTier.id}`, payload);
+        const updatePayload = {
+          name: payload.name,
+          dailyLogQuotaGb: payload.dailyLogQuotaGb,
+          maxUsers: payload.maxUsers,
+          description: payload.description,
+          isActive: payload.isActive,
+        };
+        await api.patch(`/admin/tenants/tiers/${editingTier.id}`, updatePayload);
       } else {
         await api.post('/admin/tenants/tiers', payload);
       }

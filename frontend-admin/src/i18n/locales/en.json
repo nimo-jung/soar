@@ -45,7 +45,7 @@
     "errorEmpty": "Please enter email and password.",
     "errorInvalid": "Incorrect email or password.",
     "errorLocked": "Account locked due to too many failed attempts. Try again in {{clock}}.",
-    "errorLockedExpired": "Account unlocked. Please sign in again.",
+    "lockReleased": "Account unlocked. Please sign in again.",
     "licenseExpirySoon": "License Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please update the license on the Product Info page.",
     "bootstrap": {
       "notice": "No master admin account exists yet. Initial registration is required.",

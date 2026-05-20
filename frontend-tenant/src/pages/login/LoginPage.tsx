@@ -32,6 +32,7 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [tenantWarning, setTenantWarning] = useState<TenantWarning | null>(null);
   const [lockSecondsRemaining, setLockSecondsRemaining] = useState<number>(0);
@@ -53,6 +54,7 @@ const LoginPage: React.FC = () => {
   const startLockCountdown = useCallback(
     (lockedUntilIso: string) => {
       clearLockTimer();
+      setSuccess('');
       localStorage.setItem(LOCKOUT_STORAGE_KEY, lockedUntilIso);
 
       const tick = () => {
@@ -61,8 +63,10 @@ const LoginPage: React.FC = () => {
           clearLockTimer();
           localStorage.removeItem(LOCKOUT_STORAGE_KEY);
           setLockSecondsRemaining(0);
-          setError(t('auth.errorLockedExpired'));
+          setError('');
+          setSuccess(t('auth.lockReleased'));
         } else {
+          setSuccess('');
           setLockSecondsRemaining(remaining);
           setError(
             t('auth.errorLocked', {
@@ -143,6 +147,7 @@ const LoginPage: React.FC = () => {
     }
     setLoading(true);
     setError('');
+    setSuccess('');
     try {
       const res = await api.post<{
         accessToken: string;
@@ -297,6 +302,7 @@ const LoginPage: React.FC = () => {
 
           <div className="login-form" onKeyDown={handleKeyDown}>
             {error && <Message severity={lockSecondsRemaining > 0 ? 'warn' : 'error'} text={error} className="w-full" />}
+            {success && <Message severity="success" text={success} className="w-full" />}
             {tenantWarning && (
               <Message
                 severity="warn"

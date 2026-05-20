@@ -45,6 +45,7 @@ const LoginPage: React.FC = () => {
   const startLockCountdown = useCallback(
     (lockedUntilIso: string) => {
       clearLockTimer();
+      setSuccess('');
       localStorage.setItem(LOCKOUT_STORAGE_KEY, lockedUntilIso);
 
       const tick = () => {
@@ -53,8 +54,10 @@ const LoginPage: React.FC = () => {
           clearLockTimer();
           localStorage.removeItem(LOCKOUT_STORAGE_KEY);
           setLockSecondsRemaining(0);
-          setError(t('auth.errorLockedExpired'));
+          setError('');
+          setSuccess(t('auth.lockReleased'));
         } else {
+          setSuccess('');
           setLockSecondsRemaining(remaining);
           setError(
             t('auth.errorLocked', {
