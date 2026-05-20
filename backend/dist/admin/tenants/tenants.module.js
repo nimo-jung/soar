@@ -17,6 +17,7 @@ const tenant_entity_1 = require("./entities/tenant.entity");
 const tenant_settings_entity_1 = require("./entities/tenant-settings.entity");
 const usage_snapshot_entity_1 = require("./entities/usage-snapshot.entity");
 const tenant_tier_entity_1 = require("./entities/tenant-tier.entity");
+const tenant_bootstrap_token_entity_1 = require("./entities/tenant-bootstrap-token.entity");
 const audit_log_entity_1 = require("../../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../../common/audit/audit-log.service");
 let TenantsModule = class TenantsModule {
@@ -25,7 +26,7 @@ exports.TenantsModule = TenantsModule;
 exports.TenantsModule = TenantsModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, usage_snapshot_entity_1.UsageSnapshot, tenant_tier_entity_1.TenantTier, audit_log_entity_1.AuditLog]),
+            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, usage_snapshot_entity_1.UsageSnapshot, tenant_tier_entity_1.TenantTier, tenant_bootstrap_token_entity_1.TenantBootstrapToken, audit_log_entity_1.AuditLog]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),

@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import { MasterUser } from '../admin/master-users/entities/master-user.entity';
 import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
+import { TenantBootstrapToken } from '../admin/tenants/entities/tenant-bootstrap-token.entity';
 import { TenantConnectionService } from '../common/database/tenant-connection.service';
 import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
@@ -13,6 +14,7 @@ import { AuthUserSecurityState } from './entities/auth-user-security-state.entit
 import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 import { ProductInfoService } from '../admin/product-info/product-info.service';
 import { SessionStoreService } from '../common/session/session-store.service';
+import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
 interface AuthAuditContext {
     ipAddress?: string | null;
     userAgent?: string | null;
@@ -21,6 +23,7 @@ export declare class AuthService {
     private readonly masterUserRepo;
     private readonly tenantRepo;
     private readonly tenantSettingsRepo;
+    private readonly tenantBootstrapTokenRepo;
     private readonly masterAuthSettingsRepo;
     private readonly securityStateRepo;
     private readonly tenantConnectionService;
@@ -28,7 +31,7 @@ export declare class AuthService {
     private readonly auditLogService;
     private readonly productInfoService;
     private readonly sessionStore;
-    constructor(masterUserRepo: Repository<MasterUser>, tenantRepo: Repository<Tenant>, tenantSettingsRepo: Repository<TenantSettings>, masterAuthSettingsRepo: Repository<MasterAuthSettings>, securityStateRepo: Repository<AuthUserSecurityState>, tenantConnectionService: TenantConnectionService, jwtService: JwtService, auditLogService: AuditLogService, productInfoService: ProductInfoService, sessionStore: SessionStoreService);
+    constructor(masterUserRepo: Repository<MasterUser>, tenantRepo: Repository<Tenant>, tenantSettingsRepo: Repository<TenantSettings>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, masterAuthSettingsRepo: Repository<MasterAuthSettings>, securityStateRepo: Repository<AuthUserSecurityState>, tenantConnectionService: TenantConnectionService, jwtService: JwtService, auditLogService: AuditLogService, productInfoService: ProductInfoService, sessionStore: SessionStoreService);
     private normalizeLoginId;
     private resolvePolicy;
     private getMasterAuthPolicy;
@@ -71,6 +74,16 @@ export declare class AuthService {
         daysRemaining: number | null;
         expiresAt: string | null;
     }>;
+    private getActiveTenantBySlug;
+    private hasAnyActiveTenantUser;
+    getTenantBootstrapStatus(tenantSlug: string): Promise<{
+        requiresBootstrap: boolean;
+    }>;
+    bootstrapTenant(dto: BootstrapTenantDto, context: AuthAuditContext): Promise<{
+        success: true;
+        tenantSlug: string;
+        email: string;
+    }>;
     loginAsMaster(dto: LoginDto, context: AuthAuditContext): Promise<{
         accessToken: string;
         authSettings: AuthPolicy;
@@ -94,6 +107,9 @@ export declare class AuthService {
         accessToken: string;
         sessionExpiresAt: string | null;
         authSettings: AuthPolicy;
+    }>;
+    validateSession(authHeader: string | undefined): Promise<{
+        valid: true;
     }>;
     logout(authHeader: string | undefined, context: AuthAuditContext): Promise<{
         success: true;

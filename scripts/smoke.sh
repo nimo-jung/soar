@@ -67,7 +67,7 @@ failed=0
 info "SOAR 스모크 테스트 시작 (mode=$MODE)"
 
 if [[ "$MODE" == "dev" ]]; then
-  code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs" || echo 000)
+  code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
   check_code "dev backend docs" 200 "$code" || failed=1
 
   code=$(post_json "$BACKEND_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/soar_smoke_master_backend.json || echo 000)
@@ -83,7 +83,7 @@ if [[ "$MODE" == "dev" ]]; then
     warn "tenant 로그인 점검을 건너뜁니다. (RUN_TENANT_LOGIN=$RUN_TENANT_LOGIN)"
   fi
 else
-  code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_prod.txt -w '%{http_code}' "$GATEWAY_BASE/docs" || echo 000)
+  code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_prod.txt -w '%{http_code}' "$GATEWAY_BASE/docs/" || echo 000)
   check_code "prod gateway docs" 200 "$code" || failed=1
 
   if [[ "$MASTER_PASSWORD" == replace_with* ]]; then

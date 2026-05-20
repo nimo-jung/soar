@@ -4,6 +4,8 @@ import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
+import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
+import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
 import type { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { AuditLogService } from '../../common/audit/audit-log.service';
 export declare class TenantsController {
@@ -23,4 +25,24 @@ export declare class TenantsController {
     update(id: number, dto: UpdateTenantDto, user: CurrentUserPayload, req: Request): Promise<import("./entities/tenant.entity").Tenant>;
     remove(id: number, user: CurrentUserPayload, req: Request): Promise<void>;
     getSettings(id: number): Promise<import("./entities/tenant-settings.entity").TenantSettings>;
+    issueBootstrapToken(id: number, dto: IssueTenantBootstrapTokenDto, user: CurrentUserPayload, req: Request): Promise<{
+        tenantId: number;
+        tenantSlug: string;
+        email: string | null;
+        token: string;
+        expiresAt: string;
+    }>;
+    getBootstrapTokenHistory(id: number, query: GetTenantBootstrapTokensQueryDto): Promise<{
+        items: Array<{
+            id: number;
+            email: string | null;
+            expiresAt: string;
+            usedAt: string | null;
+            issuedByMasterUserId: number | null;
+            createdAt: string;
+        }>;
+        page: number;
+        limit: number;
+        total: number;
+    }>;
 }

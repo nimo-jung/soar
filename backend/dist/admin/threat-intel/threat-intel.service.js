@@ -14,13 +14,21 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ThreatIntelService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const threat_intel_feed_entity_1 = require("./entities/threat-intel-feed.entity");
+const kafka_producer_service_1 = require("../../common/messaging/kafka-producer.service");
 let ThreatIntelService = class ThreatIntelService {
     feedRepo;
-    constructor(feedRepo) {
+    kafkaProducerService;
+    configService;
+    topic;
+    constructor(feedRepo, kafkaProducerService, configService) {
         this.feedRepo = feedRepo;
+        this.kafkaProducerService = kafkaProducerService;
+        this.configService = configService;
+        this.topic = this.configService.get('TI_GLOBAL_TOPIC', 'ti.global.updates');
     }
     async create(dto) {
         const feed = this.feedRepo.create({ ...dto, dispatchStatus: threat_intel_feed_entity_1.TiDispatchStatus.PENDING, dispatchAttempts: 0 });
@@ -45,7 +53,18 @@ let ThreatIntelService = class ThreatIntelService {
             dispatchAttempts: (feed.dispatchAttempts ?? 0) + 1,
         });
         try {
-            await this.mockPublish(feed);
+            await this.kafkaProducerService.publish(this.topic, {
+                id: feed.id,
+                feedType: feed.feedType,
+                indicator: feed.indicator,
+                severity: feed.severity,
+                description: feed.description,
+                source: feed.source,
+                isActive: feed.isActive,
+                expiresAt: feed.expiresAt,
+                createdAt: feed.createdAt,
+                updatedAt: feed.updatedAt,
+            }, String(feed.id));
             await this.feedRepo.update(id, {
                 dispatchStatus: threat_intel_feed_entity_1.TiDispatchStatus.DISPATCHED,
                 dispatchedAt: new Date(),
@@ -61,13 +80,13 @@ let ThreatIntelService = class ThreatIntelService {
         }
         return this.feedRepo.findOneOrFail({ where: { id } });
     }
-    async mockPublish(_feed) {
-    }
 };
 exports.ThreatIntelService = ThreatIntelService;
 exports.ThreatIntelService = ThreatIntelService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(threat_intel_feed_entity_1.ThreatIntelFeed)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        kafka_producer_service_1.KafkaProducerService,
+        config_1.ConfigService])
 ], ThreatIntelService);
 //# sourceMappingURL=threat-intel.service.js.map

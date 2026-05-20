@@ -16,6 +16,7 @@ const auth_service_1 = require("./auth.service");
 const master_user_entity_1 = require("../admin/master-users/entities/master-user.entity");
 const tenant_entity_1 = require("../admin/tenants/entities/tenant.entity");
 const tenant_settings_entity_1 = require("../admin/tenants/entities/tenant-settings.entity");
+const tenant_bootstrap_token_entity_1 = require("../admin/tenants/entities/tenant-bootstrap-token.entity");
 const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
 const master_auth_settings_entity_1 = require("./entities/master-auth-settings.entity");
@@ -32,6 +33,7 @@ exports.AuthModule = AuthModule = __decorate([
                 master_user_entity_1.MasterUser,
                 tenant_entity_1.Tenant,
                 tenant_settings_entity_1.TenantSettings,
+                tenant_bootstrap_token_entity_1.TenantBootstrapToken,
                 audit_log_entity_1.AuditLog,
                 master_auth_settings_entity_1.MasterAuthSettings,
                 auth_user_security_state_entity_1.AuthUserSecurityState,

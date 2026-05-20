@@ -32,11 +32,11 @@ __decorate([
     __metadata("design:type", String)
 ], TenantUser.prototype, "email", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ comment: '비밀번호 해시 (bcrypt)' }),
+    (0, typeorm_1.Column)({ name: 'password_hash', comment: '비밀번호 해시 (bcrypt)' }),
     __metadata("design:type", String)
 ], TenantUser.prototype, "passwordHash", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ comment: '표시 이름' }),
+    (0, typeorm_1.Column)({ name: 'display_name', comment: '표시 이름' }),
     __metadata("design:type", String)
 ], TenantUser.prototype, "displayName", void 0);
 __decorate([
@@ -53,11 +53,11 @@ __decorate([
     __metadata("design:type", Boolean)
 ], TenantUser.prototype, "isActive", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', comment: '생성 일시' }),
     __metadata("design:type", Date)
 ], TenantUser.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ comment: '수정 일시' }),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', comment: '수정 일시' }),
     __metadata("design:type", Date)
 ], TenantUser.prototype, "updatedAt", void 0);
 exports.TenantUser = TenantUser = __decorate([

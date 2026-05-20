@@ -67,21 +67,21 @@ const AuthSettingsPage: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="page-header mb-4">
+    <div className="tenant-page">
+      <div className="tenant-page-header">
         <div>
-          <h1 className="m-0">{t('authSettings.title')}</h1>
-          <p className="page-subtitle">{t('authSettings.description')}</p>
+          <h1 className="tenant-page-title">{t('authSettings.title')}</h1>
+          <p className="tenant-page-subtitle">{t('authSettings.description')}</p>
         </div>
       </div>
 
       {error && <Message severity="error" text={error} className="w-full mb-3" />}
       {success && <Message severity="success" text={success} className="w-full mb-3" />}
 
-      <div className="card p-4" style={{ maxWidth: '700px' }}>
+      <div className="tenant-card p-4" style={{ maxWidth: '700px' }}>
         <div className="grid">
           <div className="col-12 md:col-6">
-            <label htmlFor="max-login-failures" className="block mb-2 text-sm font-medium">
+            <label htmlFor="max-login-failures" className="tenant-form-label">
               {t('authSettings.maxLoginFailures.label')}
             </label>
             <InputNumber
@@ -98,7 +98,7 @@ const AuthSettingsPage: React.FC = () => {
           </div>
 
           <div className="col-12 md:col-6">
-            <label htmlFor="lock-minutes" className="block mb-2 text-sm font-medium">
+            <label htmlFor="lock-minutes" className="tenant-form-label">
               {t('authSettings.lockMinutes.label')}
             </label>
             <InputNumber
@@ -115,7 +115,7 @@ const AuthSettingsPage: React.FC = () => {
           </div>
 
           <div className="col-12 md:col-6">
-            <label htmlFor="max-concurrent-sessions" className="block mb-2 text-sm font-medium">
+            <label htmlFor="max-concurrent-sessions" className="tenant-form-label">
               {t('authSettings.maxConcurrentSessions.label')}
             </label>
             <InputNumber
@@ -132,7 +132,7 @@ const AuthSettingsPage: React.FC = () => {
           </div>
 
           <div className="col-12 md:col-6">
-            <label htmlFor="auto-logout-timeout" className="block mb-2 text-sm font-medium">
+            <label htmlFor="auto-logout-timeout" className="tenant-form-label">
               {t('authSettings.autoLogoutTimeoutMinutes.label')}
             </label>
             <InputNumber

@@ -174,13 +174,13 @@ const AuditLogsPage: React.FC = () => {
   };
 
   return (
-    <div className="tenants-page">
-      <div className="page-header">
-        <div></div>
+    <div className="admin-page tenants-page">
+      <div className="admin-page-header page-header">
+        <h1>{t('auditLogs.title')}</h1>
       </div>
 
-      <div className="tenants-table-card">
-        <div className="tenants-table-toolbar">
+      <div className="admin-table-shell">
+        <div className="admin-table-toolbar">
           <div className="tenants-toolbar-left">
             <div className="tenants-search-shell">
               <IconField iconPosition="left" className="tenants-search">
@@ -223,7 +223,7 @@ const AuditLogsPage: React.FC = () => {
               icon="pi pi-refresh"
               outlined
               severity="secondary"
-              className="tenants-icon-button-xs"
+              className="admin-icon-button-xs"
               aria-label={t('tenants.toolbar.refresh')}
               tooltip={t('tenants.toolbar.refresh')}
               tooltipOptions={{ position: 'top' }}
@@ -235,7 +235,7 @@ const AuditLogsPage: React.FC = () => {
               icon="pi pi-sliders-h"
               outlined
               severity="secondary"
-              className="tenants-icon-button-xs"
+              className="admin-icon-button-xs"
               aria-label={t('tenants.toolbar.fieldSettings')}
               tooltip={t('tenants.toolbar.fieldSettings')}
               tooltipOptions={{ position: 'top' }}
@@ -268,7 +268,7 @@ const AuditLogsPage: React.FC = () => {
           paginator
           rows={10}
           rowsPerPageOptions={[10, 20, 50]}
-          className="admin-tenants-table audit-logs-clickable-table"
+          className="admin-table audit-logs-clickable-table"
           emptyMessage={t('auditLogs.table.empty')}
           onRowClick={(event) => setSelectedLog(event.data as AuditLogRow)}
         >

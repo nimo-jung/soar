@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Message } from 'primereact/message';
 import api from '../../api';
 import { useAuthStore } from '../../store/auth.store';
@@ -151,24 +152,68 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-    try {
-      const res = await api.post<{
+
+    const executeLogin = async (forceLogoutExistingSessions: boolean) => {
+      return api.post<{
         accessToken: string;
         authSettings: AuthPolicy;
         licenseWarning: LicenseWarning | null;
       }>('/auth/master/login', {
         email,
         password,
+        forceLogoutExistingSessions,
       });
+    };
+
+    const requestForceLoginConfirm = async (message: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        confirmDialog({
+          header: t('common.confirm'),
+          message: `${message}\n\n${t('auth.sessionLimitConfirm')}`,
+          icon: 'pi pi-exclamation-triangle',
+          acceptLabel: t('common.confirm'),
+          rejectLabel: t('common.cancel'),
+          accept: () => resolve(true),
+          reject: () => resolve(false),
+          onHide: () => resolve(false),
+        });
+      });
+    };
+
+    try {
+      const res = await executeLogin(false);
       setAuth(res.data.accessToken, res.data.authSettings, res.data.licenseWarning);
       navigate('/tenants');
     } catch (loginError: any) {
       const data = loginError?.response?.data;
       const lockedUntil: string | undefined = data?.lockedUntil;
+      const code: string | undefined = data?.code;
+      const responseMessage = data?.message;
+      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
+
       if (lockedUntil) {
         startLockCountdown(lockedUntil);
+      } else if (code === 'SESSION_LIMIT_EXCEEDED') {
+        const confirmed = await requestForceLoginConfirm(message || t('auth.errorInvalid'));
+
+        if (!confirmed) {
+          setError(message || t('auth.errorInvalid'));
+          return;
+        }
+
+        try {
+          const forced = await executeLogin(true);
+          setAuth(forced.data.accessToken, forced.data.authSettings, forced.data.licenseWarning);
+          navigate('/tenants');
+        } catch (forcedLoginError: any) {
+          const forcedData = forcedLoginError?.response?.data;
+          const forcedMessage = Array.isArray(forcedData?.message)
+            ? forcedData.message.join(', ')
+            : forcedData?.message;
+          setError(forcedMessage || t('auth.errorInvalid'));
+        }
       } else {
-        setError(t('auth.errorInvalid'));
+        setError(message || t('auth.errorInvalid'));
       }
     } finally {
       setLoading(false);
@@ -223,6 +268,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="layout-login">
+      <ConfirmDialog />
       <div className="layout-login-card">
         <div className="layout-login-logo">
           <span className="layout-login-logo-icon">

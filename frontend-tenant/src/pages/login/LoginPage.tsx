@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Message } from 'primereact/message';
 import api from '../../api';
 import { useAuthStore } from '../../store/auth.store';
@@ -35,6 +36,7 @@ const LoginPage: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [tenantWarning, setTenantWarning] = useState<TenantWarning | null>(null);
+  const [bootstrapRequired, setBootstrapRequired] = useState(false);
   const [lockSecondsRemaining, setLockSecondsRemaining] = useState<number>(0);
   const lockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -148,16 +150,37 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-    try {
-      const res = await api.post<{
+    setBootstrapRequired(false);
+
+    const executeLogin = async (forceLogoutExistingSessions: boolean) => {
+      return api.post<{
         accessToken: string;
         brandingConfig: Record<string, string> | null;
         authSettings: AuthPolicy;
         tenantWarning: TenantWarning | null;
       }>(
         '/auth/tenant/login',
-        { tenantSlug, email, password },
+        { tenantSlug, email, password, forceLogoutExistingSessions },
       );
+    };
+
+    const requestForceLoginConfirm = async (message: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        confirmDialog({
+          header: t('common.confirm'),
+          message: `${message}\n\n${t('auth.sessionLimitConfirm')}`,
+          icon: 'pi pi-exclamation-triangle',
+          acceptLabel: t('common.confirm'),
+          rejectLabel: t('common.cancel'),
+          accept: () => resolve(true),
+          reject: () => resolve(false),
+          onHide: () => resolve(false),
+        });
+      });
+    };
+
+    try {
+      const res = await executeLogin(false);
       const rawPayload = parseJwt(res.data.accessToken);
       const payload: TenantJwtPayload = {
         sub: typeof rawPayload.sub === 'number' ? rawPayload.sub : Number(rawPayload.sub ?? 0),
@@ -178,11 +201,54 @@ const LoginPage: React.FC = () => {
       applyBranding(res.data.brandingConfig);
       navigate('/dashboard');
     } catch (loginError: any) {
-      const lockedUntil: string | undefined = loginError?.response?.data?.lockedUntil;
+      const data = loginError?.response?.data;
+      const lockedUntil: string | undefined = data?.lockedUntil;
+      const code: string | undefined = data?.code;
+      const responseMessage = data?.message;
+      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
       if (lockedUntil) {
         startLockCountdown(lockedUntil);
+      } else if (code === 'TENANT_BOOTSTRAP_REQUIRED') {
+        setBootstrapRequired(true);
+        setError(t('auth.bootstrap.required'));
+      } else if (code === 'SESSION_LIMIT_EXCEEDED') {
+        const confirmed = await requestForceLoginConfirm(message || t('auth.errorInvalid'));
+
+        if (!confirmed) {
+          setError(message || t('auth.errorInvalid'));
+          return;
+        }
+
+        try {
+          const forced = await executeLogin(true);
+          const rawPayload = parseJwt(forced.data.accessToken);
+          const payload: TenantJwtPayload = {
+            sub: typeof rawPayload.sub === 'number' ? rawPayload.sub : Number(rawPayload.sub ?? 0),
+            tenantId: typeof rawPayload.tenantId === 'string' ? rawPayload.tenantId : '',
+            role: typeof rawPayload.role === 'string' ? rawPayload.role : '',
+          };
+
+          if (!Number.isFinite(payload.sub) || payload.sub <= 0 || !payload.tenantId || !payload.role) {
+            throw new Error('Invalid tenant JWT payload');
+          }
+
+          setAuth(
+            forced.data.accessToken,
+            { sub: payload.sub, tenantId: payload.tenantId, role: payload.role },
+            forced.data.authSettings,
+            forced.data.tenantWarning,
+          );
+          applyBranding(forced.data.brandingConfig);
+          navigate('/dashboard');
+        } catch (forcedLoginError: any) {
+          const forcedData = forcedLoginError?.response?.data;
+          const forcedMessage = Array.isArray(forcedData?.message)
+            ? forcedData.message.join(', ')
+            : forcedData?.message;
+          setError(forcedMessage || t('auth.errorInvalid'));
+        }
       } else {
-        setError(t('auth.errorInvalid'));
+        setError(message || t('auth.errorInvalid'));
       }
     } finally {
       setLoading(false);
@@ -203,6 +269,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="layout-login-verona" style={gradientStyle}>
+      <ConfirmDialog />
       <div className="layout-login-left">
         <div className="network-visual" aria-hidden="true">
           <span className="network-grid" />
@@ -367,6 +434,16 @@ const LoginPage: React.FC = () => {
               disabled={lockSecondsRemaining > 0}
               className="w-full"
             />
+            {bootstrapRequired && (
+              <Button
+                type="button"
+                className="w-full"
+                outlined
+                icon="pi pi-user-plus"
+                label={t('auth.bootstrap.move')}
+                onClick={() => navigate(`/bootstrap?tenantSlug=${encodeURIComponent(tenantSlug)}&email=${encodeURIComponent(email)}`)}
+              />
+            )}
           </div>
         </div>
       </div>

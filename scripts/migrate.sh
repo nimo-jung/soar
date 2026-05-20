@@ -102,6 +102,79 @@ reset_admin_tables() {
   npx typeorm-ts-node-commonjs -d src/database/admin-data-source.ts schema:drop
 }
 
+reset_redis_runtime_keys() {
+  info "Redis 런타임 키 정리 수행 중... (auth/session/cache)"
+  node <<'NODE'
+const Redis = require('ioredis');
+
+const host = process.env.REDIS_HOST || 'localhost';
+const port = Number(process.env.REDIS_PORT || '6379');
+const password = process.env.REDIS_PASSWORD || undefined;
+
+const patterns = [
+  'session:*',
+  'sessions:master:*',
+  'sessions:tenant:*',
+  'tenant:*:api_key',
+  'tenant:*:api_key:index',
+  'tenant:*:whitelist',
+  'tenant:*:parsing_rules',
+];
+
+async function collectKeys(client, pattern) {
+  let cursor = '0';
+  const keys = [];
+  do {
+    const [nextCursor, batch] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 500);
+    cursor = nextCursor;
+    if (Array.isArray(batch) && batch.length > 0) {
+      keys.push(...batch);
+    }
+  } while (cursor !== '0');
+  return keys;
+}
+
+async function main() {
+  const redis = new Redis({
+    host,
+    port,
+    password,
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+  });
+
+  try {
+    await redis.connect();
+    const deleted = {};
+
+    for (const pattern of patterns) {
+      const keys = await collectKeys(redis, pattern);
+      if (keys.length === 0) {
+        deleted[pattern] = 0;
+        continue;
+      }
+
+      let removed = 0;
+      for (let i = 0; i < keys.length; i += 200) {
+        const chunk = keys.slice(i, i + 200);
+        removed += await redis.del(...chunk);
+      }
+      deleted[pattern] = removed;
+    }
+
+    console.log('[Reset] Redis runtime keys deleted:', JSON.stringify(deleted));
+  } finally {
+    redis.disconnect();
+  }
+}
+
+main().catch((err) => {
+  console.error('[Reset] Redis key cleanup failed:', err.message);
+  process.exit(1);
+});
+NODE
+}
+
 run_admin_migrate_and_seed() {
   info "soar_admin 마이그레이션 실행..."
   npm run migration:run:admin
@@ -169,6 +242,10 @@ case "$CMD" in
     else
       confirm_destructive "soar_admin의 모든 테이블을 삭제합니다." "$FORCE_FLAG" || exit 1
       reset_admin_tables
+    fi
+
+    if ! reset_redis_runtime_keys; then
+      warn "Redis 키 정리에 실패했습니다. 로그인 문제가 지속되면 Redis 인증/세션 키를 수동 삭제하세요."
     fi
 
     run_admin_migrate_and_seed

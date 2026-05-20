@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -19,6 +20,8 @@ import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
+import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
+import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
 import { MasterGuard } from '../../common/guards/master.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
@@ -259,5 +262,47 @@ export class TenantsController {
   @ApiOperation({ summary: '테넌트 설정 조회 (EPS·스토리지·보관 주기)' })
   getSettings(@Param('id', ParseIntPipe) id: number) {
     return this.tenantsService.getSettings(id);
+  }
+
+  @Post(':id/bootstrap-token')
+  @ApiOperation({ summary: '테넌트 최초 관리자 등록용 토큰 발급' })
+  async issueBootstrapToken(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: IssueTenantBootstrapTokenDto,
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
+    const issued = await this.tenantsService.issueBootstrapToken(id, dto, user.sub);
+
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'TENANT_BOOTSTRAP_TOKEN_ISSUE',
+      resourceType: 'TENANT_BOOTSTRAP_TOKEN',
+      resourceId: String(id),
+      message: [
+        '테넌트 최초 관리자 등록 토큰 발급',
+        `tenantId=${issued.tenantId}`,
+        `tenantSlug=${this.safe(issued.tenantSlug)}`,
+        `email=${this.safe(issued.email)}`,
+        `expiresAt=${this.safe(issued.expiresAt)}`,
+      ].join(' | '),
+      metadata: {
+        tenantId: issued.tenantId,
+        tenantSlug: issued.tenantSlug,
+        email: issued.email,
+        expiresAt: issued.expiresAt,
+      },
+    });
+
+    return issued;
+  }
+
+  @Get(':id/bootstrap-tokens')
+  @ApiOperation({ summary: '테넌트 최초 관리자 등록 토큰 발급 이력 조회' })
+  getBootstrapTokenHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: GetTenantBootstrapTokensQueryDto,
+  ) {
+    return this.tenantsService.getBootstrapTokenHistory(id, query);
   }
 }

@@ -192,8 +192,8 @@ const MonitoringPage: React.FC = () => {
   }, [tenantId, severity, from, to]);
 
   return (
-    <div className="p-4">
-      <div className="page-header">
+    <div className="admin-page">
+      <div className="admin-page-header">
         <h1>{t('monitoring.title')}</h1>
         <Button
           type="button"
@@ -206,10 +206,10 @@ const MonitoringPage: React.FC = () => {
         />
       </div>
 
-      <Card className="mb-3">
+      <Card className="mb-3 admin-card">
         <div className="grid">
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('monitoring.filters.tenant')}</label>
+            <label className="admin-form-label">{t('monitoring.filters.tenant')}</label>
             <Dropdown
               value={tenantId}
               options={[{ label: t('monitoring.filters.allTenants'), value: null }, ...tenantOptions]}
@@ -218,7 +218,7 @@ const MonitoringPage: React.FC = () => {
             />
           </div>
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('monitoring.filters.severity')}</label>
+            <label className="admin-form-label">{t('monitoring.filters.severity')}</label>
             <Dropdown
               value={severity}
               options={severityOptions}
@@ -227,11 +227,11 @@ const MonitoringPage: React.FC = () => {
             />
           </div>
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('monitoring.filters.from')}</label>
+            <label className="admin-form-label">{t('monitoring.filters.from')}</label>
             <InputText type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full" />
           </div>
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('monitoring.filters.to')}</label>
+            <label className="admin-form-label">{t('monitoring.filters.to')}</label>
             <InputText type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full" />
           </div>
         </div>
@@ -239,27 +239,27 @@ const MonitoringPage: React.FC = () => {
 
       <div className="grid mb-3">
         <div className="col-12 md:col-3">
-          <Card title={t('monitoring.cards.ingestErrorRate')}>
+          <Card title={t('monitoring.cards.ingestErrorRate')} className="admin-card admin-stat-card">
             <span>{overview.ingestErrorRate.toFixed(2)}%</span>
           </Card>
         </div>
         <div className="col-12 md:col-3">
-          <Card title={t('monitoring.cards.parseErrorRate')}>
+          <Card title={t('monitoring.cards.parseErrorRate')} className="admin-card admin-stat-card">
             <span>{overview.parseErrorRate.toFixed(2)}%</span>
           </Card>
         </div>
         <div className="col-12 md:col-3">
-          <Card title={t('monitoring.cards.avgIngestLatencyMs')}>
+          <Card title={t('monitoring.cards.avgIngestLatencyMs')} className="admin-card admin-stat-card">
             <span>{overview.avgIngestLatencyMs.toFixed(2)} ms</span>
           </Card>
         </div>
         <div className="col-12 md:col-3">
-          <Card title={t('monitoring.cards.eventCount')}>
+          <Card title={t('monitoring.cards.eventCount')} className="admin-card admin-stat-card">
             <span>{total}</span>
           </Card>
         </div>
         <div className="col-12 md:col-3">
-          <Card title={t('monitoring.cards.engineHealth')}>
+          <Card title={t('monitoring.cards.engineHealth')} className="admin-card admin-stat-card">
             <div className="flex flex-column gap-1">
               <span>{overview.engineHealthy ? t('monitoring.engine.healthy') : t('monitoring.engine.unhealthy')}</span>
               <small className="text-color-secondary">
@@ -272,7 +272,7 @@ const MonitoringPage: React.FC = () => {
         </div>
       </div>
 
-      <Card title={t('monitoring.chart.epsTitle')} className="mb-3">
+      <Card title={t('monitoring.chart.epsTitle')} className="mb-3 admin-card">
         {chartPolyline ? (
           <div className="flex flex-column gap-2">
             <svg viewBox="0 0 720 180" role="img" aria-label={t('monitoring.chart.epsTitle')} style={{ width: '100%' }}>
@@ -298,7 +298,7 @@ const MonitoringPage: React.FC = () => {
         )}
       </Card>
 
-      <Card title={t('monitoring.table.title')}>
+      <Card title={t('monitoring.table.title')} className="admin-card">
         <CommonDataTable
           value={rows}
           loading={loading}
@@ -307,7 +307,7 @@ const MonitoringPage: React.FC = () => {
           rows={limit}
           totalRecords={total}
           rowsPerPageOptions={[10, 20, 50]}
-          className="admin-tenants-table"
+          className="admin-table"
           onPage={(event) => {
             const nextPage = Math.floor((event.first ?? 0) / (event.rows ?? 10)) + 1;
             const nextLimit = event.rows ?? 10;

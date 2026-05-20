@@ -59,12 +59,12 @@ export class InitAdminSchema1785100000000 implements MigrationInterface {
 
     await queryRunner.query(`
       INSERT INTO \`tenant_tiers\` (\`code\`, \`name\`, \`daily_log_quota_gb\`, \`max_users\`, \`description\`, \`is_active\`)
-      SELECT 'ENTERPRISE', '무제한(언리미티드)', 0, 0, 'System 전용 무제한 티어', 1
+      SELECT 'ENTERPRISE', '무제한', 0, 0, 'System 전용 무제한 티어', 1
       FROM DUAL
       WHERE NOT EXISTS (
         SELECT 1
         FROM \`tenant_tiers\`
-        WHERE \`name\` = '무제한(언리미티드)'
+        WHERE \`name\` = '무제한'
       )
     `);
 
@@ -103,7 +103,7 @@ export class InitAdminSchema1785100000000 implements MigrationInterface {
         (
           SELECT \`id\`
           FROM \`tenant_tiers\`
-          WHERE \`name\` = '무제한(언리미티드)'
+          WHERE \`name\` = '무제한'
           ORDER BY \`id\` ASC
           LIMIT 1
         )
@@ -125,7 +125,7 @@ export class InitAdminSchema1785100000000 implements MigrationInterface {
         \`tierId\` = (
           SELECT \`id\`
           FROM \`tenant_tiers\`
-          WHERE \`name\` = '무제한(언리미티드)'
+          WHERE \`name\` = '무제한'
           ORDER BY \`id\` ASC
           LIMIT 1
         )

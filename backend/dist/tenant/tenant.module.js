@@ -23,6 +23,12 @@ const auth_settings_controller_1 = require("./auth-settings/auth-settings.contro
 const auth_settings_service_1 = require("./auth-settings/auth-settings.service");
 const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
+const users_controller_1 = require("./users/users.controller");
+const users_service_1 = require("./users/users.service");
+const alerts_controller_1 = require("./alerts/alerts.controller");
+const alerts_service_1 = require("./alerts/alerts.service");
+const parsing_rules_controller_1 = require("./parsing-rules/parsing-rules.controller");
+const parsing_rules_service_1 = require("./parsing-rules/parsing-rules.service");
 let TenantModule = class TenantModule {
 };
 exports.TenantModule = TenantModule;
@@ -42,12 +48,18 @@ exports.TenantModule = TenantModule = __decorate([
             ip_whitelist_controller_1.IpWhitelistController,
             playbooks_controller_1.PlaybooksController,
             auth_settings_controller_1.TenantAuthSettingsController,
+            users_controller_1.UsersController,
+            alerts_controller_1.AlertsController,
+            parsing_rules_controller_1.ParsingRulesController,
         ],
         providers: [
             collectors_service_1.CollectorsService,
             ip_whitelist_service_1.IpWhitelistService,
             playbooks_service_1.PlaybooksService,
             auth_settings_service_1.TenantAuthSettingsService,
+            users_service_1.UsersService,
+            alerts_service_1.AlertsService,
+            parsing_rules_service_1.ParsingRulesService,
             audit_log_service_1.AuditLogService,
         ],
     })

@@ -93,9 +93,9 @@ const QuotaPage: React.FC = () => {
     value === 0 ? <span className="text-green-600 font-semibold">{t('quota.unlimited')}</span> : <span>{value}</span>;
 
   return (
-    <div className="p-4">
+    <div className="admin-page">
       <Toast ref={toast} />
-      <div className="page-header">
+      <div className="admin-page-header">
         <h1>{t('quota.title')}</h1>
         <Button
           type="button"
@@ -106,14 +106,14 @@ const QuotaPage: React.FC = () => {
         />
       </div>
 
-      <Card>
+      <Card className="admin-card">
         <CommonDataTable
           value={rows}
           loading={loading}
           paginator
           rows={20}
           rowsPerPageOptions={[10, 20, 50]}
-          className="admin-tenants-table"
+          className="admin-table"
         >
           <Column field="tenantName" header={t('quota.table.tenant')} sortable />
           <Column field="tenantSlug" header={t('quota.table.slug')} />
@@ -159,7 +159,7 @@ const QuotaPage: React.FC = () => {
         {editTarget && (
           <div className="flex flex-column gap-4 pt-2">
             <div>
-              <label className="block mb-2 text-sm font-semibold">{t('quota.dialog.epsLimit')}</label>
+              <label className="admin-form-label">{t('quota.dialog.epsLimit')}</label>
               <InputNumber
                 value={editTarget.epsLimit}
                 min={0}
@@ -170,7 +170,7 @@ const QuotaPage: React.FC = () => {
               <small className="text-color-secondary">{t('quota.dialog.zeroMeansUnlimited')}</small>
             </div>
             <div>
-              <label className="block mb-2 text-sm font-semibold">{t('quota.dialog.storageQuotaGb')}</label>
+              <label className="admin-form-label">{t('quota.dialog.storageQuotaGb')}</label>
               <InputNumber
                 value={editTarget.storageQuotaGb}
                 min={0}
@@ -181,7 +181,7 @@ const QuotaPage: React.FC = () => {
               <small className="text-color-secondary">{t('quota.dialog.zeroMeansUnlimited')}</small>
             </div>
             <div>
-              <label className="block mb-2 text-sm font-semibold">{t('quota.dialog.retentionDays')}</label>
+              <label className="admin-form-label">{t('quota.dialog.retentionDays')}</label>
               <InputNumber
                 value={editTarget.retentionDays}
                 min={0}

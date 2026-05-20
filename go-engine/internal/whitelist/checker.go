@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -33,16 +34,18 @@ func (c *Checker) IsAllowed(ctx context.Context, tenantID, sourceIP string) (boo
 		return true, nil
 	}
 
-	ip := net.ParseIP(sourceIP)
+	normalizedSource := strings.TrimSpace(sourceIP)
+	ip := net.ParseIP(normalizedSource)
 	if ip == nil {
 		return false, fmt.Errorf("invalid source IP: %s", sourceIP)
 	}
 
 	for _, member := range members {
-		if member == sourceIP {
+		normalizedMember := strings.TrimSpace(member)
+		if parsedMember := net.ParseIP(normalizedMember); parsedMember != nil && parsedMember.Equal(ip) {
 			return true, nil
 		}
-		_, cidr, err := net.ParseCIDR(member)
+		_, cidr, err := net.ParseCIDR(normalizedMember)
 		if err == nil && cidr.Contains(ip) {
 			return true, nil
 		}

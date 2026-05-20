@@ -1,13 +1,18 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
+import { randomBytes } from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { Tenant, TenantStatus } from './entities/tenant.entity';
 import { TenantSettings } from './entities/tenant-settings.entity';
 import { TenantTier } from './entities/tenant-tier.entity';
+import { TenantBootstrapToken } from './entities/tenant-bootstrap-token.entity';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
+import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
+import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
 import { SYSTEM_TENANT_SLUG } from './constants/system-tenant.constants';
 
 export interface TierDeletionStatus {
@@ -26,6 +31,8 @@ export class TenantsService {
     private readonly settingsRepo: Repository<TenantSettings>,
     @InjectRepository(TenantTier)
     private readonly tierRepo: Repository<TenantTier>,
+    @InjectRepository(TenantBootstrapToken)
+    private readonly tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -357,5 +364,103 @@ export class TenantsService {
 
     await this.tierRepo.remove(deletionStatus.tier);
     return deletionStatus.tier;
+  }
+
+  async issueBootstrapToken(
+    tenantId: number,
+    dto: IssueTenantBootstrapTokenDto,
+    issuedByMasterUserId: number,
+  ): Promise<{ tenantId: number; tenantSlug: string; email: string | null; token: string; expiresAt: string }> {
+    const tenant = await this.findOne(tenantId);
+    const rawToken = randomBytes(24).toString('hex');
+    const tokenHash = await bcrypt.hash(rawToken, 12);
+    const expiresMinutes = dto.expiresMinutes ?? 60;
+    const expiresAt = new Date(Date.now() + (expiresMinutes * 60 * 1000));
+    const normalizedEmail = dto.email?.trim().toLowerCase() ?? null;
+
+    // 동일 테넌트의 미사용 토큰은 발급 시점에 만료 처리한다.
+    await this.tenantBootstrapTokenRepo.update(
+      {
+        tenantId,
+        usedAt: IsNull(),
+      },
+      {
+        usedAt: new Date(),
+      },
+    );
+
+    await this.tenantBootstrapTokenRepo.save(
+      this.tenantBootstrapTokenRepo.create({
+        tenantId,
+        email: normalizedEmail,
+        tokenHash,
+        expiresAt,
+        usedAt: null,
+        issuedByMasterUserId,
+      }),
+    );
+
+    return {
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      email: normalizedEmail,
+      token: rawToken,
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  async getBootstrapTokenHistory(
+    tenantId: number,
+    query: GetTenantBootstrapTokensQueryDto,
+  ): Promise<{
+      items: Array<{
+        id: number;
+        email: string | null;
+        expiresAt: string;
+        usedAt: string | null;
+        issuedByMasterUserId: number | null;
+        createdAt: string;
+      }>;
+      page: number;
+      limit: number;
+      total: number;
+    }> {
+    await this.findOne(tenantId);
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const qb = this.tenantBootstrapTokenRepo
+      .createQueryBuilder('token')
+      .where('token.tenant_id = :tenantId', { tenantId });
+
+    if (query.from) {
+      qb.andWhere('token.created_at >= :from', { from: query.from });
+    }
+
+    if (query.to) {
+      qb.andWhere('token.created_at <= :to', { to: query.to });
+    }
+
+    const [rows, total] = await qb
+      .orderBy('token.created_at', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items: rows.map((row) => ({
+        id: row.id,
+        email: row.email,
+        expiresAt: row.expiresAt.toISOString(),
+        usedAt: row.usedAt ? row.usedAt.toISOString() : null,
+        issuedByMasterUserId: row.issuedByMasterUserId,
+        createdAt: row.createdAt.toISOString(),
+      })),
+      page,
+      limit,
+      total,
+    };
   }
 }

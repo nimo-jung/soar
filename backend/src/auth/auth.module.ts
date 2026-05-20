@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { MasterUser } from '../admin/master-users/entities/master-user.entity';
 import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
+import { TenantBootstrapToken } from '../admin/tenants/entities/tenant-bootstrap-token.entity';
 import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
 import { MasterAuthSettings } from './entities/master-auth-settings.entity';
@@ -20,6 +21,7 @@ import { ProductInfoService } from '../admin/product-info/product-info.service';
       MasterUser,
       Tenant,
       TenantSettings,
+      TenantBootstrapToken,
       AuditLog,
       MasterAuthSettings,
       AuthUserSecurityState,

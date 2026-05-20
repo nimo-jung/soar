@@ -229,30 +229,29 @@ const MasterUsersPage: React.FC = () => {
   };
 
   return (
-    <div className="tenants-page">
+    <div className="admin-page tenants-page">
       <ConfirmDialog />
-      <div className="page-header">
-        <div></div>
+      <div className="admin-page-header page-header">
+        <h1>{t('masterUsers.title')}</h1>
         <Button
           label={t('masterUsers.createBtn')}
           icon="pi pi-user-plus"
           onClick={openCreateDialog}
-          rounded
-          size="small"
+          className="admin-primary-action"
           disabled={!canCreate}
           tooltip={!canCreate ? t('masterUsers.limitReached') : undefined}
           tooltipOptions={{ position: 'left' }}
         />
       </div>
 
-      <div className="tenants-table-card">
+      <div className="admin-table-shell">
         <CommonDataTable
           value={users}
           loading={loading}
           paginator
           rows={10}
           rowsPerPageOptions={[10, 20, 50]}
-          className="admin-tenants-table"
+          className="admin-table"
         >
           <Column field="id" header={t('masterUsers.table.id')} style={{ width: '6rem' }} />
           <Column field="email" header={t('masterUsers.table.email')} style={{ minWidth: '16rem' }} />
@@ -341,7 +340,7 @@ const MasterUsersPage: React.FC = () => {
       >
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label htmlFor="master-user-email" className="block mb-1 text-sm">
+            <label htmlFor="master-user-email" className="admin-form-label">
               {t('masterUsers.dialog.email')}
               <span className="p-error ml-1">*</span>
             </label>
@@ -355,7 +354,7 @@ const MasterUsersPage: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="master-user-password" className="block mb-1 text-sm">
+            <label htmlFor="master-user-password" className="admin-form-label">
               {t('masterUsers.dialog.password')}
               {!editingUser && <span className="p-error ml-1">*</span>}
             </label>

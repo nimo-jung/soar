@@ -9,10 +9,12 @@ import { Tenant } from '../tenants/entities/tenant.entity';
 import { TenantTier } from '../tenants/entities/tenant-tier.entity';
 import { AuditLog } from '../../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../../common/audit/audit-log.service';
+import { UsageSnapshotBatchService } from './usage-snapshot-batch.service';
+import { BillingPricingPolicy } from './entities/billing-pricing-policy.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UsageSnapshot, Tenant, TenantTier, AuditLog]),
+    TypeOrmModule.forFeature([UsageSnapshot, Tenant, TenantTier, AuditLog, BillingPricingPolicy]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),
@@ -21,6 +23,6 @@ import { AuditLogService } from '../../common/audit/audit-log.service';
     }),
   ],
   controllers: [BillingController],
-  providers: [BillingService, AuditLogService],
+  providers: [BillingService, UsageSnapshotBatchService, AuditLogService],
 })
 export class BillingModule {}

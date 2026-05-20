@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -75,10 +77,7 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// IP whitelist check
-	sourceIP := r.RemoteAddr
-	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-		sourceIP = fwd
-	}
+	sourceIP := extractClientIP(r)
 
 	allowed, err := h.wl.IsAllowed(ctx, tenantID, sourceIP)
 	if err != nil || !allowed {
@@ -119,6 +118,26 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 
 	h.metrics.RecordIngest(time.Since(start), true)
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func extractClientIP(r *http.Request) string {
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		parts := strings.Split(forwarded, ",")
+		candidate := strings.TrimSpace(parts[0])
+		if candidate != "" {
+			if host, _, err := net.SplitHostPort(candidate); err == nil {
+				candidate = host
+			}
+			return candidate
+		}
+	}
+
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil {
+		return host
+	}
+
+	return strings.TrimSpace(r.RemoteAddr)
 }
 
 // HealthHandler for liveness probe

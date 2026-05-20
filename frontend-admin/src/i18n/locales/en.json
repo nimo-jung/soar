@@ -50,6 +50,7 @@
     "submit": "Sign In",
     "errorEmpty": "Please enter email and password.",
     "errorInvalid": "Incorrect email or password.",
+    "sessionLimitConfirm": "Do you want to force-close existing sessions and continue login?",
     "errorLocked": "Account locked due to too many failed attempts. Try again in {{clock}}.",
     "lockReleased": "Account unlocked. Please sign in again.",
     "licenseExpirySoon": "License Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please update the license on the Product Info page.",
@@ -217,6 +218,35 @@
         "deleteFailed": "An error occurred while deleting the tier.",
         "ok": "OK"
       }
+    },
+    "bootstrap": {
+      "issueAction": "Issue First Admin Token",
+      "historyAction": "Token Issue History",
+      "issueTitle": "Issue First Admin Registration Token",
+      "historyTitle": "Token Issue History",
+      "emailPlaceholder": "Invite email (optional)",
+      "expiresMinutes": "Expires In (minutes)",
+      "issueSubmit": "Issue Token",
+      "issueSuccessTitle": "Token Issued",
+      "issueSuccessDetail": "First-admin registration token has been issued.",
+      "tokenLabel": "Issued Token (shown once)",
+      "copyToken": "Copy Token",
+      "copySuccessTitle": "Copied",
+      "copySuccessDetail": "Token copied to clipboard.",
+      "copyFailedTitle": "Copy Failed",
+      "copyFailedDetail": "Failed to copy token.",
+      "filterFrom": "Issued From",
+      "filterTo": "Issued To",
+      "filterApply": "Search",
+      "filterReset": "Reset",
+      "expiresAt": "Expires At",
+      "usedAt": "Used At",
+      "issuedBy": "Issuer ID",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "used": "Used"
+      }
     }
   },
   "auditLogs": {
@@ -337,6 +367,7 @@
   "billing": {
     "title": "Billing & Usage",
     "actions": {
+      "collectUsage": "Run Usage Collection",
       "refresh": "Refresh",
       "exportCsv": "Export CSV"
     },
@@ -360,6 +391,19 @@
       "epsAvg": "Average EPS",
       "storageUsedGb": "Used Storage (GB)",
       "logCount": "Log Count"
+    },
+    "pricing": {
+      "title": "Pricing Policies",
+      "save": "Save Pricing Policies",
+      "columns": {
+        "tierCode": "Tier Code",
+        "baseFee": "Base Fee",
+        "includedEps": "Included EPS",
+        "epsOveragePer100": "Per 100 EPS Overage",
+        "storageOveragePerGb": "Per GB Storage Overage",
+        "logPerMillion": "Per Million Logs",
+        "currency": "Currency"
+      }
     }
   },
   "monitoring": {

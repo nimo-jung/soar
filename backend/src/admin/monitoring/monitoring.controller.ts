@@ -13,13 +13,13 @@ export class MonitoringController {
   constructor(private readonly monitoringService: MonitoringService) {}
 
   @Get('overview')
-  @ApiOperation({ summary: '플랫폼 모니터링 개요 조회 (MVP 스켈레톤)' })
+  @ApiOperation({ summary: '플랫폼 모니터링 개요 조회' })
   getOverview(@Query() query: GetMonitoringOverviewQueryDto) {
     return this.monitoringService.getOverview(query);
   }
 
   @Get('events')
-  @ApiOperation({ summary: '플랫폼 모니터링 이벤트 목록 조회 (MVP 스켈레톤)' })
+  @ApiOperation({ summary: '플랫폼 모니터링 이벤트 목록 조회' })
   getEvents(@Query() query: GetMonitoringEventsQueryDto) {
     return this.monitoringService.getEvents(query);
   }

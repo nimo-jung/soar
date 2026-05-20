@@ -15,10 +15,10 @@ export class TenantUser {
   @Column({ unique: true, comment: '로그인 이메일' })
   email: string;
 
-  @Column({ comment: '비밀번호 해시 (bcrypt)' })
+  @Column({ name: 'password_hash', comment: '비밀번호 해시 (bcrypt)' })
   passwordHash: string;
 
-  @Column({ comment: '표시 이름' })
+  @Column({ name: 'display_name', comment: '표시 이름' })
   displayName: string;
 
   @Column({
@@ -32,9 +32,9 @@ export class TenantUser {
   @Column({ name: 'is_active', default: true, comment: '계정 활성화 여부' })
   isActive: boolean;
 
-  @CreateDateColumn({ comment: '생성 일시' })
+  @CreateDateColumn({ name: 'created_at', comment: '생성 일시' })
   createdAt: Date;
 
-  @UpdateDateColumn({ comment: '수정 일시' })
+  @UpdateDateColumn({ name: 'updated_at', comment: '수정 일시' })
   updatedAt: Date;
 }

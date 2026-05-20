@@ -144,11 +144,11 @@ const SystemStatusPage: React.FC = () => {
   );
 
   return (
-    <div className="p-4">
+    <div className="admin-page">
       <Toast ref={toast} />
-      <div className="page-header">
+      <div className="admin-page-header">
         <h1>{t('systemStatus.title')}</h1>
-        <div className="flex gap-2">
+        <div className="admin-actions-row">
           <Button
             icon="pi pi-refresh"
             label={t('common.refresh')}
@@ -169,7 +169,7 @@ const SystemStatusPage: React.FC = () => {
         <div className="grid mb-3">
           {/* 리소스 사용률 카드 */}
           <div className="col-12 md:col-4">
-            <Card title="CPU">
+            <Card title="CPU" className="admin-card admin-stat-card">
               <div className="mb-2 text-2xl font-bold" style={{ color: usageColor(current.cpuUsagePct) }}>
                 {current.cpuUsagePct.toFixed(1)}%
               </div>
@@ -177,7 +177,7 @@ const SystemStatusPage: React.FC = () => {
             </Card>
           </div>
           <div className="col-12 md:col-4">
-            <Card title={t('systemStatus.memory')}>
+            <Card title={t('systemStatus.memory')} className="admin-card admin-stat-card">
               <div className="mb-2 text-2xl font-bold" style={{ color: usageColor(current.memoryUsagePct) }}>
                 {current.memoryUsagePct.toFixed(1)}%
               </div>
@@ -185,7 +185,7 @@ const SystemStatusPage: React.FC = () => {
             </Card>
           </div>
           <div className="col-12 md:col-4">
-            <Card title={t('systemStatus.disk')}>
+            <Card title={t('systemStatus.disk')} className="admin-card admin-stat-card">
               <div className="mb-2 text-2xl font-bold" style={{ color: usageColor(current.diskUsagePct) }}>
                 {current.diskUsagePct.toFixed(1)}%
               </div>
@@ -195,7 +195,7 @@ const SystemStatusPage: React.FC = () => {
 
           {/* 서비스 상태 카드 */}
           <div className="col-12">
-            <Card title={t('systemStatus.services')}>
+            <Card title={t('systemStatus.services')} className="admin-card">
               <div className="flex flex-wrap gap-3">
                 <div className="flex align-items-center gap-2">
                   <span className="font-semibold">MariaDB</span>
@@ -231,6 +231,7 @@ const SystemStatusPage: React.FC = () => {
             first={(alertsPage - 1) * 20}
             rows={20}
             totalRecords={alertsTotal}
+            className="admin-table"
             onPage={(e) => { void loadAlerts(Math.floor((e.first ?? 0) / 20) + 1); }}
           >
             <Column
@@ -282,6 +283,7 @@ const SystemStatusPage: React.FC = () => {
             first={(historyPage - 1) * 20}
             rows={20}
             totalRecords={historyTotal}
+            className="admin-table"
             onPage={(e) => { void loadHistory(Math.floor((e.first ?? 0) / 20) + 1); }}
           >
             <Column

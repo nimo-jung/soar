@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -7,6 +6,8 @@ import { InputText } from 'primereact/inputtext';
 import { Message } from 'primereact/message';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
+import CommonDataTable from '../../components/CommonDataTable';
+import { formatDateOnly } from '../../utils/date';
 
 interface Collector {
   id: number;
@@ -17,8 +18,7 @@ interface Collector {
 }
 
 const CollectorsPage: React.FC = () => {
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language.startsWith('ko') ? 'ko-KR' : 'en-US';
+  const { t } = useTranslation();
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -45,10 +45,10 @@ const CollectorsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex justify-content-between align-items-center mb-4">
-        <h1 className="text-2xl font-bold">{t('collectors.title')}</h1>
-        <Button label={t('collectors.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
+    <div className="tenant-page">
+      <div className="tenant-page-header">
+        <h1>{t('collectors.title')}</h1>
+        <Button className="tenant-primary-action" label={t('collectors.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
       </div>
 
       {newKey && (
@@ -65,7 +65,8 @@ const CollectorsPage: React.FC = () => {
         />
       )}
 
-      <DataTable value={collectors} loading={loading} paginator rows={10} className="p-datatable-sm">
+      <div className="tenant-table-shell">
+        <CommonDataTable value={collectors} loading={loading} paginator rows={10} className="tenant-table p-datatable-sm">
         <Column field="name" header={t('collectors.table.name')} />
         <Column field="description" header={t('collectors.table.description')} />
         <Column
@@ -80,7 +81,7 @@ const CollectorsPage: React.FC = () => {
         <Column
           field="createdAt"
           header={t('common.createdAt')}
-          body={(row: Collector) => new Date(row.createdAt).toLocaleDateString(locale)}
+          body={(row: Collector) => formatDateOnly(row.createdAt)}
         />
         <Column
           header={t('common.actions')}
@@ -94,16 +95,17 @@ const CollectorsPage: React.FC = () => {
             />
           )}
         />
-      </DataTable>
+        </CommonDataTable>
+      </div>
 
       <Dialog header={t('collectors.dialog.title')} visible={showCreate} style={{ width: '440px' }} onHide={() => setShowCreate(false)}>
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">{t('collectors.dialog.name')}</label>
+            <label className="tenant-form-label">{t('collectors.dialog.name')}</label>
             <InputText value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('collectors.dialog.description')}</label>
+            <label className="tenant-form-label">{t('collectors.dialog.description')}</label>
             <InputText value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full" />
           </div>
           <Button label={t('common.register')} onClick={handleCreate} />

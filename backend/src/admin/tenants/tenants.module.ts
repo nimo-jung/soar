@@ -8,12 +8,13 @@ import { Tenant } from './entities/tenant.entity';
 import { TenantSettings } from './entities/tenant-settings.entity';
 import { UsageSnapshot } from './entities/usage-snapshot.entity';
 import { TenantTier } from './entities/tenant-tier.entity';
+import { TenantBootstrapToken } from './entities/tenant-bootstrap-token.entity';
 import { AuditLog } from '../../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../../common/audit/audit-log.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tenant, TenantSettings, UsageSnapshot, TenantTier, AuditLog]),
+    TypeOrmModule.forFeature([Tenant, TenantSettings, UsageSnapshot, TenantTier, TenantBootstrapToken, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),

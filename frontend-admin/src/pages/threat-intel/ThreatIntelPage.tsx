@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
+import { Card } from 'primereact/card';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
@@ -37,21 +38,6 @@ const DISPATCH_SEVERITY_MAP: Record<string, 'success' | 'warning' | 'danger'> = 
   PENDING: 'warning',
   FAILED: 'danger',
 };
-
-
-interface ThreatFeed {
-  id: number;
-  feedType: string;
-  indicator: string;
-  severity: string;
-  source: string;
-  isActive: boolean;
-  dispatchStatus: 'PENDING' | 'DISPATCHED' | 'FAILED';
-  dispatchedAt: string | null;
-  dispatchError: string | null;
-  dispatchAttempts: number;
-  createdAt: string;
-}
 
 const ThreatIntelPage: React.FC = () => {
   const { t } = useTranslation();
@@ -155,14 +141,15 @@ const ThreatIntelPage: React.FC = () => {
   );
 
   return (
-    <div className="p-4">
+    <div className="admin-page">
       <Toast ref={toast} />
-      <div className="page-header">
+      <div className="admin-page-header">
         <h1>{t('threatIntel.title')}</h1>
-        <Button label={t('threatIntel.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
+        <Button className="admin-primary-action" label={t('threatIntel.registerBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
       </div>
 
-      <CommonDataTable value={feeds} loading={loading} paginator rows={10} className="p-datatable-sm">
+      <Card className="admin-card">
+        <CommonDataTable value={feeds} loading={loading} paginator rows={10} className="admin-table p-datatable-sm">
         <Column field="feedType" header={t('threatIntel.table.type')} />
         <Column field="indicator" header={t('threatIntel.table.indicator')} />
         <Column
@@ -187,7 +174,8 @@ const ThreatIntelPage: React.FC = () => {
           body={(row: ThreatFeed) => formatDateTimeSeconds(row.createdAt)}
         />
         <Column header={t('common.actions')} body={actionBody} style={{ minWidth: '220px' }} />
-      </CommonDataTable>
+        </CommonDataTable>
+      </Card>
 
       <Dialog
         header={t('threatIntel.dialog.title')}
@@ -203,19 +191,19 @@ const ThreatIntelPage: React.FC = () => {
       >
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">{t('threatIntel.dialog.type')}</label>
+            <label className="admin-form-label">{t('threatIntel.dialog.type')}</label>
             <InputText value={form.feedType} onChange={(e) => setForm({ ...form, feedType: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('threatIntel.dialog.indicator')}</label>
+            <label className="admin-form-label">{t('threatIntel.dialog.indicator')}</label>
             <InputText value={form.indicator} onChange={(e) => setForm({ ...form, indicator: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('threatIntel.dialog.severity')}</label>
+            <label className="admin-form-label">{t('threatIntel.dialog.severity')}</label>
             <InputText value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('threatIntel.dialog.source')}</label>
+            <label className="admin-form-label">{t('threatIntel.dialog.source')}</label>
             <InputText value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} className="w-full" />
           </div>
         </div>

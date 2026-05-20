@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
@@ -8,6 +7,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
+import CommonDataTable from '../../components/CommonDataTable';
 
 interface Playbook {
   id: number;
@@ -50,13 +50,14 @@ const PlaybooksPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex justify-content-between align-items-center mb-4">
-        <h1 className="text-2xl font-bold">{t('playbooks.title')}</h1>
-        <Button label={t('playbooks.createBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
+    <div className="tenant-page">
+      <div className="tenant-page-header">
+        <h1>{t('playbooks.title')}</h1>
+        <Button className="tenant-primary-action" label={t('playbooks.createBtn')} icon="pi pi-plus" onClick={() => setShowCreate(true)} />
       </div>
 
-      <DataTable value={playbooks} loading={loading} paginator rows={10} className="p-datatable-sm">
+      <div className="tenant-table-shell">
+        <CommonDataTable value={playbooks} loading={loading} paginator rows={10} className="tenant-table p-datatable-sm">
         <Column field="name" header={t('playbooks.table.name')} />
         <Column field="description" header={t('playbooks.table.description')} />
         <Column
@@ -75,20 +76,21 @@ const PlaybooksPage: React.FC = () => {
             <Button size="small" label={t('playbooks.table.runBtn')} icon="pi pi-play" onClick={() => handleExecute(row.id)} />
           )}
         />
-      </DataTable>
+        </CommonDataTable>
+      </div>
 
       <Dialog header={t('playbooks.dialog.title')} visible={showCreate} style={{ width: '560px' }} onHide={() => setShowCreate(false)}>
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">{t('playbooks.dialog.name')}</label>
+            <label className="tenant-form-label">{t('playbooks.dialog.name')}</label>
             <InputText value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('playbooks.dialog.description')}</label>
+            <label className="tenant-form-label">{t('playbooks.dialog.description')}</label>
             <InputText value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full" />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('playbooks.dialog.definition')}</label>
+            <label className="tenant-form-label">{t('playbooks.dialog.definition')}</label>
             <InputTextarea
               value={form.definition}
               onChange={(e) => setForm({ ...form, definition: e.target.value })}

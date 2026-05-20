@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { MasterUser, MasterUserStatus } from '../admin/master-users/entities/master-user.entity';
 import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
+import { TenantBootstrapToken } from '../admin/tenants/entities/tenant-bootstrap-token.entity';
 import { TenantConnectionService } from '../common/database/tenant-connection.service';
 import { TenantUser } from '../tenant/users/entities/tenant-user.entity';
 import { LoginDto } from './dto/login.dto';
@@ -32,6 +33,8 @@ import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 import { getMasterUserPasswordValidationError } from '../admin/master-users/password-policy';
 import { ProductInfoService } from '../admin/product-info/product-info.service';
 import { SessionStoreService } from '../common/session/session-store.service';
+import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
+import { TenantRole } from '../common/guards/roles.guard';
 
 interface AuthAuditContext {
   ipAddress?: string | null;
@@ -78,6 +81,8 @@ export class AuthService {
     private readonly tenantRepo: Repository<Tenant>,
     @InjectRepository(TenantSettings)
     private readonly tenantSettingsRepo: Repository<TenantSettings>,
+    @InjectRepository(TenantBootstrapToken)
+    private readonly tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>,
     @InjectRepository(MasterAuthSettings)
     private readonly masterAuthSettingsRepo: Repository<MasterAuthSettings>,
     @InjectRepository(AuthUserSecurityState)
@@ -276,10 +281,26 @@ export class AuthService {
     return `sessions:tenant:${identity.tenantSlug}:${identity.accountId}`;
   }
 
-  private async assertConcurrentSessionLimit(identity: ScopeIdentity, policy: AuthPolicy): Promise<void> {
+  private async assertConcurrentSessionLimit(
+    identity: ScopeIdentity,
+    policy: AuthPolicy,
+    forceLogoutExistingSessions = false,
+  ): Promise<void> {
     const activeCount = await this.sessionStore.pruneAndCount(this.sessionSetKey(identity));
     if (activeCount >= policy.maxConcurrentSessions) {
-      throw new UnauthorizedException('계정당 동시 로그인 가능 세션 수를 초과했습니다. 기존 세션 종료 후 다시 시도해 주세요.');
+      if (forceLogoutExistingSessions) {
+        await this.sessionStore.revokeAllFromSet(this.sessionSetKey(identity));
+        return;
+      }
+
+      throw new UnauthorizedException({
+        statusCode: 401,
+        error: 'Unauthorized',
+        code: 'SESSION_LIMIT_EXCEEDED',
+        message: '계정당 동시 로그인 가능 세션 수를 초과했습니다. 기존 세션 종료 후 다시 시도해 주세요.',
+        activeSessionCount: activeCount,
+        maxConcurrentSessions: policy.maxConcurrentSessions,
+      });
     }
   }
 
@@ -302,12 +323,13 @@ export class AuthService {
   private async createSessionAndToken(
     payload: Omit<SessionTokenPayload, 'jti'>,
     policy: AuthPolicy,
+    forceLogoutExistingSessions = false,
   ): Promise<SessionIssueResult> {
     const jti = randomUUID().replace(/-/g, '');
     const identity = this.buildSessionIdentity({ ...payload, jti });
     const ttl = this.sessionExpiresIn(policy);
 
-    await this.assertConcurrentSessionLimit(identity, policy);
+    await this.assertConcurrentSessionLimit(identity, policy, forceLogoutExistingSessions);
 
     await this.sessionStore.set(jti, identity.accountId, ttl);
     await this.sessionStore.addToSet(this.sessionSetKey(identity), jti);
@@ -437,6 +459,133 @@ export class AuthService {
     return warning;
   }
 
+  private async getActiveTenantBySlug(rawTenantSlug: string): Promise<Tenant | null> {
+    const isMultiTenantEnabled = await this.isMultiTenantEnabled();
+    const requestedTenantSlug = rawTenantSlug?.trim();
+    const resolvedTenantSlug = isMultiTenantEnabled
+      ? requestedTenantSlug
+      : SYSTEM_TENANT_SLUG;
+
+    if (!resolvedTenantSlug) {
+      return null;
+    }
+
+    return this.tenantRepo.findOne({
+      where: { slug: resolvedTenantSlug, status: 'ACTIVE' as any },
+    });
+  }
+
+  private async hasAnyActiveTenantUser(tenant: Tenant): Promise<boolean> {
+    const conn = await this.tenantConnectionService.getConnection(
+      tenant.slug.replace(/-/g, '_'),
+    );
+    const tenantUserRepo = conn.getRepository(TenantUser);
+
+    const count = await tenantUserRepo.count({ where: { isActive: true } });
+    return count > 0;
+  }
+
+  async getTenantBootstrapStatus(tenantSlug: string): Promise<{ requiresBootstrap: boolean }> {
+    const tenant = await this.getActiveTenantBySlug(tenantSlug);
+    if (!tenant) {
+      return { requiresBootstrap: false };
+    }
+
+    const hasUsers = await this.hasAnyActiveTenantUser(tenant);
+    return { requiresBootstrap: !hasUsers };
+  }
+
+  async bootstrapTenant(
+    dto: BootstrapTenantDto,
+    context: AuthAuditContext,
+  ): Promise<{ success: true; tenantSlug: string; email: string }> {
+    const tenant = await this.getActiveTenantBySlug(dto.tenantSlug);
+    if (!tenant) {
+      throw new UnauthorizedException('유효한 테넌트를 찾을 수 없습니다.');
+    }
+
+    const hasUsers = await this.hasAnyActiveTenantUser(tenant);
+    if (hasUsers) {
+      throw new ConflictException('이미 테넌트 관리자가 등록되어 있습니다.');
+    }
+
+    const tokenRecord = await this.tenantBootstrapTokenRepo.findOne({
+      where: {
+        tenantId: tenant.id,
+        usedAt: IsNull(),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!tokenRecord || tokenRecord.expiresAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException('유효한 최초 관리자 등록 토큰이 없습니다.');
+    }
+
+    const tokenMatch = await bcrypt.compare(dto.invitationToken, tokenRecord.tokenHash);
+    if (!tokenMatch) {
+      await this.safeAudit({
+        actorType: AuditActorType.SYSTEM,
+        actorEmail: dto.email.trim().toLowerCase(),
+        tenantSlug: tenant.slug,
+        action: 'TENANT_BOOTSTRAP_FAILED',
+        resourceType: 'TENANT_BOOTSTRAP',
+        message: '테넌트 최초 관리자 등록 실패: 토큰 불일치',
+        ipAddress: context.ipAddress ?? null,
+        userAgent: context.userAgent ?? null,
+      });
+      throw new UnauthorizedException('최초 관리자 등록 토큰이 올바르지 않습니다.');
+    }
+
+    const normalizedEmail = this.normalizeLoginId(dto.email);
+    if (tokenRecord.email && tokenRecord.email.toLowerCase() !== normalizedEmail) {
+      throw new UnauthorizedException('토큰 발급 대상 이메일과 일치하지 않습니다.');
+    }
+
+    const conn = await this.tenantConnectionService.getConnection(
+      tenant.slug.replace(/-/g, '_'),
+    );
+    const tenantUserRepo = conn.getRepository(TenantUser);
+
+    const existingUser = await tenantUserRepo.findOne({ where: { email: normalizedEmail } });
+    if (existingUser) {
+      throw new ConflictException('이미 존재하는 사용자 이메일입니다.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    await tenantUserRepo.save(
+      tenantUserRepo.create({
+        email: normalizedEmail,
+        displayName: dto.displayName,
+        role: TenantRole.OPERATOR,
+        isActive: true,
+        passwordHash,
+      }),
+    );
+
+    tokenRecord.usedAt = new Date();
+    await this.tenantBootstrapTokenRepo.save(tokenRecord);
+
+    await this.safeAudit({
+      actorType: AuditActorType.SYSTEM,
+      actorEmail: normalizedEmail,
+      tenantSlug: tenant.slug,
+      action: 'TENANT_BOOTSTRAP_COMPLETED',
+      resourceType: 'TENANT_USER',
+      message: '테넌트 최초 관리자 등록 완료',
+      ipAddress: context.ipAddress ?? null,
+      userAgent: context.userAgent ?? null,
+      metadata: {
+        role: TenantRole.OPERATOR,
+      },
+    });
+
+    return {
+      success: true,
+      tenantSlug: tenant.slug,
+      email: normalizedEmail,
+    };
+  }
+
   async loginAsMaster(
     dto: LoginDto,
     context: AuthAuditContext,
@@ -488,7 +637,7 @@ export class AuthService {
     await this.resetSecurityState(state);
 
     const payload = { sub: user.id, email: user.email, isMaster: true, role: 'master' };
-    const session = await this.createSessionAndToken(payload, policy);
+    const session = await this.createSessionAndToken(payload, policy, dto.forceLogoutExistingSessions ?? false);
 
     await this.safeAudit({
       actorType: AuditActorType.MASTER,
@@ -553,6 +702,27 @@ export class AuthService {
       throw new UnauthorizedException('테넌트를 찾을 수 없거나 비활성 상태입니다.');
     }
 
+    const requiresBootstrap = !(await this.hasAnyActiveTenantUser(tenant));
+    if (requiresBootstrap) {
+      await this.safeAudit({
+        actorType: AuditActorType.TENANT,
+        actorEmail: loginId,
+        tenantSlug: tenant.slug,
+        action: 'TENANT_LOGIN_BLOCKED_BOOTSTRAP',
+        resourceType: 'AUTH',
+        message: '테넌트 로그인 차단: 최초 관리자 등록 필요',
+        ipAddress: context.ipAddress ?? null,
+        userAgent: context.userAgent ?? null,
+      });
+
+      throw new UnauthorizedException({
+        statusCode: 401,
+        error: 'Unauthorized',
+        code: 'TENANT_BOOTSTRAP_REQUIRED',
+        message: '테넌트 최초 관리자 등록이 필요합니다.',
+      });
+    }
+
     const policy = await this.getTenantAuthPolicyByTenantId(tenant.id);
     const state = await this.getSecurityState(AuthScope.TENANT, tenant.slug, loginId);
     this.ensureNotLocked(state);
@@ -613,7 +783,7 @@ export class AuthService {
       isMaster: false,
     };
 
-    const session = await this.createSessionAndToken(payload, policy);
+    const session = await this.createSessionAndToken(payload, policy, dto.forceLogoutExistingSessions ?? false);
 
     await this.safeAudit({
       actorType: AuditActorType.TENANT,
@@ -700,6 +870,32 @@ export class AuthService {
       sessionExpiresAt: new Date(Date.now() + ttl * 1000).toISOString(),
       authSettings: policy,
     };
+  }
+
+  async validateSession(authHeader: string | undefined): Promise<{ valid: true }> {
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('인증 토큰이 필요합니다.');
+    }
+
+    const token = authHeader.slice(7);
+
+    let payload: SessionTokenPayload;
+    try {
+      payload = this.jwtService.verify<SessionTokenPayload>(token);
+    } catch {
+      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+    }
+
+    if (!payload.jti) {
+      throw new UnauthorizedException('세션 정보가 없는 토큰입니다.');
+    }
+
+    const sessionValid = await this.sessionStore.exists(payload.jti);
+    if (!sessionValid) {
+      throw new UnauthorizedException('세션이 만료되었거나 다른 기기에서 종료되었습니다.');
+    }
+
+    return { valid: true };
   }
 
   async logout(authHeader: string | undefined, context: AuthAuditContext): Promise<{ success: true }> {

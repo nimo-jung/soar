@@ -5,6 +5,7 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
 import CommonDataTable from '../../components/CommonDataTable';
 import api from '../../api';
 import { formatDateTimeSeconds } from '../../utils/date';
@@ -44,6 +45,20 @@ type TenantDto = {
   name: string;
 };
 
+type PricingPolicyRow = {
+  tierCode: string;
+  baseFee: number;
+  includedEps: number;
+  epsOveragePer100: number;
+  storageOveragePerGb: number;
+  logPerMillion: number;
+  currency: string;
+};
+
+type PricingPolicyResponse = {
+  items: PricingPolicyRow[];
+};
+
 const BillingPage: React.FC = () => {
   const { t } = useTranslation();
   const [rows, setRows] = useState<BillingRow[]>([]);
@@ -51,6 +66,7 @@ const BillingPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [collecting, setCollecting] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [tenantOptions, setTenantOptions] = useState<TenantOption[]>([]);
@@ -58,6 +74,9 @@ const BillingPage: React.FC = () => {
   const [tierCode, setTierCode] = useState<string>('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [pricingPolicies, setPricingPolicies] = useState<PricingPolicyRow[]>([]);
+  const [loadingPricing, setLoadingPricing] = useState(false);
+  const [savingPricing, setSavingPricing] = useState(false);
 
   const tierOptions = useMemo(
     () => [
@@ -98,6 +117,16 @@ const BillingPage: React.FC = () => {
     }
   };
 
+  const loadPricingPolicies = async () => {
+    setLoadingPricing(true);
+    try {
+      const res = await api.get<PricingPolicyResponse>('/admin/billing/pricing-policies');
+      setPricingPolicies(res.data.items);
+    } finally {
+      setLoadingPricing(false);
+    }
+  };
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -125,8 +154,57 @@ const BillingPage: React.FC = () => {
     }
   };
 
+  const handleCollectUsage = async () => {
+    setCollecting(true);
+    try {
+      await api.post('/admin/billing/usage/collect');
+      await loadUsage(1, limit);
+    } finally {
+      setCollecting(false);
+    }
+  };
+
+  const setPolicyNumber = (tierCode: string, key: keyof Omit<PricingPolicyRow, 'tierCode' | 'currency'>, value: number) => {
+    setPricingPolicies((prev) => prev.map((policy) => (
+      policy.tierCode === tierCode
+        ? { ...policy, [key]: Number.isFinite(value) ? value : 0 }
+        : policy
+    )));
+  };
+
+  const setPolicyCurrency = (tierCode: string, value: string) => {
+    setPricingPolicies((prev) => prev.map((policy) => (
+      policy.tierCode === tierCode
+        ? { ...policy, currency: value.toUpperCase() }
+        : policy
+    )));
+  };
+
+  const handleSavePricingPolicies = async () => {
+    setSavingPricing(true);
+    try {
+      const payload = {
+        items: pricingPolicies.map((policy) => ({
+          tierCode: policy.tierCode,
+          baseFee: policy.baseFee,
+          includedEps: policy.includedEps,
+          epsOveragePer100: policy.epsOveragePer100,
+          storageOveragePerGb: policy.storageOveragePerGb,
+          logPerMillion: policy.logPerMillion,
+          currency: policy.currency || 'USD',
+        })),
+      };
+
+      const res = await api.patch<PricingPolicyResponse>('/admin/billing/pricing-policies', payload);
+      setPricingPolicies(res.data.items);
+    } finally {
+      setSavingPricing(false);
+    }
+  };
+
   useEffect(() => {
     void loadTenants();
+    void loadPricingPolicies();
   }, []);
 
   useEffect(() => {
@@ -134,10 +212,19 @@ const BillingPage: React.FC = () => {
   }, [tenantId, tierCode, from, to]);
 
   return (
-    <div className="p-4">
-      <div className="page-header">
+    <div className="admin-page">
+      <div className="admin-page-header">
         <h1>{t('billing.title')}</h1>
-        <div className="flex gap-2">
+        <div className="admin-actions-row">
+          <Button
+            type="button"
+            icon="pi pi-database"
+            label={t('billing.actions.collectUsage')}
+            loading={collecting}
+            onClick={() => {
+              void handleCollectUsage();
+            }}
+          />
           <Button
             type="button"
             icon="pi pi-refresh"
@@ -159,10 +246,10 @@ const BillingPage: React.FC = () => {
         </div>
       </div>
 
-      <Card className="mb-3">
+      <Card className="mb-3 admin-card">
         <div className="grid">
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('billing.filters.tenant')}</label>
+            <label className="admin-form-label">{t('billing.filters.tenant')}</label>
             <Dropdown
               value={tenantId}
               options={[{ label: t('billing.filters.allTenants'), value: null }, ...tenantOptions]}
@@ -172,7 +259,7 @@ const BillingPage: React.FC = () => {
             />
           </div>
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('billing.filters.tier')}</label>
+            <label className="admin-form-label">{t('billing.filters.tier')}</label>
             <Dropdown
               value={tierCode}
               options={tierOptions}
@@ -181,11 +268,11 @@ const BillingPage: React.FC = () => {
             />
           </div>
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('billing.filters.from')}</label>
+            <label className="admin-form-label">{t('billing.filters.from')}</label>
             <InputText type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full" />
           </div>
           <div className="col-12 md:col-3">
-            <label className="block mb-2 text-sm">{t('billing.filters.to')}</label>
+            <label className="admin-form-label">{t('billing.filters.to')}</label>
             <InputText type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full" />
           </div>
         </div>
@@ -193,23 +280,23 @@ const BillingPage: React.FC = () => {
 
       <div className="grid mb-3">
         <div className="col-12 md:col-4">
-          <Card title={t('billing.summary.totalLogCount')}>
+          <Card title={t('billing.summary.totalLogCount')} className="admin-card admin-stat-card">
             <span>{summary.totalLogCount}</span>
           </Card>
         </div>
         <div className="col-12 md:col-4">
-          <Card title={t('billing.summary.avgEps')}>
+          <Card title={t('billing.summary.avgEps')} className="admin-card admin-stat-card">
             <span>{summary.avgEps.toFixed(2)}</span>
           </Card>
         </div>
         <div className="col-12 md:col-4">
-          <Card title={t('billing.summary.avgStorageGb')}>
+          <Card title={t('billing.summary.avgStorageGb')} className="admin-card admin-stat-card">
             <span>{summary.avgStorageGb.toFixed(2)} GB</span>
           </Card>
         </div>
       </div>
 
-      <Card title={t('billing.table.title')}>
+      <Card title={t('billing.table.title')} className="admin-card">
         <CommonDataTable
           value={rows}
           loading={loading}
@@ -218,7 +305,7 @@ const BillingPage: React.FC = () => {
           rows={limit}
           totalRecords={total}
           rowsPerPageOptions={[10, 20, 50]}
-          className="admin-tenants-table"
+          className="admin-table"
           onPage={(event) => {
             const nextPage = Math.floor((event.first ?? 0) / (event.rows ?? 10)) + 1;
             const nextLimit = event.rows ?? 10;
@@ -230,6 +317,110 @@ const BillingPage: React.FC = () => {
           <Column field="epsAvg" header={t('billing.table.epsAvg')} body={(row: BillingRow) => row.epsAvg.toFixed(2)} />
           <Column field="storageUsedGb" header={t('billing.table.storageUsedGb')} body={(row: BillingRow) => row.storageUsedGb.toFixed(2)} />
           <Column field="logCount" header={t('billing.table.logCount')} />
+        </CommonDataTable>
+      </Card>
+
+      <Card title={t('billing.pricing.title')} className="mt-3 admin-card">
+        <div className="flex justify-content-end mb-3">
+          <Button
+            type="button"
+            icon="pi pi-save"
+            label={t('billing.pricing.save')}
+            loading={savingPricing}
+            disabled={loadingPricing || pricingPolicies.length === 0}
+            onClick={() => {
+              void handleSavePricingPolicies();
+            }}
+          />
+        </div>
+        <CommonDataTable value={pricingPolicies} loading={loadingPricing} className="admin-table">
+          <Column field="tierCode" header={t('billing.pricing.columns.tierCode')} />
+          <Column
+            header={t('billing.pricing.columns.baseFee')}
+            body={(row: PricingPolicyRow) => (
+              <InputNumber
+                value={row.baseFee}
+                min={0}
+                minFractionDigits={2}
+                maxFractionDigits={2}
+                mode="decimal"
+                useGrouping={false}
+                className="w-full"
+                onValueChange={(event) => setPolicyNumber(row.tierCode, 'baseFee', event.value ?? 0)}
+              />
+            )}
+          />
+          <Column
+            header={t('billing.pricing.columns.includedEps')}
+            body={(row: PricingPolicyRow) => (
+              <InputNumber
+                value={row.includedEps}
+                min={0}
+                minFractionDigits={0}
+                maxFractionDigits={2}
+                mode="decimal"
+                useGrouping={false}
+                className="w-full"
+                onValueChange={(event) => setPolicyNumber(row.tierCode, 'includedEps', event.value ?? 0)}
+              />
+            )}
+          />
+          <Column
+            header={t('billing.pricing.columns.epsOveragePer100')}
+            body={(row: PricingPolicyRow) => (
+              <InputNumber
+                value={row.epsOveragePer100}
+                min={0}
+                minFractionDigits={0}
+                maxFractionDigits={4}
+                mode="decimal"
+                useGrouping={false}
+                className="w-full"
+                onValueChange={(event) => setPolicyNumber(row.tierCode, 'epsOveragePer100', event.value ?? 0)}
+              />
+            )}
+          />
+          <Column
+            header={t('billing.pricing.columns.storageOveragePerGb')}
+            body={(row: PricingPolicyRow) => (
+              <InputNumber
+                value={row.storageOveragePerGb}
+                min={0}
+                minFractionDigits={0}
+                maxFractionDigits={4}
+                mode="decimal"
+                useGrouping={false}
+                className="w-full"
+                onValueChange={(event) => setPolicyNumber(row.tierCode, 'storageOveragePerGb', event.value ?? 0)}
+              />
+            )}
+          />
+          <Column
+            header={t('billing.pricing.columns.logPerMillion')}
+            body={(row: PricingPolicyRow) => (
+              <InputNumber
+                value={row.logPerMillion}
+                min={0}
+                minFractionDigits={0}
+                maxFractionDigits={4}
+                mode="decimal"
+                useGrouping={false}
+                className="w-full"
+                onValueChange={(event) => setPolicyNumber(row.tierCode, 'logPerMillion', event.value ?? 0)}
+              />
+            )}
+          />
+          <Column
+            header={t('billing.pricing.columns.currency')}
+            body={(row: PricingPolicyRow) => (
+              <InputText
+                value={row.currency}
+                maxLength={10}
+                className="w-full"
+                onChange={(event) => setPolicyCurrency(row.tierCode, event.target.value)}
+              />
+            )}
+          />
         </CommonDataTable>
       </Card>
     </div>

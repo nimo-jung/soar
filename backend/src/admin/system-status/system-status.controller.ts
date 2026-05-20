@@ -65,8 +65,17 @@ export class SystemStatusController {
   @Post('check')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '즉시 헬스 체크 + DB 저장 트리거' })
-  async triggerCheck() {
+  async triggerCheck(
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
     await this.svc.runPeriodicCheck();
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'SYSTEM_STATUS_CHECK_TRIGGER',
+      resourceType: 'SYSTEM_STATUS',
+      message: '시스템 상태 즉시 점검 수동 실행',
+    });
     return { ok: true };
   }
 

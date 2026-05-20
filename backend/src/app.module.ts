@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/c
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './common/database/database.module';
 import { RedisModule } from './common/redis/redis.module';
+import { MessagingModule } from './common/messaging/messaging.module';
 import { AdminModule } from './admin/admin.module';
 import { TenantModule } from './tenant/tenant.module';
 import { AuthModule } from './auth/auth.module';
@@ -11,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '../.env' }),
     DatabaseModule,
     RedisModule,
+    MessagingModule,
     AuthModule,
     AdminModule,
     TenantModule,

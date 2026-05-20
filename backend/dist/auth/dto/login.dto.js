@@ -15,6 +15,7 @@ const swagger_1 = require("@nestjs/swagger");
 class LoginDto {
     email;
     password;
+    forceLogoutExistingSessions;
 }
 exports.LoginDto = LoginDto;
 __decorate([
@@ -27,4 +28,10 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '동시 세션 초과 시 기존 세션을 강제 종료하고 로그인할지 여부' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], LoginDto.prototype, "forceLogoutExistingSessions", void 0);
 //# sourceMappingURL=login.dto.js.map

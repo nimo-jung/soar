@@ -140,12 +140,12 @@ const IntegrityPage: React.FC = () => {
   const missingCount = baselines.filter((b) => b.status === 'MISSING').length;
 
   return (
-    <div className="p-4">
+    <div className="admin-page">
       <Toast ref={toast} />
       <ConfirmDialog />
-      <div className="page-header">
+      <div className="admin-page-header">
         <h1>{t('integrity.title')}</h1>
-        <div className="flex gap-2">
+        <div className="admin-actions-row">
           <Button icon="pi pi-search" label={t('integrity.checkAllBtn')} loading={checking} onClick={() => { void handleCheckAll(); }} />
           <Button icon="pi pi-plus" label={t('integrity.registerBtn')} outlined onClick={() => setShowRegister(true)} />
         </div>
@@ -160,12 +160,13 @@ const IntegrityPage: React.FC = () => {
         </div>
       )}
 
-      <Card>
+      <Card className="admin-card">
         <CommonDataTable
           value={baselines}
           loading={loading}
           paginator
           rows={20}
+          className="admin-table"
         >
           <Column field="fileLabel" header={t('integrity.table.label')} sortable />
           <Column field="filePath" header={t('integrity.table.path')} style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis' }} />
@@ -200,7 +201,7 @@ const IntegrityPage: React.FC = () => {
       >
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">{t('integrity.registerDialog.filePath')}</label>
+            <label className="admin-form-label">{t('integrity.registerDialog.filePath')}</label>
             <InputText
               value={form.filePath}
               onChange={(e) => setForm({ ...form, filePath: e.target.value })}
@@ -209,7 +210,7 @@ const IntegrityPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block mb-1 text-sm">{t('integrity.registerDialog.fileLabel')}</label>
+            <label className="admin-form-label">{t('integrity.registerDialog.fileLabel')}</label>
             <InputText
               value={form.fileLabel}
               onChange={(e) => setForm({ ...form, fileLabel: e.target.value })}

@@ -50,6 +50,7 @@
     "submit": "로그인",
     "errorEmpty": "이메일과 비밀번호를 입력하세요.",
     "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "sessionLimitConfirm": "강제로 기존 세션을 종료하고 로그인하시겠습니까?",
     "errorLocked": "로그인 실패 횟수를 초과하여 계정이 잠금 상태입니다. {{clock}} 후 다시 시도할 수 있습니다.",
     "lockReleased": "잠금이 해제되었습니다. 다시 로그인해 주세요.",
     "licenseExpirySoon": "라이선스 만료 임박: {{days}}일 후 만료됩니다. (만료일: {{date}}) 제품 정보 페이지에서 라이선스를 업데이트하세요.",
@@ -217,6 +218,35 @@
         "deleteFailed": "등급 삭제 중 오류가 발생했습니다.",
         "ok": "확인"
       }
+    },
+    "bootstrap": {
+      "issueAction": "초기 관리자 토큰 발급",
+      "historyAction": "토큰 발급 이력",
+      "issueTitle": "초기 관리자 등록 토큰 발급",
+      "historyTitle": "토큰 발급 이력",
+      "emailPlaceholder": "초대 대상 이메일(선택)",
+      "expiresMinutes": "만료 시간(분)",
+      "issueSubmit": "토큰 발급",
+      "issueSuccessTitle": "토큰 발급 완료",
+      "issueSuccessDetail": "초기 관리자 등록 토큰이 발급되었습니다.",
+      "tokenLabel": "발급 토큰 (1회 노출)",
+      "copyToken": "토큰 복사",
+      "copySuccessTitle": "복사 완료",
+      "copySuccessDetail": "토큰이 클립보드에 복사되었습니다.",
+      "copyFailedTitle": "복사 실패",
+      "copyFailedDetail": "토큰 복사 중 오류가 발생했습니다.",
+      "filterFrom": "발급 시작일",
+      "filterTo": "발급 종료일",
+      "filterApply": "조회",
+      "filterReset": "초기화",
+      "expiresAt": "만료 시각",
+      "usedAt": "사용 시각",
+      "issuedBy": "발급자 ID",
+      "status": {
+        "active": "유효",
+        "expired": "만료",
+        "used": "사용완료"
+      }
     }
   },
   "auditLogs": {
@@ -337,6 +367,7 @@
   "billing": {
     "title": "빌링/사용량",
     "actions": {
+      "collectUsage": "사용량 집계 실행",
       "refresh": "새로고침",
       "exportCsv": "CSV 내보내기"
     },
@@ -360,6 +391,19 @@
       "epsAvg": "평균 EPS",
       "storageUsedGb": "사용 스토리지(GB)",
       "logCount": "로그 건수"
+    },
+    "pricing": {
+      "title": "단가 정책",
+      "save": "단가 정책 저장",
+      "columns": {
+        "tierCode": "등급 코드",
+        "baseFee": "기본 요금",
+        "includedEps": "기본 포함 EPS",
+        "epsOveragePer100": "EPS 초과 100당",
+        "storageOveragePerGb": "스토리지 초과 GB당",
+        "logPerMillion": "로그 100만 건당",
+        "currency": "통화"
+      }
     }
   },
   "monitoring": {

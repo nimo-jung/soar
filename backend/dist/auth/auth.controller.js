@@ -19,6 +19,7 @@ const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
 const tenant_login_dto_1 = require("./dto/tenant-login.dto");
 const bootstrap_master_dto_1 = require("./dto/bootstrap-master.dto");
+const bootstrap_tenant_dto_1 = require("./dto/bootstrap-tenant.dto");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -54,6 +55,12 @@ let AuthController = class AuthController {
     tenantLogin(dto, req) {
         return this.authService.loginAsTenant(dto, this.getRequestContext(req));
     }
+    tenantBootstrapStatus(tenantSlug) {
+        return this.authService.getTenantBootstrapStatus(tenantSlug ?? '');
+    }
+    tenantBootstrap(dto, req) {
+        return this.authService.bootstrapTenant(dto, this.getRequestContext(req));
+    }
     logout(authorization, req) {
         return this.authService.logout(authorization, this.getRequestContext(req));
     }
@@ -62,6 +69,9 @@ let AuthController = class AuthController {
     }
     extendSession(authorization) {
         return this.authService.extendSession(authorization);
+    }
+    validateSession(authorization) {
+        return this.authService.validateSession(authorization);
     }
 };
 exports.AuthController = AuthController;
@@ -140,6 +150,25 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "tenantLogin", null);
 __decorate([
+    (0, common_1.Get)('tenant/bootstrap/status'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록 필요 여부 조회' }),
+    __param(0, (0, common_1.Query)('tenantSlug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "tenantBootstrapStatus", null);
+__decorate([
+    (0, common_1.Post)('tenant/bootstrap'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록(1회성 토큰)' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bootstrap_tenant_dto_1.BootstrapTenantDto, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "tenantBootstrap", null);
+__decorate([
     (0, common_1.Post)('logout'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: '로그아웃 감사로그 기록' }),
@@ -168,6 +197,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "extendSession", null);
+__decorate([
+    (0, common_1.Post)('session/validate'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '세션 유효성 검증 (연장 없음)' }),
+    __param(0, (0, common_1.Headers)('authorization')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "validateSession", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),

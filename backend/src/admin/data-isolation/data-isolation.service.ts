@@ -49,22 +49,27 @@ export class DataIsolationService {
       snapshotCounts[row.tenant_id] = { count: Number(row.cnt), lastAt: row.last_at };
     }
 
-    // 감사로그: tenantSlug가 null 건수 집계 (per tenant, 자기 slug 기준 filtering)
-    // 감사로그: cross-tenant access (다른 slug가 이 tenantSlug 값으로 기록한 건수)
-    const missingContextRows = await this.dataSource.query<{ cnt: string }[]>(
-      `SELECT COUNT(*) AS cnt FROM audit_logs WHERE tenant_slug IS NULL AND actor_type != 'MASTER'`,
+    const gapStats = await Promise.all(
+      tenants.map(async (tenant) => ({
+        tenantId: tenant.id,
+        tenantSlug: tenant.slug,
+        ...(await this.getTenantGapCounts(tenant.slug)),
+      })),
     );
-    const globalMissingContext = Number(missingContextRows[0]?.cnt ?? 0);
+    const gapByTenantSlug = new Map(gapStats.map((row) => [row.tenantSlug, row]));
 
     const results: IsolationTenantStat[] = tenants.map((t) => {
       const snap = snapshotCounts[t.id] ?? { count: 0, lastAt: null };
-      const missingContextCount = globalMissingContext > 0 && tenants.length > 0
-        ? Math.round(globalMissingContext / tenants.length)
-        : 0;
+      const gap = gapByTenantSlug.get(t.slug);
+      const auditCrossCount = gap?.auditCrossCount ?? 0;
+      const missingContextCount = gap?.missingContextCount ?? 0;
 
       let riskLevel: 'OK' | 'WARN' | 'CRITICAL' = 'OK';
-      if (missingContextCount > 10) riskLevel = 'CRITICAL';
-      else if (missingContextCount > 0) riskLevel = 'WARN';
+      if (auditCrossCount > 0 || missingContextCount >= 10) {
+        riskLevel = 'CRITICAL';
+      } else if (missingContextCount > 0 || snap.count === 0) {
+        riskLevel = 'WARN';
+      }
 
       return {
         tenantId: t.id,
@@ -72,7 +77,7 @@ export class DataIsolationService {
         tenantSlug: t.slug,
         snapshotCount: snap.count,
         lastSnapshotAt: snap.lastAt,
-        auditCrossCount: 0,
+        auditCrossCount,
         missingContextCount,
         riskLevel,
       };
@@ -96,10 +101,22 @@ export class DataIsolationService {
    * 특정 테넌트에 대한 감사로그 컨텍스트 누락 건수를 실제로 집계
    */
   async getTenantAuditGaps(tenantSlug: string): Promise<{ missingContextCount: number; recentMissing: AuditLog[] }> {
+    const normalized = tenantSlug.trim();
+    if (!normalized) {
+      return { missingContextCount: 0, recentMissing: [] };
+    }
+
     const missing = await this.auditLogRepo
       .createQueryBuilder('al')
       .where('al.tenantSlug IS NULL')
       .andWhere('al.actorType != :type', { type: 'MASTER' })
+      .andWhere(
+        `(
+          JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.targetTenantSlug')) = :tenantSlug
+          OR JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.tenantSlug')) = :tenantSlug
+        )`,
+        { tenantSlug: normalized },
+      )
       .orderBy('al.createdAt', 'DESC')
       .limit(20)
       .getMany();
@@ -109,11 +126,60 @@ export class DataIsolationService {
       .select('COUNT(*)', 'cnt')
       .where('al.tenantSlug IS NULL')
       .andWhere('al.actorType != :type', { type: 'MASTER' })
+      .andWhere(
+        `(
+          JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.targetTenantSlug')) = :tenantSlug
+          OR JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.tenantSlug')) = :tenantSlug
+        )`,
+        { tenantSlug: normalized },
+      )
       .getRawOne<{ cnt: string }>();
 
     return {
       missingContextCount: Number(countRows?.cnt ?? 0),
       recentMissing: missing,
+    };
+  }
+
+  private async getTenantGapCounts(tenantSlug: string): Promise<{ auditCrossCount: number; missingContextCount: number }> {
+    const crossRows = await this.dataSource.query<{ cnt: string }[]>(
+      `
+      SELECT COUNT(*) AS cnt
+      FROM audit_logs al
+      WHERE al.actor_type = 'TENANT'
+        AND (
+          (
+            al.tenant_slug = ?
+            AND JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.targetTenantSlug')) IS NOT NULL
+            AND JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.targetTenantSlug')) != ?
+          )
+          OR
+          (
+            al.tenant_slug != ?
+            AND JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.targetTenantSlug')) = ?
+          )
+        )
+      `,
+      [tenantSlug, tenantSlug, tenantSlug, tenantSlug],
+    );
+
+    const missingRows = await this.dataSource.query<{ cnt: string }[]>(
+      `
+      SELECT COUNT(*) AS cnt
+      FROM audit_logs al
+      WHERE al.actor_type = 'TENANT'
+        AND al.tenant_slug IS NULL
+        AND (
+          JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.targetTenantSlug')) = ?
+          OR JSON_UNQUOTE(JSON_EXTRACT(al.metadata, '$.tenantSlug')) = ?
+        )
+      `,
+      [tenantSlug, tenantSlug],
+    );
+
+    return {
+      auditCrossCount: Number(crossRows[0]?.cnt ?? 0),
+      missingContextCount: Number(missingRows[0]?.cnt ?? 0),
     };
   }
 }

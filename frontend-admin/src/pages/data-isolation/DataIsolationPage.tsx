@@ -70,9 +70,9 @@ const DataIsolationPage: React.FC = () => {
     row.lastSnapshotAt ? formatDateTimeSeconds(row.lastSnapshotAt) : '-';
 
   return (
-    <div className="p-4">
+    <div className="admin-page">
       <Toast ref={toast} />
-      <div className="page-header">
+      <div className="admin-page-header">
         <h1>{t('dataIsolation.title')}</h1>
         <Button
           type="button"
@@ -88,28 +88,28 @@ const DataIsolationPage: React.FC = () => {
         <>
           <div className="grid mb-3">
             <div className="col-12 md:col-3">
-              <Card title={t('dataIsolation.summary.totalTenants')}>
+              <Card title={t('dataIsolation.summary.totalTenants')} className="admin-card admin-stat-card">
                 <span className="text-2xl font-bold">{data.totalTenants}</span>
               </Card>
             </div>
             <div className="col-12 md:col-3">
-              <Card title={t('dataIsolation.summary.ok')}>
+              <Card title={t('dataIsolation.summary.ok')} className="admin-card admin-stat-card">
                 <span className="text-2xl font-bold text-green-500">{data.okCount}</span>
               </Card>
             </div>
             <div className="col-12 md:col-3">
-              <Card title={t('dataIsolation.summary.warn')}>
+              <Card title={t('dataIsolation.summary.warn')} className="admin-card admin-stat-card">
                 <span className="text-2xl font-bold text-yellow-500">{data.warnCount}</span>
               </Card>
             </div>
             <div className="col-12 md:col-3">
-              <Card title={t('dataIsolation.summary.critical')}>
+              <Card title={t('dataIsolation.summary.critical')} className="admin-card admin-stat-card">
                 <span className="text-2xl font-bold text-red-500">{data.criticalCount}</span>
               </Card>
             </div>
           </div>
 
-          <Card title={t('dataIsolation.table.title')}>
+          <Card title={t('dataIsolation.table.title')} className="admin-card">
             <small className="block mb-3 text-color-secondary">
               {t('dataIsolation.checkedAt', { checkedAt: formatDateTimeSeconds(data.checkedAt) })}
             </small>
@@ -119,7 +119,7 @@ const DataIsolationPage: React.FC = () => {
               paginator
               rows={20}
               rowsPerPageOptions={[10, 20, 50]}
-              className="admin-tenants-table"
+              className="admin-table"
             >
               <Column field="tenantName" header={t('dataIsolation.table.tenant')} sortable />
               <Column field="tenantSlug" header={t('dataIsolation.table.slug')} />

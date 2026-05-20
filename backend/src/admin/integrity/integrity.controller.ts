@@ -42,8 +42,24 @@ export class IntegrityController {
   @Post('check')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '전체 파일 무결성 점검 실행' })
-  async checkAll() {
-    return this.integritySvc.checkAll();
+  async checkAll(
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
+    const result = await this.integritySvc.checkAll();
+    const totalChecked = result.length;
+    const mismatchedCount = result.filter((item) => item.status === 'CHANGED').length;
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'INTEGRITY_CHECK_ALL',
+      resourceType: 'INTEGRITY_BASELINE',
+      message: `무결성 전체 점검 실행 | checked=${totalChecked} | mismatched=${mismatchedCount}`,
+      metadata: {
+        totalChecked,
+        mismatchedCount,
+      },
+    });
+    return result;
   }
 
   @Post(':id/sync')

@@ -41,6 +41,9 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CollectorsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -49,10 +52,13 @@ const crypto = __importStar(require("crypto"));
 const tenant_connection_service_1 = require("../../common/database/tenant-connection.service");
 const collector_entity_1 = require("./entities/collector.entity");
 const tenant_context_1 = require("../../common/context/tenant.context");
+const redis_module_1 = require("../../common/redis/redis.module");
 let CollectorsService = class CollectorsService {
     tenantConn;
-    constructor(tenantConn) {
+    redis;
+    constructor(tenantConn, redis) {
         this.tenantConn = tenantConn;
+        this.redis = redis;
     }
     async getRepo(tenantId) {
         const conn = await this.tenantConn.getConnection(tenantId);
@@ -65,6 +71,13 @@ let CollectorsService = class CollectorsService {
         const apiKeyHash = await bcrypt.hash(plainApiKey, 12);
         const collector = repo.create({ ...dto, apiKeyHash });
         const saved = await repo.save(collector);
+        try {
+            await this.persistApiKeyMapping(tenantId, saved.id, plainApiKey);
+        }
+        catch (error) {
+            await repo.remove(saved);
+            throw error;
+        }
         return { ...saved, plainApiKey };
     }
     async findAll() {
@@ -75,12 +88,44 @@ let CollectorsService = class CollectorsService {
     async deactivate(id) {
         const tenantId = tenant_context_1.TenantContext.getTenantId();
         const repo = await this.getRepo(tenantId);
+        const collector = await repo.findOne({ where: { id } });
+        if (!collector) {
+            throw new common_1.NotFoundException(`collector id=${id} not found`);
+        }
         await repo.update(id, { isActive: false });
+        await this.revokeApiKeyMappings(tenantId, id);
+    }
+    authKey(apiKey) {
+        return `api_key:${apiKey}`;
+    }
+    collectorApiIndexKey(tenantId, collectorId) {
+        return `tenant:${tenantId}:collector:${collectorId}:api_keys`;
+    }
+    async persistApiKeyMapping(tenantId, collectorId, plainApiKey) {
+        const pipeline = this.redis.pipeline();
+        pipeline.set(this.authKey(plainApiKey), tenantId);
+        pipeline.sadd(this.collectorApiIndexKey(tenantId, collectorId), plainApiKey);
+        await pipeline.exec();
+    }
+    async revokeApiKeyMappings(tenantId, collectorId) {
+        const indexKey = this.collectorApiIndexKey(tenantId, collectorId);
+        const apiKeys = await this.redis.smembers(indexKey);
+        if (apiKeys.length === 0) {
+            await this.redis.del(indexKey);
+            return;
+        }
+        const pipeline = this.redis.pipeline();
+        for (const apiKey of apiKeys) {
+            pipeline.del(this.authKey(apiKey));
+        }
+        pipeline.del(indexKey);
+        await pipeline.exec();
     }
 };
 exports.CollectorsService = CollectorsService;
 exports.CollectorsService = CollectorsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [tenant_connection_service_1.TenantConnectionService])
+    __param(1, (0, common_1.Inject)(redis_module_1.REDIS_CLIENT)),
+    __metadata("design:paramtypes", [tenant_connection_service_1.TenantConnectionService, Function])
 ], CollectorsService);
 //# sourceMappingURL=collectors.service.js.map

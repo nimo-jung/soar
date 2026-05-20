@@ -30,6 +30,7 @@
     "alerts": "Alerts",
     "playbooks": "Playbooks",
     "collectors": "Collector",
+    "users": "Users",
     "settings": "Settings",
     "authSettings": "Auth Settings"
   },
@@ -44,6 +45,7 @@
     "submit": "Sign In",
     "errorEmpty": "Please fill in all fields.",
     "errorInvalid": "Please check your login credentials.",
+    "sessionLimitConfirm": "Do you want to force-close existing sessions and continue login?",
     "errorLocked": "Account locked due to too many failed attempts. Try again in {{clock}}.",
     "lockReleased": "Account unlocked. Please sign in again.",
     "tenantExpirySoon": "⚠ Subscription Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please contact your administrator to renew the subscription.",
@@ -61,6 +63,18 @@
       "realtime": "AI-powered real-time network behavior analytics and anomaly tracking",
       "isolation": "Tenant-isolated protection for logs, policies, and sessions",
       "playbook": "Detection-driven automated response playbook orchestration"
+    },
+    "bootstrap": {
+      "required": "You must register the first tenant administrator before login.",
+      "move": "Go To First Admin Registration",
+      "title": "Tenant First Admin Registration",
+      "subtitle": "Register the first operator using a one-time token issued by Master Admin.",
+      "invitationToken": "Invitation Token",
+      "submit": "Register First Admin",
+      "goLogin": "Go To Login",
+      "success": "First admin registration completed. Redirecting to login.",
+      "errorEmpty": "Please fill in all fields.",
+      "errorFailed": "Failed to register first admin. Please check token and input values."
     }
   },
   "collectors": {
@@ -81,12 +95,44 @@
   },
   "alerts": {
     "title": "Alert List",
+    "description": "Create security alerts and manage status, notification policy, and delivery history.",
+    "createBtn": "Create Alert",
     "table": {
       "title": "Title",
       "severity": "Severity",
       "sourceIp": "Source IP",
       "occurredAt": "Occurred At",
-      "acknowledgeBtn": "Acknowledge"
+      "acknowledgeBtn": "Acknowledge",
+      "statusUpdate": "Update Status"
+    },
+    "dialog": {
+      "title": "Create Alert",
+      "titleLabel": "Title",
+      "descriptionLabel": "Description",
+      "severity": "Severity",
+      "sourceIp": "Source IP",
+      "ruleId": "Detection Rule ID"
+    },
+    "policy": {
+      "title": "Notification Policy",
+      "channels": "Delivery Channels",
+      "channelsPlaceholder": "Select channels",
+      "recipients": "Recipients",
+      "recipientsHelp": "Separate values with commas. Example: soc@acme.com, #soc-alerts"
+    },
+    "history": {
+      "title": "Delivery History",
+      "alertId": "Alert ID",
+      "channel": "Channel",
+      "recipient": "Recipient",
+      "deliveryStatus": "Result",
+      "sentAt": "Sent At"
+    },
+    "errors": {
+      "loadFailed": "Failed to load alert data.",
+      "createFailed": "An error occurred while creating alert.",
+      "statusFailed": "An error occurred while updating alert status.",
+      "policyFailed": "An error occurred while saving notification policy."
     }
   },
   "playbooks": {
@@ -103,6 +149,43 @@
       "description": "Description",
       "status": "Status",
       "runBtn": "Run"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage IP whitelist, parsing rules, and branding settings.",
+    "parsingRules": {
+      "title": "Parsing Rules",
+      "createBtn": "Create Parsing Rule",
+      "table": {
+        "name": "Rule Name",
+        "logSourceType": "Log Source",
+        "priority": "Priority",
+        "editBtn": "Edit",
+        "deactivateBtn": "Deactivate"
+      },
+      "sources": {
+        "all": "All",
+        "syslog": "Syslog",
+        "firewall": "Firewall",
+        "waf": "WAF",
+        "edr": "EDR"
+      },
+      "dialog": {
+        "createTitle": "Create Parsing Rule",
+        "editTitle": "Edit Parsing Rule",
+        "name": "Rule Name",
+        "logSourceType": "Log Source",
+        "priority": "Priority",
+        "ruleDefinition": "Rule Definition JSON",
+        "ruleDefinitionHelp": "Example: {\"fieldMappings\": {\"src_ip\": \"source_ip\"}}"
+      },
+      "errors": {
+        "loadFailed": "Failed to load parsing rules.",
+        "saveFailed": "An error occurred while saving parsing rule.",
+        "deactivateFailed": "An error occurred while deactivating parsing rule.",
+        "invalidJson": "Rule definition JSON is invalid."
+      }
     }
   },
   "authSettings": {
@@ -129,6 +212,40 @@
     "autoLogoutTimeoutMinutes": {
       "label": "Auto logout timeout (minutes)",
       "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "description": "Manage tenant user accounts and roles.",
+    "createBtn": "Create User",
+    "roles": {
+      "operator": "Operator",
+      "analyst": "Analyst",
+      "auditor": "Auditor"
+    },
+    "table": {
+      "email": "Email",
+      "displayName": "Name",
+      "role": "Role",
+      "editBtn": "Edit",
+      "deactivateBtn": "Deactivate"
+    },
+    "dialog": {
+      "createTitle": "Create User",
+      "editTitle": "Edit User",
+      "email": "Email",
+      "displayName": "Name",
+      "role": "Role",
+      "password": "Password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter only when changing",
+      "createConfirm": "Create",
+      "editConfirm": "Save"
+    },
+    "errors": {
+      "loadFailed": "Failed to load user list.",
+      "saveFailed": "An error occurred while saving user.",
+      "deactivateFailed": "An error occurred while deactivating user."
     }
   },
   "tenantWarning": {

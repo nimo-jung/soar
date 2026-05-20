@@ -260,6 +260,16 @@ Tenant 앱은 로그인 응답의 `brandingConfig`를 기반으로 CSS 변수를
 
 ---
 
+## 8. UI 상호작용 공통 규칙 (중요)
+
+- `window.alert`, `window.confirm`, `window.prompt`는 두 앱에서 **절대 사용하지 않는다**.
+- 사용자 확인/경고/에러 안내는 PrimeReact 컴포넌트로 구현한다.
+- 확인이 필요한 액션: `ConfirmDialog` 또는 커스텀 `Dialog` 사용.
+- 알림성 피드백: `Toast` 또는 `Message` 사용.
+- 코드 리뷰 기준: 브라우저 기본 다이얼로그 API 사용 코드가 있으면 반려한다.
+
+---
+
 ## 8. CSS 작성 규칙
 - 페이지·컴포넌트 레벨의 스타일은 PrimeFlex 유틸리티 클래스 또는 PrimeReact 컴포넌트 내장 스타일을 우선 사용한다.
 - Tailwind CSS는 PrimeFlex로 표현 불가능한 경우에 한해 보조적으로 사용한다.

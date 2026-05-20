@@ -23,6 +23,7 @@
     "migration:revert:admin": "typeorm-ts-node-commonjs -d src/database/admin-data-source.ts migration:revert",
     "migration:run:tenant": "typeorm-ts-node-commonjs -d src/database/tenant-data-source.ts migration:run",
     "migration:revert:tenant": "typeorm-ts-node-commonjs -d src/database/tenant-data-source.ts migration:revert",
+    "billing:pricing:upsert": "node scripts/upsert-billing-pricing.js",
     "check:audit:cud": "node scripts/check-cud-audit.js",
     "setup": "node -e \"console.log('Admin seed is disabled. Use /auth/master/bootstrap for initial admin registration.')\""
   },
@@ -39,6 +40,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "ioredis": "^5.10.1",
+    "kafkajs": "^2.2.4",
     "mysql2": "^3.22.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

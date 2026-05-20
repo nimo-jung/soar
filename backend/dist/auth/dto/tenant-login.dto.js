@@ -16,6 +16,7 @@ class TenantLoginDto {
     email;
     password;
     tenantSlug;
+    forceLogoutExistingSessions;
 }
 exports.TenantLoginDto = TenantLoginDto;
 __decorate([
@@ -34,4 +35,10 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], TenantLoginDto.prototype, "tenantSlug", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '동시 세션 초과 시 기존 세션을 강제 종료하고 로그인할지 여부' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], TenantLoginDto.prototype, "forceLogoutExistingSessions", void 0);
 //# sourceMappingURL=tenant-login.dto.js.map

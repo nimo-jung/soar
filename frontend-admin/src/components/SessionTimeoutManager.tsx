@@ -11,6 +11,7 @@ import { AuthPolicy } from '../types/auth-policy';
 const WARNING_THRESHOLD_MS = 70_000;
 const AUTO_EXTEND_COOLDOWN_MS = 15_000;
 const AUTO_EXTEND_REMAINING_MS = 120_000;
+const SESSION_VALIDATE_INTERVAL_MS = 10_000;
 
 function readTokenRemainingMs(token: string): number {
   const payload = parseJwt(token);
@@ -145,6 +146,45 @@ const SessionTimeoutManager: React.FC = () => {
     }, 1000);
 
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const validateSession = async () => {
+      if (!tokenRef.current || !authSettingsRef.current) {
+        return;
+      }
+
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+
+      if (extendingRef.current) {
+        return;
+      }
+
+      try {
+        await api.post('/auth/session/validate');
+      } catch {
+        // 401 인터셉터가 로그인 페이지로 이동 처리한다.
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      void validateSession();
+    }, SESSION_VALIDATE_INTERVAL_MS);
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void validateSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const remainingText = useMemo(() => {

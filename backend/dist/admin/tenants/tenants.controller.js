@@ -20,6 +20,8 @@ const create_tenant_dto_1 = require("./dto/create-tenant.dto");
 const update_tenant_dto_1 = require("./dto/update-tenant.dto");
 const create_tenant_tier_dto_1 = require("./dto/create-tenant-tier.dto");
 const update_tenant_tier_dto_1 = require("./dto/update-tenant-tier.dto");
+const issue_tenant_bootstrap_token_dto_1 = require("./dto/issue-tenant-bootstrap-token.dto");
+const get_tenant_bootstrap_tokens_query_dto_1 = require("./dto/get-tenant-bootstrap-tokens-query.dto");
 const master_guard_1 = require("../../common/guards/master.guard");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const audit_log_service_1 = require("../../common/audit/audit-log.service");
@@ -204,6 +206,32 @@ let TenantsController = class TenantsController {
     getSettings(id) {
         return this.tenantsService.getSettings(id);
     }
+    async issueBootstrapToken(id, dto, user, req) {
+        const issued = await this.tenantsService.issueBootstrapToken(id, dto, user.sub);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_BOOTSTRAP_TOKEN_ISSUE',
+            resourceType: 'TENANT_BOOTSTRAP_TOKEN',
+            resourceId: String(id),
+            message: [
+                '테넌트 최초 관리자 등록 토큰 발급',
+                `tenantId=${issued.tenantId}`,
+                `tenantSlug=${this.safe(issued.tenantSlug)}`,
+                `email=${this.safe(issued.email)}`,
+                `expiresAt=${this.safe(issued.expiresAt)}`,
+            ].join(' | '),
+            metadata: {
+                tenantId: issued.tenantId,
+                tenantSlug: issued.tenantSlug,
+                email: issued.email,
+                expiresAt: issued.expiresAt,
+            },
+        });
+        return issued;
+    }
+    getBootstrapTokenHistory(id, query) {
+        return this.tenantsService.getBootstrapTokenHistory(id, query);
+    }
 };
 exports.TenantsController = TenantsController;
 __decorate([
@@ -308,6 +336,26 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "getSettings", null);
+__decorate([
+    (0, common_1.Post)(':id/bootstrap-token'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록용 토큰 발급' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __param(3, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, issue_tenant_bootstrap_token_dto_1.IssueTenantBootstrapTokenDto, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TenantsController.prototype, "issueBootstrapToken", null);
+__decorate([
+    (0, common_1.Get)(':id/bootstrap-tokens'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록 토큰 발급 이력 조회' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, get_tenant_bootstrap_tokens_query_dto_1.GetTenantBootstrapTokensQueryDto]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "getBootstrapTokenHistory", null);
 exports.TenantsController = TenantsController = __decorate([
     (0, swagger_1.ApiTags)('Admin - Tenants'),
     (0, swagger_1.ApiBearerAuth)(),

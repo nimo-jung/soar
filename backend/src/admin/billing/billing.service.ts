@@ -4,16 +4,113 @@ import { SelectQueryBuilder, Repository } from 'typeorm';
 import { GetUsageQueryDto } from './dto/get-usage-query.dto';
 import { GetInvoicePreviewQueryDto } from './dto/get-invoice-preview-query.dto';
 import { InvoicePreviewResponseDto, UsageListResponseDto } from './dto/usage-response.dto';
+import { BillingPricingPolicyListResponseDto, UpsertBillingPricingPoliciesDto } from './dto/pricing-policy.dto';
 import { UsageSnapshot } from '../tenants/entities/usage-snapshot.entity';
 import { Tenant } from '../tenants/entities/tenant.entity';
 import { TenantTier } from '../tenants/entities/tenant-tier.entity';
+import { BillingPricingPolicy } from './entities/billing-pricing-policy.entity';
+
+type PricingPolicy = {
+  baseFee: number;
+  includedEps: number;
+  epsOveragePer100: number;
+  storageOveragePerGb: number;
+  logPerMillion: number;
+  currency: string;
+};
 
 @Injectable()
 export class BillingService {
   constructor(
     @InjectRepository(UsageSnapshot)
     private readonly usageSnapshotRepo: Repository<UsageSnapshot>,
+    @InjectRepository(BillingPricingPolicy)
+    private readonly billingPricingPolicyRepo: Repository<BillingPricingPolicy>,
   ) {}
+
+  private readonly defaultPricingByTierCode: Record<string, PricingPolicy> = {
+    LITE: {
+      baseFee: 80,
+      includedEps: 100,
+      epsOveragePer100: 8,
+      storageOveragePerGb: 1.5,
+      logPerMillion: 2,
+      currency: 'USD',
+    },
+    PREMIUM: {
+      baseFee: 250,
+      includedEps: 400,
+      epsOveragePer100: 6,
+      storageOveragePerGb: 1.2,
+      logPerMillion: 1.5,
+      currency: 'USD',
+    },
+    ENTERPRISE: {
+      baseFee: 700,
+      includedEps: 1200,
+      epsOveragePer100: 4,
+      storageOveragePerGb: 0.9,
+      logPerMillion: 1,
+      currency: 'USD',
+    },
+  };
+
+  private async getPricingByTierCode(): Promise<Record<string, PricingPolicy>> {
+    const pricing = { ...this.defaultPricingByTierCode };
+    const policies = await this.billingPricingPolicyRepo.find();
+
+    for (const policy of policies) {
+      const tierCode = String(policy.tierCode ?? '').toUpperCase();
+      if (!tierCode) {
+        continue;
+      }
+
+      pricing[tierCode] = {
+        baseFee: this.toNumber(policy.baseFee),
+        includedEps: this.toNumber(policy.includedEps),
+        epsOveragePer100: this.toNumber(policy.epsOveragePer100),
+        storageOveragePerGb: this.toNumber(policy.storageOveragePerGb),
+        logPerMillion: this.toNumber(policy.logPerMillion),
+        currency: String(policy.currency ?? 'USD').toUpperCase(),
+      };
+    }
+
+    return pricing;
+  }
+
+  async getPricingPolicies(): Promise<BillingPricingPolicyListResponseDto> {
+    const policies = await this.billingPricingPolicyRepo.find({
+      order: { tierCode: 'ASC' },
+    });
+
+    return {
+      items: policies.map((policy) => ({
+        tierCode: String(policy.tierCode ?? '').toUpperCase(),
+        baseFee: this.toNumber(policy.baseFee),
+        includedEps: this.toNumber(policy.includedEps),
+        epsOveragePer100: this.toNumber(policy.epsOveragePer100),
+        storageOveragePerGb: this.toNumber(policy.storageOveragePerGb),
+        logPerMillion: this.toNumber(policy.logPerMillion),
+        currency: String(policy.currency ?? 'USD').toUpperCase(),
+      })),
+    };
+  }
+
+  async upsertPricingPolicies(dto: UpsertBillingPricingPoliciesDto): Promise<BillingPricingPolicyListResponseDto> {
+    const payload = dto.items.map((item) => this.billingPricingPolicyRepo.create({
+      tierCode: item.tierCode.toUpperCase(),
+      baseFee: item.baseFee,
+      includedEps: item.includedEps,
+      epsOveragePer100: item.epsOveragePer100,
+      storageOveragePerGb: item.storageOveragePerGb,
+      logPerMillion: item.logPerMillion,
+      currency: String(item.currency ?? 'USD').toUpperCase(),
+    }));
+
+    await this.billingPricingPolicyRepo.upsert(payload, ['tierCode']);
+
+    return this.getPricingPolicies();
+  }
 
   private parseDate(value?: string): Date | null {
     if (!value) return null;
@@ -173,9 +270,74 @@ export class BillingService {
     return `\uFEFF${headers.join(',')}\n${lines.join('\n')}`;
   }
 
-  getInvoicePreview(_query: GetInvoicePreviewQueryDto): InvoicePreviewResponseDto {
-    return {
-      items: [],
-    };
+  async getInvoicePreview(query: GetInvoicePreviewQueryDto): Promise<InvoicePreviewResponseDto> {
+    const monthMatch = /^(\d{4})-(\d{2})$/.exec(query.billingMonth);
+    if (!monthMatch) {
+      return { items: [] };
+    }
+
+    const year = Number(monthMatch[1]);
+    const month = Number(monthMatch[2]) - 1;
+    const start = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+    const end = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0));
+
+    const qb = this.usageSnapshotRepo
+      .createQueryBuilder('usage')
+      .innerJoin(Tenant, 'tenant', 'tenant.id = usage.tenant_id')
+      .innerJoin(TenantTier, 'tier', 'tier.id = tenant.tierId')
+      .where('usage.snapshot_at >= :start', { start })
+      .andWhere('usage.snapshot_at < :end', { end });
+
+    if (query.tenantId) {
+      qb.andWhere('usage.tenant_id = :tenantId', { tenantId: query.tenantId });
+    }
+
+    const rows = await qb
+      .select([
+        'usage.tenant_id AS tenantId',
+        'tenant.name AS tenantName',
+        'tier.code AS tierCode',
+        'tier.daily_log_quota_gb AS tierStorageQuotaGb',
+        'COALESCE(AVG(usage.eps_avg), 0) AS avgEps',
+        'COALESCE(MAX(usage.storage_used_gb), 0) AS maxStorageUsedGb',
+        'COALESCE(SUM(usage.log_count), 0) AS totalLogCount',
+      ])
+      .groupBy('usage.tenant_id')
+      .addGroupBy('tenant.name')
+      .addGroupBy('tier.code')
+      .addGroupBy('tier.daily_log_quota_gb')
+      .orderBy('usage.tenant_id', 'ASC')
+      .getRawMany();
+
+    const pricingByTierCode = await this.getPricingByTierCode();
+
+    const items = rows.map((row) => {
+      const tierCode = String(row.tierCode ?? 'LITE').toUpperCase();
+      const pricing = pricingByTierCode[tierCode] ?? pricingByTierCode.LITE;
+
+      const avgEps = this.toNumber(row.avgEps);
+      const maxStorageUsedGb = this.toNumber(row.maxStorageUsedGb);
+      const totalLogCount = this.toNumber(row.totalLogCount);
+      const storageQuotaGb = this.toNumber(row.tierStorageQuotaGb);
+
+      const epsOverageBlocks = Math.max(0, avgEps - pricing.includedEps) / 100;
+      const storageOverageGb = Math.max(0, maxStorageUsedGb - storageQuotaGb);
+      const logMillions = totalLogCount / 1_000_000;
+
+      const amount = pricing.baseFee
+        + (epsOverageBlocks * pricing.epsOveragePer100)
+        + (storageOverageGb * pricing.storageOveragePerGb)
+        + (logMillions * pricing.logPerMillion);
+
+      return {
+        tenantId: this.toNumber(row.tenantId),
+        tenantName: String(row.tenantName ?? '-'),
+        billingMonth: query.billingMonth,
+        amount: Number(amount.toFixed(2)),
+        currency: pricing.currency,
+      };
+    });
+
+    return { items };
   }
 }

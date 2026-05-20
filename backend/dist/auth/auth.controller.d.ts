@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
 import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
+import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -49,6 +50,14 @@ export declare class AuthController {
             expiresAt: string;
         } | null;
     }>;
+    tenantBootstrapStatus(tenantSlug: string | undefined): Promise<{
+        requiresBootstrap: boolean;
+    }>;
+    tenantBootstrap(dto: BootstrapTenantDto, req: Request): Promise<{
+        success: true;
+        tenantSlug: string;
+        email: string;
+    }>;
     logout(authorization: string | undefined, req: Request): Promise<{
         success: true;
     }>;
@@ -59,5 +68,8 @@ export declare class AuthController {
         accessToken: string;
         sessionExpiresAt: string | null;
         authSettings: import("./auth-policy.constants").AuthPolicy;
+    }>;
+    validateSession(authorization: string | undefined): Promise<{
+        valid: true;
     }>;
 }

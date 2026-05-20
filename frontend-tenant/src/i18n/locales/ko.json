@@ -30,6 +30,7 @@
     "alerts": "알람",
     "playbooks": "플레이북",
     "collectors": "Collector",
+    "users": "사용자",
     "settings": "설정",
     "authSettings": "인증 설정"
   },
@@ -44,6 +45,7 @@
     "submit": "로그인",
     "errorEmpty": "모든 필드를 입력하세요.",
     "errorInvalid": "로그인 정보를 확인하세요.",
+    "sessionLimitConfirm": "강제로 기존 세션을 종료하고 로그인하시겠습니까?",
     "errorLocked": "로그인 실패 횟수를 초과하여 계정이 잠금 상태입니다. {{clock}} 후 다시 시도할 수 있습니다.",
     "lockReleased": "잠금이 해제되었습니다. 다시 로그인해 주세요.",
     "tenantExpirySoon": "⚠ 사용기한 만료 임박: {{days}}일 후 만료됩니다. (만료일: {{date}}) 담당 관리자에게 사용기한 연장을 요청하세요.",
@@ -61,6 +63,18 @@
       "realtime": "AI 기반 실시간 네트워크 행위 분석과 이상 징후 추적",
       "isolation": "테넌트 격리 기반 로그·정책·세션 보호",
       "playbook": "탐지 결과 기반 자동 대응 플레이북 오케스트레이션"
+    },
+    "bootstrap": {
+      "required": "최초 테넌트 관리자를 먼저 등록해야 로그인할 수 있습니다.",
+      "move": "최초 관리자 등록으로 이동",
+      "title": "테넌트 최초 관리자 등록",
+      "subtitle": "Master Admin이 발급한 1회성 토큰으로 최초 운영자를 등록합니다.",
+      "invitationToken": "초대 토큰",
+      "submit": "최초 관리자 등록",
+      "goLogin": "로그인으로 이동",
+      "success": "최초 관리자 등록이 완료되었습니다. 로그인 화면으로 이동합니다.",
+      "errorEmpty": "모든 필드를 입력하세요.",
+      "errorFailed": "최초 관리자 등록에 실패했습니다. 토큰/입력값을 확인하세요."
     }
   },
   "collectors": {
@@ -81,12 +95,44 @@
   },
   "alerts": {
     "title": "알람 목록",
+    "description": "보안 알림을 생성하고 상태, 알림 정책, 발송 이력을 관리합니다.",
+    "createBtn": "알림 생성",
     "table": {
       "title": "제목",
       "severity": "위험도",
       "sourceIp": "출발지 IP",
       "occurredAt": "발생일시",
-      "acknowledgeBtn": "확인"
+      "acknowledgeBtn": "확인",
+      "statusUpdate": "상태 변경"
+    },
+    "dialog": {
+      "title": "알림 생성",
+      "titleLabel": "제목",
+      "descriptionLabel": "설명",
+      "severity": "위험도",
+      "sourceIp": "출발지 IP",
+      "ruleId": "탐지 룰 ID"
+    },
+    "policy": {
+      "title": "알림 정책",
+      "channels": "발송 채널",
+      "channelsPlaceholder": "채널을 선택하세요",
+      "recipients": "수신자 목록",
+      "recipientsHelp": "쉼표(,)로 구분해 입력하세요. 예: soc@acme.com, #soc-alerts"
+    },
+    "history": {
+      "title": "발송 이력",
+      "alertId": "알림 ID",
+      "channel": "채널",
+      "recipient": "수신자",
+      "deliveryStatus": "결과",
+      "sentAt": "발송 시각"
+    },
+    "errors": {
+      "loadFailed": "알림 데이터를 불러오지 못했습니다.",
+      "createFailed": "알림 생성 중 오류가 발생했습니다.",
+      "statusFailed": "알림 상태 변경 중 오류가 발생했습니다.",
+      "policyFailed": "알림 정책 저장 중 오류가 발생했습니다."
     }
   },
   "playbooks": {
@@ -103,6 +149,43 @@
       "description": "설명",
       "status": "상태",
       "runBtn": "실행"
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "description": "IP 화이트리스트, 파싱 룰, 브랜딩 설정을 관리합니다.",
+    "parsingRules": {
+      "title": "파싱 룰 관리",
+      "createBtn": "파싱 룰 생성",
+      "table": {
+        "name": "규칙 이름",
+        "logSourceType": "로그 소스",
+        "priority": "우선순위",
+        "editBtn": "수정",
+        "deactivateBtn": "비활성화"
+      },
+      "sources": {
+        "all": "전체",
+        "syslog": "Syslog",
+        "firewall": "Firewall",
+        "waf": "WAF",
+        "edr": "EDR"
+      },
+      "dialog": {
+        "createTitle": "파싱 룰 생성",
+        "editTitle": "파싱 룰 수정",
+        "name": "규칙 이름",
+        "logSourceType": "로그 소스",
+        "priority": "우선순위",
+        "ruleDefinition": "룰 정의 JSON",
+        "ruleDefinitionHelp": "예: {\"fieldMappings\": {\"src_ip\": \"source_ip\"}}"
+      },
+      "errors": {
+        "loadFailed": "파싱 룰 목록을 불러오지 못했습니다.",
+        "saveFailed": "파싱 룰 저장 중 오류가 발생했습니다.",
+        "deactivateFailed": "파싱 룰 비활성화 중 오류가 발생했습니다.",
+        "invalidJson": "룰 정의 JSON 형식이 올바르지 않습니다."
+      }
     }
   },
   "authSettings": {
@@ -129,6 +212,40 @@
     "autoLogoutTimeoutMinutes": {
       "label": "자동 로그아웃 타임아웃(분)",
       "help": "기본 5분, 최소 1분, 최대 30분, 0이면 만료 없음"
+    }
+  },
+  "users": {
+    "title": "사용자 관리",
+    "description": "테넌트 사용자 계정과 역할을 관리합니다.",
+    "createBtn": "사용자 생성",
+    "roles": {
+      "operator": "운영자",
+      "analyst": "분석가",
+      "auditor": "감사자"
+    },
+    "table": {
+      "email": "이메일",
+      "displayName": "이름",
+      "role": "역할",
+      "editBtn": "수정",
+      "deactivateBtn": "비활성화"
+    },
+    "dialog": {
+      "createTitle": "사용자 생성",
+      "editTitle": "사용자 수정",
+      "email": "이메일",
+      "displayName": "이름",
+      "role": "역할",
+      "password": "비밀번호",
+      "newPassword": "새 비밀번호",
+      "newPasswordPlaceholder": "변경 시에만 입력",
+      "createConfirm": "생성",
+      "editConfirm": "저장"
+    },
+    "errors": {
+      "loadFailed": "사용자 목록을 불러오지 못했습니다.",
+      "saveFailed": "사용자 저장 중 오류가 발생했습니다.",
+      "deactivateFailed": "사용자 비활성화 중 오류가 발생했습니다."
     }
   },
   "tenantWarning": {

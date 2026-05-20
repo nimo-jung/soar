@@ -25,6 +25,8 @@ const navSections = [
     sectionIcon: 'pi pi-bookmark',
     items: [
       { labelKey: 'nav.auditLogs', path: '/audit-logs', icon: 'pi pi-book' },
+      { labelKey: 'nav.systemStatus', path: '/system-status', icon: 'pi pi-server' },
+      { labelKey: 'nav.integrity', path: '/integrity', icon: 'pi pi-verified' },
     ],
   },
   {
@@ -33,8 +35,6 @@ const navSections = [
     items: [
       { labelKey: 'nav.userManagement', path: '/master-users', icon: 'pi pi-users' },
       { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
-      { labelKey: 'nav.systemStatus', path: '/system-status', icon: 'pi pi-server' },
-      { labelKey: 'nav.integrity', path: '/integrity', icon: 'pi pi-verified' },
       { labelKey: 'nav.productInfo', path: '/product-info', icon: 'pi pi-info-circle' },
     ],
   },

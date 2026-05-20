@@ -14,6 +14,12 @@ import { TenantAuthSettingsController } from './auth-settings/auth-settings.cont
 import { TenantAuthSettingsService } from './auth-settings/auth-settings.service';
 import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
+import { UsersController } from './users/users.controller';
+import { UsersService } from './users/users.service';
+import { AlertsController } from './alerts/alerts.controller';
+import { AlertsService } from './alerts/alerts.service';
+import { ParsingRulesController } from './parsing-rules/parsing-rules.controller';
+import { ParsingRulesService } from './parsing-rules/parsing-rules.service';
 
 @Module({
   imports: [
@@ -30,12 +36,18 @@ import { AuditLogService } from '../common/audit/audit-log.service';
     IpWhitelistController,
     PlaybooksController,
     TenantAuthSettingsController,
+    UsersController,
+    AlertsController,
+    ParsingRulesController,
   ],
   providers: [
     CollectorsService,
     IpWhitelistService,
     PlaybooksService,
     TenantAuthSettingsService,
+    UsersService,
+    AlertsService,
+    ParsingRulesService,
     AuditLogService,
   ],
 })

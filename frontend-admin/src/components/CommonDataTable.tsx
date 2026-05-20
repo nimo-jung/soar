@@ -13,7 +13,7 @@ const CommonDataTable: React.FC<CommonDataTableProps> = ({
   ...rest
 }) => {
   const { t } = useTranslation();
-  const mergedClassName = ['common-data-table', className].filter(Boolean).join(' ');
+  const mergedClassName = ['common-data-table', 'admin-table', className].filter(Boolean).join(' ');
 
   return (
     <DataTable

@@ -39,8 +39,15 @@ api.interceptors.response.use(
     const status = err.response?.status as number | undefined;
 
     if (status === 401) {
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
+      const requestUrl = (err.config?.url as string | undefined) ?? '';
+      const isAuthRequest = requestUrl.includes('/auth/tenant/login')
+        || requestUrl.includes('/auth/tenant/bootstrap')
+        || requestUrl.includes('/auth/tenant/bootstrap/status')
+        || requestUrl.includes('/auth/tenant/lock-status');
+      if (!isAuthRequest) {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+      }
       return Promise.reject(err);
     }
 

@@ -102,13 +102,13 @@ const ProductInfoPage: React.FC = () => {
   };
 
   return (
-    <div className="">
-      <div className="page-header mb-4">
+    <div className="admin-page">
+      <div className="admin-page-header">
         <div>
-          <h1 className="m-0">{t('productInfo.title')}</h1>
-          <p className="m-0 mt-2 text-color-secondary">{t('productInfo.subtitle')}</p>
+          <h1 className="admin-page-title">{t('productInfo.title')}</h1>
+          <p className="admin-page-subtitle">{t('productInfo.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="admin-actions-row">
           <Button
             type="button"
             icon="pi pi-refresh"
@@ -133,7 +133,7 @@ const ProductInfoPage: React.FC = () => {
 
       <div className="grid">
         <div className="col-12 lg:col-6">
-          <Card title={t('productInfo.product.title')}>
+          <Card title={t('productInfo.product.title')} className="admin-card">
             <div className="flex flex-column gap-3">
               <div><strong>{t('productInfo.product.productName')}:</strong> {data.product.productName}</div>
               <div><strong>{t('productInfo.product.productVersion')}:</strong> {data.product.productVersion}</div>
@@ -145,7 +145,7 @@ const ProductInfoPage: React.FC = () => {
         </div>
 
         <div className="col-12 lg:col-6">
-          <Card title={t('productInfo.license.title')}>
+          <Card title={t('productInfo.license.title')} className="admin-card">
             {data.license ? (
               <div className="flex flex-column gap-3">
                 <div><strong>{t('productInfo.license.licenseKey')}:</strong> {data.license.licenseKey}</div>

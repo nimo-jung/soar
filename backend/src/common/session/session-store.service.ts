@@ -97,4 +97,25 @@ export class SessionStoreService {
 
     return jtis.length - expired.length;
   }
+
+  /**
+   * 계정의 동시 세션 Set에 포함된 세션을 모두 종료한다.
+   * @returns 종료 처리된 세션 수
+   */
+  async revokeAllFromSet(setKey: string): Promise<number> {
+    const jtis = await this.redis.smembers(setKey);
+    if (jtis.length === 0) {
+      await this.redis.del(setKey);
+      return 0;
+    }
+
+    const pipeline = this.redis.pipeline();
+    for (const jti of jtis) {
+      pipeline.del(this.key(jti));
+    }
+    pipeline.del(setKey);
+    await pipeline.exec();
+
+    return jtis.length;
+  }
 }

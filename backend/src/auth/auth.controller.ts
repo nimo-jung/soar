@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
 import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
+import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -77,6 +78,20 @@ export class AuthController {
     return this.authService.loginAsTenant(dto, this.getRequestContext(req));
   }
 
+  @Get('tenant/bootstrap/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '테넌트 최초 관리자 등록 필요 여부 조회' })
+  tenantBootstrapStatus(@Query('tenantSlug') tenantSlug: string | undefined) {
+    return this.authService.getTenantBootstrapStatus(tenantSlug ?? '');
+  }
+
+  @Post('tenant/bootstrap')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: '테넌트 최초 관리자 등록(1회성 토큰)' })
+  tenantBootstrap(@Body() dto: BootstrapTenantDto, @Req() req: Request) {
+    return this.authService.bootstrapTenant(dto, this.getRequestContext(req));
+  }
+
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그아웃 감사로그 기록' })
@@ -102,5 +117,12 @@ export class AuthController {
   @ApiOperation({ summary: '세션 만료 시간 연장' })
   extendSession(@Headers('authorization') authorization: string | undefined) {
     return this.authService.extendSession(authorization);
+  }
+
+  @Post('session/validate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '세션 유효성 검증 (연장 없음)' })
+  validateSession(@Headers('authorization') authorization: string | undefined) {
+    return this.authService.validateSession(authorization);
   }
 }

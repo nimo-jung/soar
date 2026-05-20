@@ -358,21 +358,20 @@ const TenantTiersPage: React.FC = () => {
   };
 
   return (
-    <div className="tenants-page">
+    <div className="admin-page tenants-page">
       <ConfirmDialog />
-      <div className="page-header">
-        <div></div>
+      <div className="admin-page-header page-header">
+        <h1>{t('tenants.tiers.title')}</h1>
         <Button
           label={t('tenants.tiers.createBtn')}
           icon="pi pi-plus"
           onClick={openCreateDialog}
-          rounded
-          size="small"
+          className="admin-primary-action"
         />
       </div>
 
-      <div className="tenants-table-card">
-        <div className="tenants-table-toolbar">
+      <div className="admin-table-shell">
+        <div className="admin-table-toolbar">
           <div className="tenants-toolbar-left">
             <div className="tenants-search-shell">
               <IconField iconPosition="left" className="tenants-search">
@@ -415,7 +414,7 @@ const TenantTiersPage: React.FC = () => {
               icon="pi pi-refresh"
               outlined
               severity="secondary"
-              className="tenants-icon-button-xs"
+              className="admin-icon-button-xs"
               aria-label={t('tenants.toolbar.refresh')}
               tooltip={t('tenants.toolbar.refresh')}
               tooltipOptions={{ position: 'top' }}
@@ -427,7 +426,7 @@ const TenantTiersPage: React.FC = () => {
               icon="pi pi-sliders-h"
               outlined
               severity="secondary"
-              className="tenants-icon-button-xs"
+              className="admin-icon-button-xs"
               aria-label={t('tenants.toolbar.fieldSettings')}
               tooltip={t('tenants.toolbar.fieldSettings')}
               tooltipOptions={{ position: 'top' }}
@@ -460,7 +459,7 @@ const TenantTiersPage: React.FC = () => {
           rows={10}
           rowsPerPageOptions={[10, 20, 50]}
           removableSort
-          className="admin-tenants-table"
+          className="admin-table"
         >
           {isFieldVisible('code') && (
             <Column
@@ -550,7 +549,7 @@ const TenantTiersPage: React.FC = () => {
       >
         <div className="flex flex-column gap-3 pt-2">
           <div>
-            <label className="block mb-1 text-sm">
+            <label className="admin-form-label">
               {t('tenants.tiers.code')}
               <span className="p-error ml-1">*</span>
             </label>
@@ -572,7 +571,7 @@ const TenantTiersPage: React.FC = () => {
             {formErrors.code && <small className="p-error">{formErrors.code}</small>}
           </div>
           <div>
-            <label className="block mb-1 text-sm">
+            <label className="admin-form-label">
               {t('tenants.tiers.name')}
               <span className="p-error ml-1">*</span>
             </label>
@@ -590,7 +589,7 @@ const TenantTiersPage: React.FC = () => {
           </div>
             <div className="flex gap-1">
             <div>
-                <label className="block mb-1 text-sm">
+                <label className="admin-form-label">
                   {t('tenants.tiers.dailyLogQuotaGb')}
                   <span className="p-error ml-1">*</span>
                 </label>
@@ -612,7 +611,7 @@ const TenantTiersPage: React.FC = () => {
                 {formErrors.dailyLogQuotaGb && <small className="p-error">{formErrors.dailyLogQuotaGb}</small>}
             </div>
             <div>
-                <label className="block mb-1 text-sm">
+                <label className="admin-form-label">
                   {t('tenants.tiers.maxUsers')}
                   <span className="p-error ml-1">*</span>
                 </label>
@@ -635,7 +634,7 @@ const TenantTiersPage: React.FC = () => {
             </div>
             </div>        
           <div>
-            <label className="block mb-1 text-sm">
+            <label className="admin-form-label">
               {t('tenants.tiers.description')}
               <span className="p-error ml-1">*</span>
             </label>
