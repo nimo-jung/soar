@@ -9,8 +9,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ThreatIntelFeed = void 0;
+exports.ThreatIntelFeed = exports.TiDispatchStatus = void 0;
 const typeorm_1 = require("typeorm");
+var TiDispatchStatus;
+(function (TiDispatchStatus) {
+    TiDispatchStatus["PENDING"] = "PENDING";
+    TiDispatchStatus["DISPATCHED"] = "DISPATCHED";
+    TiDispatchStatus["FAILED"] = "FAILED";
+})(TiDispatchStatus || (exports.TiDispatchStatus = TiDispatchStatus = {}));
 let ThreatIntelFeed = class ThreatIntelFeed {
     id;
     feedType;
@@ -19,6 +25,10 @@ let ThreatIntelFeed = class ThreatIntelFeed {
     description;
     source;
     isActive;
+    dispatchStatus;
+    dispatchedAt;
+    dispatchError;
+    dispatchAttempts;
     expiresAt;
     createdAt;
     updatedAt;
@@ -52,6 +62,28 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'is_active', default: true, comment: '활성화 여부' }),
     __metadata("design:type", Boolean)
 ], ThreatIntelFeed.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'dispatch_status',
+        type: 'enum',
+        enum: TiDispatchStatus,
+        default: TiDispatchStatus.PENDING,
+        comment: 'RedPanda 전파 상태: PENDING | DISPATCHED | FAILED',
+    }),
+    __metadata("design:type", String)
+], ThreatIntelFeed.prototype, "dispatchStatus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'dispatched_at', type: 'datetime', nullable: true, comment: '전파 완료 일시' }),
+    __metadata("design:type", Object)
+], ThreatIntelFeed.prototype, "dispatchedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'dispatch_error', type: 'text', nullable: true, comment: '전파 실패 오류 메시지' }),
+    __metadata("design:type", Object)
+], ThreatIntelFeed.prototype, "dispatchError", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'dispatch_attempts', type: 'int', default: 0, comment: '전파 시도 횟수' }),
+    __metadata("design:type", Number)
+], ThreatIntelFeed.prototype, "dispatchAttempts", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'expires_at', type: 'datetime', nullable: true, comment: '만료 일시' }),
     __metadata("design:type", Object)

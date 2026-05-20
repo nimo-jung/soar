@@ -20,7 +20,9 @@
     "loading": "Loading...",
     "name": "Name",
     "description": "Description",
-    "noDataFound": "No data found."
+    "noDataFound": "No data found.",
+    "edit": "Edit",
+    "refresh": "Refresh"
   },
   "nav": {
     "operations": "Operations",
@@ -29,6 +31,10 @@
     "threatIntel": "Threat Intelligence",
     "billing": "Billing",
     "monitoring": "Monitoring",
+    "quotas": "Quota Policy",
+    "dataIsolation": "Data Isolation",
+    "systemStatus": "System Status",
+    "integrity": "Integrity Check",
     "securityAudit": "Security Audit",
     "auditLogs": "Audit Logs",
     "systemManagement": "System Settings",
@@ -257,7 +263,146 @@
       "indicator": "Indicator",
       "severity": "Severity",
       "source": "Source",
-      "deactivateBtn": "Deactivate"
+      "deactivateBtn": "Deactivate",
+      "dispatchStatus": "Dispatch Status"
+    },
+    "dispatch": {
+      "retryBtn": "Retry Dispatch",
+      "successTitle": "Dispatch Succeeded",
+      "success": "TI feed dispatched successfully.",
+      "failedTitle": "Dispatch Failed",
+      "failed": "An error occurred during dispatch.",
+      "pending": "Waiting for dispatch",
+      "dispatchedAt": "Dispatched at: {{at}}",
+      "status": {
+        "PENDING": "Pending",
+        "DISPATCHED": "Dispatched",
+        "FAILED": "Failed"
+      }
+    }
+  },
+  "quota": {
+    "title": "Quota Policy Management",
+    "unlimited": "Unlimited",
+    "table": {
+      "tenant": "Tenant",
+      "slug": "Slug",
+      "epsLimit": "EPS Limit",
+      "storageQuotaGb": "Storage Quota (GB)",
+      "retentionDays": "Retention (Days)",
+      "updatedAt": "Last Updated"
+    },
+    "dialog": {
+      "title": "Edit Quota: {{name}}",
+      "epsLimit": "EPS Limit (events/sec)",
+      "storageQuotaGb": "Storage Quota",
+      "retentionDays": "Log Retention",
+      "epsSuffix": " EPS",
+      "daysSuffix": " days",
+      "zeroMeansUnlimited": "0 means unlimited."
+    },
+    "result": {
+      "successTitle": "Saved",
+      "saveSuccess": "Quota policy saved successfully.",
+      "errorTitle": "Save Failed",
+      "saveFailed": "An error occurred while saving."
+    }
+  },
+  "dataIsolation": {
+    "title": "Data Isolation Verification",
+    "loadFailed": "Failed to load isolation stats.",
+    "checkedAt": "Last checked: {{checkedAt}}",
+    "summary": {
+      "totalTenants": "Total Tenants",
+      "ok": "OK",
+      "warn": "Warning",
+      "critical": "Critical"
+    },
+    "risk": {
+      "OK": "OK",
+      "WARN": "Warning",
+      "CRITICAL": "Critical"
+    },
+    "table": {
+      "title": "Per-Tenant Isolation Metrics",
+      "tenant": "Tenant",
+      "slug": "Slug",
+      "riskLevel": "Risk Level",
+      "snapshotCount": "Snapshots",
+      "lastSnapshotAt": "Last Snapshot",
+      "missingContextCount": "Missing Context",
+      "auditCrossCount": "Cross-Tenant Audit"
+    }
+  },
+  "billing": {
+    "title": "Billing & Usage",
+    "actions": {
+      "refresh": "Refresh",
+      "exportCsv": "Export CSV"
+    },
+    "filters": {
+      "tenant": "Tenant",
+      "tier": "Tier",
+      "from": "From",
+      "to": "To",
+      "allTenants": "All Tenants",
+      "allTiers": "All Tiers"
+    },
+    "summary": {
+      "totalLogCount": "Total Log Count",
+      "avgEps": "Average EPS",
+      "avgStorageGb": "Average Storage (GB)"
+    },
+    "table": {
+      "title": "Usage Snapshots",
+      "snapshotAt": "Snapshot Time",
+      "tenant": "Tenant",
+      "epsAvg": "Average EPS",
+      "storageUsedGb": "Used Storage (GB)",
+      "logCount": "Log Count"
+    }
+  },
+  "monitoring": {
+    "title": "Platform Monitoring",
+    "actions": {
+      "refresh": "Refresh"
+    },
+    "filters": {
+      "tenant": "Tenant",
+      "severity": "Severity",
+      "from": "From",
+      "to": "To",
+      "allTenants": "All Tenants",
+      "allSeverities": "All Severities"
+    },
+    "cards": {
+      "ingestErrorRate": "Ingest Error Rate",
+      "parseErrorRate": "Parse Error Rate",
+      "avgIngestLatencyMs": "Avg Ingest Latency (ms)",
+      "eventCount": "Event Count",
+      "engineHealth": "Go Engine Status"
+    },
+    "chart": {
+      "epsTitle": "EPS Trend",
+      "noData": "No EPS data to display.",
+      "minLabel": "Min EPS: {{value}}",
+      "maxLabel": "Max EPS: {{value}}",
+      "startLabel": "Start: {{value}}",
+      "middleLabel": "Middle: {{value}}",
+      "endLabel": "End: {{value}}"
+    },
+    "engine": {
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "checkedAt": "Checked at: {{checkedAt}}"
+    },
+    "table": {
+      "title": "Recent Events",
+      "occurredAt": "Occurred At",
+      "tenant": "Tenant",
+      "severity": "Severity",
+      "code": "Code",
+      "message": "Message"
     }
   },
   "masterUsers": {
@@ -355,5 +500,67 @@
     "goBack": "Previous Page",
     "goDashboard": "Go To Dashboard",
     "retry": "Retry"
+  },
+  "systemStatus": {
+    "title": "System Status History",
+    "checkNow": "Check Now",
+    "checkDone": "Check Complete",
+    "memory": "Memory",
+    "disk": "Disk",
+    "services": "Service Status",
+    "checkedAt": "Checked at: {{at}}",
+    "service": {
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
+      "UNKNOWN": "Unknown"
+    },
+    "tabs": {
+      "alerts": "Alert Events",
+      "history": "Status History"
+    },
+    "alert": {
+      "severity": "Severity",
+      "type": "Type",
+      "message": "Message",
+      "count": "Count",
+      "resolved": "Resolved",
+      "resolveBtn": "Mark Resolved"
+    },
+    "history": {
+      "checkedAt": "Checked At",
+      "hasAlert": "Alert"
+    }
+  },
+  "integrity": {
+    "title": "Integrity Check",
+    "checkAllBtn": "Check All",
+    "registerBtn": "Register File",
+    "syncBtn": "Sync",
+    "checkDone": "Integrity check complete",
+    "syncDone": "Sync complete",
+    "syncFailed": "Sync failed",
+    "deleteTitle": "Remove File Tracking",
+    "deleteConfirm": "Remove tracking for {{label}}?",
+    "warningMsg": "Tampering detected: {{changed}} changed, {{missing}} missing",
+    "status": {
+      "OK": "OK",
+      "CHANGED": "Changed",
+      "MISSING": "Missing",
+      "UNCHECKED": "Unchecked"
+    },
+    "table": {
+      "label": "File Label",
+      "path": "Path",
+      "status": "Status",
+      "expectedHash": "Expected Hash",
+      "currentHash": "Current Hash",
+      "lastCheckedAt": "Last Checked",
+      "lastSyncedAt": "Last Synced"
+    },
+    "registerDialog": {
+      "title": "Register File",
+      "filePath": "File Path (absolute path inside container)",
+      "fileLabel": "File Label (display name)"
+    }
   }
 }

@@ -7,28 +7,31 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/redis/go-redis/v9"
 	tenantctx "github.com/soar/go-engine/internal/context"
 	"github.com/soar/go-engine/internal/parsing"
 	"github.com/soar/go-engine/internal/publisher"
 	"github.com/soar/go-engine/internal/whitelist"
-	"github.com/redis/go-redis/v9"
 )
 
 // Handler handles incoming log HTTP requests
 type Handler struct {
-	rdb       *redis.Client
-	wl        *whitelist.Checker
-	parser    *parsing.Engine
-	pub       *publisher.Publisher
+	rdb     *redis.Client
+	wl      *whitelist.Checker
+	parser  *parsing.Engine
+	pub     *publisher.Publisher
+	metrics *RuntimeMetrics
 }
 
 func NewHandler(rdb *redis.Client, pub *publisher.Publisher) *Handler {
 	return &Handler{
-		rdb:    rdb,
-		wl:     whitelist.New(rdb),
-		parser: parsing.New(rdb),
-		pub:    pub,
+		rdb:     rdb,
+		wl:      whitelist.New(rdb),
+		parser:  parsing.New(rdb),
+		pub:     pub,
+		metrics: NewRuntimeMetrics(),
 	}
 }
 
@@ -52,10 +55,12 @@ func (h *Handler) resolveAPIKey(ctx context.Context, apiKey string) (string, err
 // Expects: Authorization: Bearer <api_key>
 func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	start := time.Now()
 
 	// Extract API key
 	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
+		h.metrics.RecordIngest(time.Since(start), false)
 		http.Error(w, "X-API-Key header required", http.StatusUnauthorized)
 		return
 	}
@@ -64,6 +69,7 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := h.resolveAPIKey(ctx, apiKey)
 	if err != nil {
 		log.Printf("[ingestion] auth failed: %v", err)
+		h.metrics.RecordIngest(time.Since(start), false)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -77,6 +83,7 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	allowed, err := h.wl.IsAllowed(ctx, tenantID, sourceIP)
 	if err != nil || !allowed {
 		log.Printf("[ingestion][%s] IP blocked: %s", tenantID, sourceIP)
+		h.metrics.RecordIngest(time.Since(start), false)
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
@@ -84,6 +91,7 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	// Read body
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20)) // max 1MB
 	if err != nil {
+		h.metrics.RecordIngest(time.Since(start), false)
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
@@ -95,6 +103,7 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	enriched, err := h.parser.Apply(ctx, tenantID, body)
 	if err != nil {
 		log.Printf("[ingestion][%s] parse error: %v", tenantID, err)
+		h.metrics.RecordParseFailure()
 		// Proceed with raw payload
 		_ = json.Unmarshal(body, &enriched)
 	}
@@ -102,10 +111,13 @@ func (h *Handler) IngestHandler(w http.ResponseWriter, r *http.Request) {
 	// Publish to RedPanda
 	if err := h.pub.PublishRawLog(ctx, tenantID, enriched); err != nil {
 		log.Printf("[ingestion][%s] publish error: %v", tenantID, err)
+		h.metrics.RecordPublishFailure()
+		h.metrics.RecordIngest(time.Since(start), false)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
+	h.metrics.RecordIngest(time.Since(start), true)
 	w.WriteHeader(http.StatusAccepted)
 }
 

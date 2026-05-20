@@ -11,4 +11,5 @@ export declare class ThreatIntelController {
     create(dto: CreateThreatIntelDto, user: CurrentUserPayload, req: Request): Promise<import("./entities/threat-intel-feed.entity").ThreatIntelFeed>;
     findAll(): Promise<import("./entities/threat-intel-feed.entity").ThreatIntelFeed[]>;
     deactivate(id: number, user: CurrentUserPayload, req: Request): Promise<void>;
+    dispatch(id: number, user: CurrentUserPayload, req: Request): Promise<import("./entities/threat-intel-feed.entity").ThreatIntelFeed>;
 }

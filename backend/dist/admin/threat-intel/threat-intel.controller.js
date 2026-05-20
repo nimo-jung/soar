@@ -68,6 +68,18 @@ let ThreatIntelController = class ThreatIntelController {
             message: '글로벌 TI 피드 비활성화',
         });
     }
+    async dispatch(id, user, req) {
+        const result = await this.threatIntelService.dispatchFeed(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'THREAT_INTEL_DISPATCH',
+            resourceType: 'THREAT_INTEL',
+            resourceId: String(id),
+            message: `TI 피드 전파 재시도 | status=${result.dispatchStatus}`,
+            metadata: { dispatchStatus: result.dispatchStatus, dispatchAttempts: result.dispatchAttempts },
+        });
+        return result;
+    }
 };
 exports.ThreatIntelController = ThreatIntelController;
 __decorate([
@@ -98,6 +110,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ThreatIntelController.prototype, "deactivate", null);
+__decorate([
+    (0, common_1.Post)(':id/dispatch'),
+    (0, swagger_1.ApiOperation)({ summary: 'TI 피드 RedPanda 전파 재시도' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], ThreatIntelController.prototype, "dispatch", null);
 exports.ThreatIntelController = ThreatIntelController = __decorate([
     (0, swagger_1.ApiTags)('Admin - Threat Intel'),
     (0, swagger_1.ApiBearerAuth)(),

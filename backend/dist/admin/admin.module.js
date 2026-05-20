@@ -21,6 +21,12 @@ const auth_settings_service_1 = require("./auth-settings/auth-settings.service")
 const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
 const product_info_module_1 = require("./product-info/product-info.module");
+const billing_module_1 = require("./billing/billing.module");
+const monitoring_module_1 = require("./monitoring/monitoring.module");
+const quotas_module_1 = require("./quotas/quotas.module");
+const data_isolation_module_1 = require("./data-isolation/data-isolation.module");
+const system_status_module_1 = require("./system-status/system-status.module");
+const integrity_module_1 = require("./integrity/integrity.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -32,6 +38,12 @@ exports.AdminModule = AdminModule = __decorate([
             audit_logs_module_1.AuditLogsModule,
             master_users_module_1.MasterUsersModule,
             product_info_module_1.ProductInfoModule,
+            billing_module_1.BillingModule,
+            monitoring_module_1.MonitoringModule,
+            quotas_module_1.QuotasModule,
+            data_isolation_module_1.DataIsolationModule,
+            system_status_module_1.SystemStatusModule,
+            integrity_module_1.IntegrityModule,
             typeorm_1.TypeOrmModule.forFeature([master_auth_settings_entity_1.MasterAuthSettings, audit_log_entity_1.AuditLog]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({

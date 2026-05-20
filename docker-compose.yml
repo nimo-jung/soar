@@ -255,15 +255,17 @@ services:
       - .env.dev
     environment:
       # Redis
-      REDIS_ADDR: redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       # RedPanda (컨테이너 내부 주소)
-      KAFKA_BROKERS: redpanda:9092
+      REDPANDA_HOST: redpanda
+      REDPANDA_PORT: "9092"
       # ClickHouse (Native TCP — 고성능 배치 적재용)
       CLICKHOUSE_DSN: clickhouse://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:9000/default
       # General
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      HTTP_PORT: "8081"
+      PORT: "8081"
     ports:
       - "${PORT_GO_ENGINE:-8081}:8081"  # 로그 수집 HTTP 엔드포인트
     networks:
@@ -286,15 +288,17 @@ services:
       - .env.prod
     environment:
       # Redis
-      REDIS_ADDR: redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       # RedPanda (컨테이너 내부 주소)
-      KAFKA_BROKERS: redpanda:9092
+      REDPANDA_HOST: redpanda
+      REDPANDA_PORT: "9092"
       # ClickHouse (Native TCP — 고성능 배치 적재용)
       CLICKHOUSE_DSN: clickhouse://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:9000/default
       # General
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      HTTP_PORT: "8081"
+      PORT: "8081"
     ports:
       - "${PORT_GO_ENGINE:-8081}:8081"
     networks:

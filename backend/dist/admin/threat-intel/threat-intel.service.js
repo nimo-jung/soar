@@ -23,15 +23,45 @@ let ThreatIntelService = class ThreatIntelService {
         this.feedRepo = feedRepo;
     }
     async create(dto) {
-        const feed = this.feedRepo.create(dto);
+        const feed = this.feedRepo.create({ ...dto, dispatchStatus: threat_intel_feed_entity_1.TiDispatchStatus.PENDING, dispatchAttempts: 0 });
         const saved = await this.feedRepo.save(feed);
-        return saved;
+        await this.dispatchFeed(saved.id);
+        return this.feedRepo.findOneOrFail({ where: { id: saved.id } });
     }
     async findAll() {
-        return this.feedRepo.find({ where: { isActive: true }, order: { createdAt: 'DESC' } });
+        return this.feedRepo.find({ order: { createdAt: 'DESC' } });
     }
     async deactivate(id) {
+        const feed = await this.feedRepo.findOne({ where: { id } });
+        if (!feed)
+            throw new common_1.NotFoundException(`TI feed id=${id} not found`);
         await this.feedRepo.update(id, { isActive: false });
+    }
+    async dispatchFeed(id) {
+        const feed = await this.feedRepo.findOne({ where: { id } });
+        if (!feed)
+            throw new common_1.NotFoundException(`TI feed id=${id} not found`);
+        await this.feedRepo.update(id, {
+            dispatchAttempts: (feed.dispatchAttempts ?? 0) + 1,
+        });
+        try {
+            await this.mockPublish(feed);
+            await this.feedRepo.update(id, {
+                dispatchStatus: threat_intel_feed_entity_1.TiDispatchStatus.DISPATCHED,
+                dispatchedAt: new Date(),
+                dispatchError: null,
+            });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            await this.feedRepo.update(id, {
+                dispatchStatus: threat_intel_feed_entity_1.TiDispatchStatus.FAILED,
+                dispatchError: message,
+            });
+        }
+        return this.feedRepo.findOneOrFail({ where: { id } });
+    }
+    async mockPublish(_feed) {
     }
 };
 exports.ThreatIntelService = ThreatIntelService;

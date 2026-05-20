@@ -7,4 +7,6 @@ export declare class ThreatIntelService {
     create(dto: CreateThreatIntelDto): Promise<ThreatIntelFeed>;
     findAll(): Promise<ThreatIntelFeed[]>;
     deactivate(id: number): Promise<void>;
+    dispatchFeed(id: number): Promise<ThreatIntelFeed>;
+    private mockPublish;
 }

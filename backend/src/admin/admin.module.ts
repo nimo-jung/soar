@@ -12,6 +12,12 @@ import { AdminAuthSettingsService } from './auth-settings/auth-settings.service'
 import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
 import { ProductInfoModule } from './product-info/product-info.module';
+import { BillingModule } from './billing/billing.module';
+import { MonitoringModule } from './monitoring/monitoring.module';
+import { QuotasModule } from './quotas/quotas.module';
+import { DataIsolationModule } from './data-isolation/data-isolation.module';
+import { SystemStatusModule } from './system-status/system-status.module';
+import { IntegrityModule } from './integrity/integrity.module';
 
 @Module({
   imports: [
@@ -20,6 +26,12 @@ import { ProductInfoModule } from './product-info/product-info.module';
     AuditLogsModule,
     MasterUsersModule,
     ProductInfoModule,
+    BillingModule,
+    MonitoringModule,
+    QuotasModule,
+    DataIsolationModule,
+    SystemStatusModule,
+    IntegrityModule,
     TypeOrmModule.forFeature([MasterAuthSettings, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({

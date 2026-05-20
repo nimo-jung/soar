@@ -78,4 +78,23 @@ export class ThreatIntelController {
       message: '글로벌 TI 피드 비활성화',
     });
   }
+
+  @Post(':id/dispatch')
+  @ApiOperation({ summary: 'TI 피드 RedPanda 전파 재시도' })
+  async dispatch(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
+    const result = await this.threatIntelService.dispatchFeed(id);
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'THREAT_INTEL_DISPATCH',
+      resourceType: 'THREAT_INTEL',
+      resourceId: String(id),
+      message: `TI 피드 전파 재시도 | status=${result.dispatchStatus}`,
+      metadata: { dispatchStatus: result.dispatchStatus, dispatchAttempts: result.dispatchAttempts },
+    });
+    return result;
+  }
 }

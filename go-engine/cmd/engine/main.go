@@ -40,6 +40,7 @@ func main() {
 	handler := ingestion.NewHandler(rdb, pub)
 	mux.HandleFunc("/ingest", handler.IngestHandler)
 	mux.HandleFunc("/health", ingestion.HealthHandler)
+	mux.HandleFunc("/metrics", handler.MetricsHandler)
 
 	port := getEnv("PORT", "8081")
 	srv := &http.Server{
