@@ -15,6 +15,7 @@ import { SelectButton } from 'primereact/selectbutton';
 import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { InputNumber } from 'primereact/inputnumber';
+import { Message } from 'primereact/message';
 import { Toast } from 'primereact/toast';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
@@ -1013,63 +1014,65 @@ const TenantsPage: React.FC = () => {
       <Dialog
         header={editingTenant ? t('tenants.dialog.editTitle') : t('tenants.dialog.title')}
         visible={showTenantDialog}
-        style={{ width: '560px', maxWidth: '96vw' }}
+        style={{ width: '840px', maxWidth: '96vw' }}
         className="tenant-create-dialog"
         onHide={closeTenantDialog}
       >
         <div className="flex flex-column gap-3 pt-2">
-          <div>
-            <label className="admin-form-label">
-              {t('tenants.dialog.slug')}
-              <span className="p-error ml-1">*</span>
-            </label>
-            <InputText
-              value={form.slug}
-              disabled={!!editingTenant}
-              onChange={(e) => {
-                setForm({ ...form, slug: e.target.value });
-                if (formErrors.slug) {
-                  setFormErrors({ ...formErrors, slug: undefined });
-                }
-              }}
-              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.slug ? 'p-invalid' : ''}`}
-              placeholder={t('tenants.dialog.slugPlaceholder')}
-            />
-            {formErrors.slug && <small className="p-error">{formErrors.slug}</small>}
-          </div>
-          <div>
-            <label className="admin-form-label">
-              {t('tenants.dialog.companyName')}
-              <span className="p-error ml-1">*</span>
-            </label>
-            <InputText
-              value={form.name}
-              onChange={(e) => {
-                setForm({ ...form, name: e.target.value });
-                if (formErrors.name) {
-                  setFormErrors({ ...formErrors, name: undefined });
-                }
-              }}
-              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.name ? 'p-invalid' : ''}`}
-            />
-            {formErrors.name && <small className="p-error">{formErrors.name}</small>}
-          </div>
-          <div>
-            <label className="admin-form-label">
-              {t('tenants.dialog.contactEmail')}
-              <span className="p-error ml-1">*</span>
-            </label>
-            <InputText
-              value={form.contactEmail}
-              onChange={(e) => {
-                setForm({ ...form, contactEmail: e.target.value });
-                if (formErrors.contactEmail) {
-                  setFormErrors({ ...formErrors, contactEmail: undefined });
-                }
-              }}
-              className={`w-full tenants-search-input p-inputtext-sm ${formErrors.contactEmail ? 'p-invalid' : ''}`}
-            />
-            {formErrors.contactEmail && <small className="p-error">{formErrors.contactEmail}</small>}
+          <div className="grid m-0">
+            <div className="col-12 md:col-4 pl-0 pr-0 md:pr-2">
+              <label className="admin-form-label">
+                {t('tenants.dialog.slug')}
+                <span className="p-error ml-1">*</span>
+              </label>
+              <InputText
+                value={form.slug}
+                disabled={!!editingTenant}
+                onChange={(e) => {
+                  setForm({ ...form, slug: e.target.value });
+                  if (formErrors.slug) {
+                    setFormErrors({ ...formErrors, slug: undefined });
+                  }
+                }}
+                className={`w-full tenants-search-input p-inputtext-sm ${formErrors.slug ? 'p-invalid' : ''}`}
+                placeholder={t('tenants.dialog.slugPlaceholder')}
+              />
+              {formErrors.slug && <small className="p-error">{formErrors.slug}</small>}
+            </div>
+            <div className="col-12 md:col-4 pl-0 pr-0 md:px-1">
+              <label className="admin-form-label">
+                {t('tenants.dialog.companyName')}
+                <span className="p-error ml-1">*</span>
+              </label>
+              <InputText
+                value={form.name}
+                onChange={(e) => {
+                  setForm({ ...form, name: e.target.value });
+                  if (formErrors.name) {
+                    setFormErrors({ ...formErrors, name: undefined });
+                  }
+                }}
+                className={`w-full tenants-search-input p-inputtext-sm ${formErrors.name ? 'p-invalid' : ''}`}
+              />
+              {formErrors.name && <small className="p-error">{formErrors.name}</small>}
+            </div>
+            <div className="col-12 md:col-4 p-0 md:pl-2">
+              <label className="admin-form-label">
+                {t('tenants.dialog.contactEmail')}
+                <span className="p-error ml-1">*</span>
+              </label>
+              <InputText
+                value={form.contactEmail}
+                onChange={(e) => {
+                  setForm({ ...form, contactEmail: e.target.value });
+                  if (formErrors.contactEmail) {
+                    setFormErrors({ ...formErrors, contactEmail: undefined });
+                  }
+                }}
+                className={`w-full tenants-search-input p-inputtext-sm ${formErrors.contactEmail ? 'p-invalid' : ''}`}
+              />
+              {formErrors.contactEmail && <small className="p-error">{formErrors.contactEmail}</small>}
+            </div>
           </div>
           <div className="grid m-0">
             <div className="col-12 md:col-6 pl-0 pr-0 md:pr-2">
@@ -1120,18 +1123,24 @@ const TenantsPage: React.FC = () => {
               {formErrors.expiresAt && <small className="p-error">{formErrors.expiresAt}</small>}
             </div>
           </div>
-          <div className="surface-ground border-1 border-300 border-round p-3 flex flex-column gap-2">
-            <div className="font-semibold">{t('tenants.dialog.quotaSectionTitle')}</div>
-            <small className="text-color-secondary">{t('tenants.dialog.quotaSectionHelp')}</small>
-            {selectedTier && (
-              <div className="text-sm text-color-secondary">
-                {t('tenants.dialog.tierDefaults', {
-                  dailyLogQuotaGb: formatTierLimit(selectedTier.dailyLogQuotaGb, 'GB', t('quota.unlimited')),
-                  maxUsers: formatTierLimit(selectedTier.maxUsers, '', t('tenants.tiers.unlimited')),
-                })}
+          <Message
+            severity="info"
+            className="w-full"
+            content={
+              <div className="flex flex-column gap-2">
+                <div className="font-semibold">{t('tenants.dialog.quotaSectionTitle')}</div>
+                <small className="text-color-secondary">{t('tenants.dialog.quotaSectionHelp')}</small>
+                {selectedTier && (
+                  <small className="text-color-secondary">
+                    {t('tenants.dialog.tierDefaults', {
+                      dailyLogQuotaGb: formatTierLimit(selectedTier.dailyLogQuotaGb, 'GB', t('quota.unlimited')),
+                      maxUsers: formatTierLimit(selectedTier.maxUsers, '', t('tenants.tiers.unlimited')),
+                    })}
+                  </small>
+                )}
               </div>
-            )}
-          </div>
+            }
+          />
           <div className="grid m-0">
             <div className="col-12 md:col-4 pl-0 pr-0 md:pr-2">
               <label className="admin-form-label">{t('quota.dialog.epsLimit')}</label>
