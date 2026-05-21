@@ -6,7 +6,7 @@ export enum PlaybookStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
-@Entity('playbooks', { comment: 'SOAR 자동 대응 플레이북 정의' })
+@Entity('playbooks', { comment: 'TMS 자동 대응 플레이북 정의' })
 export class Playbook {
   @PrimaryGeneratedColumn({ comment: '플레이북 고유 ID' })
   id: number;

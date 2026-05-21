@@ -105,7 +105,7 @@ const AdminLayout: React.FC = () => {
             <i className="pi pi-shield" style={{ fontSize: '1.15rem', color: 'var(--primary-color)' }} />
           </div>
           <div className="layout-sidebar-logo-copy">
-            <span>SOAR Admin</span>
+            <span>TMS Admin</span>
             <small>{t('layout.brandSubtext')}</small>
           </div>
         </div>

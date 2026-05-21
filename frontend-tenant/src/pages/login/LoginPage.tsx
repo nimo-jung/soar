@@ -305,7 +305,7 @@ const LoginPage: React.FC = () => {
             ) : (
               <i className="pi pi-shield logo-icon" />
             )}
-            <span className="logo-name">{branding.companyName ?? 'SOAR'}</span>
+            <span className="logo-name">{branding.companyName ?? 'TMS'}</span>
           </div>
 
           <div className="security-signal">{t('auth.securitySignal')}</div>
@@ -364,7 +364,7 @@ const LoginPage: React.FC = () => {
               <span>{t('auth.liveGuard')}</span>
             </div>
             <h2>{t('auth.welcome')}</h2>
-            <p>{branding.companyName ?? 'SOAR'} {t('auth.subtitle')}</p>
+            <p>{branding.companyName ?? 'TMS'} {t('auth.subtitle')}</p>
           </div>
 
           <div className="login-form" onKeyDown={handleKeyDown}>

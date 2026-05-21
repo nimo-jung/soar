@@ -6,7 +6,7 @@ import {
 } from '../../admin/master-users/password-policy';
 
 export class BootstrapMasterDto {
-  @ApiProperty({ example: 'admin@soar.io', description: '최초 마스터 관리자 이메일' })
+  @ApiProperty({ example: 'admin@tms.io', description: '최초 마스터 관리자 이메일' })
   @IsEmail()
   email: string;
 

@@ -43,7 +43,7 @@ const admin_data_source_1 = __importDefault(require("../admin-data-source"));
 async function runAdminSeed(dataSource) {
     const masterUserRepo = dataSource.getRepository(master_user_entity_1.MasterUser);
     const existing = await masterUserRepo.findOne({
-        where: { email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io' },
+        where: { email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@tms.io' },
     });
     if (existing) {
         console.log('[Seed] 마스터 관리자 계정이 이미 존재합니다. 스킵합니다.');
@@ -52,14 +52,14 @@ async function runAdminSeed(dataSource) {
     const password = process.env.MASTER_ADMIN_PASSWORD ?? 'ChangeMe1234!';
     const passwordHash = await bcrypt.hash(password, 12);
     await masterUserRepo.save(masterUserRepo.create({
-        email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io',
+        email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@tms.io',
         passwordHash,
         isActive: true,
         status: master_user_entity_1.MasterUserStatus.ACTIVE,
         deletedAt: null,
     }));
     console.log('[Seed] 마스터 관리자 계정이 생성되었습니다.');
-    console.log(`[Seed] Email: ${process.env.MASTER_ADMIN_EMAIL ?? 'admin@soar.io'}`);
+    console.log(`[Seed] Email: ${process.env.MASTER_ADMIN_EMAIL ?? 'admin@tms.io'}`);
     console.log('[Seed] 운영 환경에서는 반드시 비밀번호를 변경하세요.');
 }
 async function runAdminSeedCli() {

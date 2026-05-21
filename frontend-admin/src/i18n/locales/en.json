@@ -47,9 +47,9 @@
     "brandSubtext": "Master Console"
   },
   "auth": {
-    "title": "SOAR Master Admin",
+    "title": "TMS Master Admin",
     "badge": "Master Control",
-    "emailPlaceholder": "admin@soar.io",
+    "emailPlaceholder": "admin@tms.io",
     "submit": "Sign In",
     "errorEmpty": "Please enter email and password.",
     "errorInvalid": "Incorrect email or password.",

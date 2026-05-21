@@ -47,9 +47,9 @@
     "brandSubtext": "Master Console"
   },
   "auth": {
-    "title": "SOAR Master Admin",
+    "title": "TMS Master Admin",
     "badge": "Master Control",
-    "emailPlaceholder": "admin@soar.io",
+    "emailPlaceholder": "admin@tms.io",
     "submit": "로그인",
     "errorEmpty": "이메일과 비밀번호를 입력하세요.",
     "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다.",

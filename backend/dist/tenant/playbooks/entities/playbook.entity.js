@@ -69,6 +69,6 @@ __decorate([
     __metadata("design:type", Date)
 ], Playbook.prototype, "updatedAt", void 0);
 exports.Playbook = Playbook = __decorate([
-    (0, typeorm_1.Entity)('playbooks', { comment: 'SOAR 자동 대응 플레이북 정의' })
+    (0, typeorm_1.Entity)('playbooks', { comment: 'TMS 자동 대응 플레이북 정의' })
 ], Playbook);
 //# sourceMappingURL=playbook.entity.js.map

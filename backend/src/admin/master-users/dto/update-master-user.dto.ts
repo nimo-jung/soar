@@ -6,7 +6,7 @@ import {
 } from '../password-policy';
 
 export class UpdateMasterUserDto {
-  @ApiPropertyOptional({ description: '로그인 이메일', example: 'secops-admin@soar.io' })
+  @ApiPropertyOptional({ description: '로그인 이메일', example: 'secops-admin@tms.io' })
   @IsEmail()
   @IsOptional()
   email?: string;

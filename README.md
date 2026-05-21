@@ -1,6 +1,6 @@
-# SOAR
+# TMS
 
-Security Orchestration, Automation and Response 플랫폼.
+TMS 플랫폼.
 멀티테넌트 아키텍처로 구성되며, 테넌트별 물리적 데이터 격리와 고성능 로그 분석을 제공합니다.
 
 ## 기술 스택

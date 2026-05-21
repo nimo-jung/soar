@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import * as path from 'path';
 import { TenantConnectionService } from './tenant-connection.service';
 
 /**
@@ -10,22 +11,27 @@ import { TenantConnectionService } from './tenant-connection.service';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 3306),
-        username: config.get<string>('DB_USER', 'soar'),
-        password: config.get<string>('DB_PASSWORD', 'soarpassword'),
-        database: 'soar_admin',
-        entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
-        synchronize: false,
-        migrationsRun: false,
-        charset: 'utf8mb4',
-        timezone: '+00:00',
-        extra: {
-          connectionLimit: 10,
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const isDevelopment = config.get<string>('NODE_ENV', 'development') === 'development';
+
+        return {
+          type: 'mysql',
+          host: config.get<string>('DB_HOST', 'localhost'),
+          port: config.get<number>('DB_PORT', 3306),
+          username: config.get<string>('DB_USER', 'soar'),
+          password: config.get<string>('DB_PASSWORD', 'soarpassword'),
+          database: 'soar_admin',
+          entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
+          migrations: [path.join(__dirname, '../../database/migrations/admin/**/*{.ts,.js}')],
+          synchronize: false,
+          migrationsRun: isDevelopment,
+          charset: 'utf8mb4',
+          timezone: '+00:00',
+          extra: {
+            connectionLimit: 10,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

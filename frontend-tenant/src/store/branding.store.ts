@@ -18,7 +18,7 @@ const DEFAULT_BRANDING: BrandingConfig = {
   primaryColor: '#3B82F6',
   logoUrl: undefined,
   faviconUrl: undefined,
-  companyName: 'SOAR',
+  companyName: 'TMS',
 };
 
 /**

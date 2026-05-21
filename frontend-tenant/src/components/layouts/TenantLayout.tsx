@@ -149,7 +149,7 @@ const TenantLayout: React.FC = () => {
           ) : (
             <i className="pi pi-shield brand-icon" />
           )}
-          <span className="brand-name">{branding.companyName ?? 'SOAR'}</span>
+          <span className="brand-name">{branding.companyName ?? 'TMS'}</span>
         </div>
 
         {/* Grouped menu */}

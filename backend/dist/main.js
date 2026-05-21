@@ -15,7 +15,7 @@ async function bootstrap() {
         credentials: true,
     });
     const config = new swagger_1.DocumentBuilder()
-        .setTitle('SOAR API')
+        .setTitle('TMS API')
         .setDescription('Security Orchestration, Automation and Response API')
         .setVersion('1.0')
         .addBearerAuth()
@@ -24,8 +24,8 @@ async function bootstrap() {
     swagger_1.SwaggerModule.setup('docs', app, document);
     const port = process.env.PORT_BACKEND ?? 3000;
     await app.listen(port);
-    console.log(`[SOAR Backend] 서버 기동 완료: http://localhost:${port}`);
-    console.log(`[SOAR Backend] API 문서: http://localhost:${port}/docs`);
+    console.log(`[TMS Backend] 서버 기동 완료: http://localhost:${port}`);
+    console.log(`[TMS Backend] API 문서: http://localhost:${port}/docs`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

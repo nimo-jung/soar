@@ -6,7 +6,7 @@ import {
 } from '../password-policy';
 
 export class CreateMasterUserDto {
-  @ApiProperty({ description: '로그인 이메일', example: 'secops-admin@soar.io' })
+  @ApiProperty({ description: '로그인 이메일', example: 'secops-admin@tms.io' })
   @IsEmail()
   email: string;
 
