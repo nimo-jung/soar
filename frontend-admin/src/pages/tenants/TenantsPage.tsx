@@ -1014,7 +1014,7 @@ const TenantsPage: React.FC = () => {
       <Dialog
         header={editingTenant ? t('tenants.dialog.editTitle') : t('tenants.dialog.title')}
         visible={showTenantDialog}
-        style={{ width: '840px', maxWidth: '96vw' }}
+        style={{ width: '640px', maxWidth: '96vw' }}
         className="tenant-create-dialog"
         onHide={closeTenantDialog}
       >
@@ -1056,7 +1056,7 @@ const TenantsPage: React.FC = () => {
               />
               {formErrors.name && <small className="p-error">{formErrors.name}</small>}
             </div>
-            <div className="col-12 md:col-4 p-0 md:pl-2">
+            <div className="col-12 md:col-4 pr-0 md:pl-2">
               <label className="admin-form-label">
                 {t('tenants.dialog.contactEmail')}
                 <span className="p-error ml-1">*</span>
@@ -1127,7 +1127,7 @@ const TenantsPage: React.FC = () => {
             severity="info"
             className="w-full"
             content={
-              <div className="flex flex-column gap-2">
+              <div className="flex flex-column">
                 <div className="font-semibold">{t('tenants.dialog.quotaSectionTitle')}</div>
                 <small className="text-color-secondary">{t('tenants.dialog.quotaSectionHelp')}</small>
                 {selectedTier && (
