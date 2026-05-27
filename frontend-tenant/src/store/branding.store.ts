@@ -30,7 +30,7 @@ export const useBrandingStore = create<BrandingState>()(
     (set) => ({
       branding: DEFAULT_BRANDING,
       applyBranding: (config) => {
-        const merged = { ...DEFAULT_BRANDING, ...config };
+        const merged = { ...DEFAULT_BRANDING, ...normalizeBrandingConfig(config) };
         set({ branding: merged });
         applyCssVariables(merged);
         if (merged.faviconUrl) updateFavicon(merged.faviconUrl);
@@ -43,6 +43,20 @@ export const useBrandingStore = create<BrandingState>()(
     { name: 'tenant-branding' },
   ),
 );
+
+function normalizeBrandingConfig(config: BrandingConfig | null): BrandingConfig {
+  if (!config) {
+    return {};
+  }
+
+  const normalized = { ...config };
+  const companyName = normalized.companyName?.trim();
+  if (companyName && companyName.toUpperCase() === 'SOAR') {
+    normalized.companyName = 'TMS';
+  }
+
+  return normalized;
+}
 
 function applyCssVariables(config: BrandingConfig): void {
   const root = document.documentElement;
