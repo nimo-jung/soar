@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SOAR 개발 서버 일괄 기동 스크립트 (dev mode)
+# TMS 개발 서버 일괄 기동 스크립트 (dev mode)
 # 사용법: ./scripts/dev.sh [service]
 #   기본 동작: dev 컨테이너(profile=dev) 기반 기동
 #   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev
@@ -444,7 +444,7 @@ case "$SERVICE" in
     fi
     echo ""
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${BOLD} SOAR 개발 서버 기동 완료${RESET}"
+    echo -e "${BOLD} TMS 개발 서버 기동 완료${RESET}"
     echo -e "  Backend    → http://localhost:${PORT_BACKEND:-3000}"
     echo -e "  Swagger    → http://localhost:${PORT_BACKEND:-3000}/docs"
     echo -e "  Admin UI   → http://localhost:${PORT_FRONTEND_ADMIN:-5174}"

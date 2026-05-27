@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SOAR DB 마이그레이션 실행 스크립트
+# TMS DB 마이그레이션 실행 스크립트
 # 사용법: ./scripts/migrate.sh [run|revert|generate <name>|reset [db|tables] [--yes]] [dev|prod]
 # =============================================================================
 set -euo pipefail
@@ -14,6 +14,21 @@ info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
+
+normalize_runtime_env() {
+  # compose host 포트 변경 시 migrate도 동일 포트를 사용하도록 정규화
+  DB_HOST="${DB_HOST:-localhost}"
+  DB_PORT="${DB_PORT:-${PORT_MARIADB:-3306}}"
+  DB_USER="${DB_USER:-${MARIADB_USER:-soar}}"
+  DB_PASSWORD="${DB_PASSWORD:-${MARIADB_PASSWORD:-soarpassword}}"
+  DB_NAME="${DB_NAME:-soar_admin}"
+
+  REDIS_HOST="${REDIS_HOST:-localhost}"
+  REDIS_PORT="${REDIS_PORT:-${PORT_REDIS:-6379}}"
+
+  export DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME
+  export REDIS_HOST REDIS_PORT
+}
 
 print_migrate_hint() {
   local action="$1"
@@ -185,6 +200,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 set -a; source "$ENV_FILE"; set +a
+normalize_runtime_env
 
 cd "$REPO_ROOT/backend"
 [[ -d node_modules ]] || npm ci
@@ -201,6 +217,7 @@ if [[ "${!#:-}" == "dev" || "${!#:-}" == "prod" ]]; then
     exit 1
   fi
   set -a; source "$ENV_FILE"; set +a
+  normalize_runtime_env
   set -- "${@:1:$(($#-1))}"
 fi
 

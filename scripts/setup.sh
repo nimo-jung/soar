@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SOAR 최초 설치 스크립트 (npm install + .env 초기화)
+# TMS 최초 설치 스크립트 (npm install + .env 초기화)
 # 사용법: ./scripts/setup.sh
 # =============================================================================
 set -euo pipefail
@@ -12,7 +12,7 @@ info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 
-echo -e "${BOLD}SOAR 초기 설치 시작${RESET}"
+echo -e "${BOLD}TMS 초기 설치 시작${RESET}"
 echo ""
 
 # ── .env.dev / .env.prod 초기화 ──────────────────────────────────────────────

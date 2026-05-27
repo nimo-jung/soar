@@ -36,9 +36,9 @@
   },
   "auth": {
     "logoAlt": "회사 로고",
-    "welcome": "SOC 콘솔에 오신 것을 환영합니다",
+    "welcome": "TMS 콘솔에 오신 것을 환영합니다",
     "subtitle": "테넌트 보안 운영 포털에 접속하려면 로그인하세요.",
-    "liveGuard": "SOC 실시간 모니터링 활성",
+    "liveGuard": "TMS 실시간 모니터링 활성",
     "securitySignal": "AI 위협 인텔리전스 엔진 활성",
     "tenantSlug": "테넌트 슬러그",
     "tenantSlugPlaceholder": "acme-corp",

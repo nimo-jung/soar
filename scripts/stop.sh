@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SOAR 전체 프로세스 종료 스크립트
+# TMS 전체 프로세스 종료 스크립트
 # 사용법: ./scripts/stop.sh [service]
 #   ./scripts/stop.sh          → 로컬 프로세스 + dev/prod/infra 전체 종료
 #   ./scripts/stop.sh backend  → 백엔드만 종료

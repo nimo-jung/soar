@@ -1,5 +1,5 @@
 
-# SOAR Project Architecture (copilot-instructions.md)
+# TMS Project Architecture (copilot-instructions.md)
 
 ## 1. 프로젝트 개요
 

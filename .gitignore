@@ -1,5 +1,8 @@
 node_modules/
 package-lock.json
+!backend/package-lock.json
+!frontend-admin/package-lock.json
+!frontend-tenant/package-lock.json
 .env
 *.pid
 *.log

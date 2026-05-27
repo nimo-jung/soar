@@ -36,9 +36,9 @@
   },
   "auth": {
     "logoAlt": "Company logo",
-    "welcome": "Welcome to the SOC Console",
+    "welcome": "Welcome to the TMS Console",
     "subtitle": "Sign in to access your tenant security operations portal.",
-    "liveGuard": "SOC live monitoring enabled",
+    "liveGuard": "TMS live monitoring enabled",
     "securitySignal": "AI threat intelligence engine active",
     "tenantSlug": "Tenant Slug",
     "tenantSlugPlaceholder": "acme-corp",

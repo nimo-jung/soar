@@ -2,7 +2,7 @@
 applyTo: "**"
 ---
 
-# SOAR 프로젝트 디렉토리 구조 규칙
+# TMS 프로젝트 디렉토리 구조 규칙
 
 이 파일은 프로젝트가 성장하면서 지속적으로 갱신한다.
 새 모듈·컴포넌트를 추가할 때는 아래 구조를 기준으로 위치를 결정하고, 이 파일을 함께 업데이트한다.
@@ -32,7 +32,7 @@ backend/
     │   ├── users/               # 테넌트 내 사용자·역할 관리 (RBAC)
     │   ├── dashboard/           # 대시보드 위젯 설정
     │   ├── alerts/              # 알람 정책·알림 발송 이력
-    │   └── playbooks/           # SOAR 플레이북 편집·실행
+    │   └── playbooks/           # TMS 플레이북 편집·실행
     │
     └── common/                  # 공유 인프라 (두 영역에서 재사용)
         ├── guards/              # MasterGuard, TenantGuard, RolesGuard
@@ -79,7 +79,7 @@ frontend-tenant/
     │   ├── dashboard/           # 커스텀 위젯 대시보드
     │   ├── collectors/          # Collector 관리·API Key 발급
     │   ├── alerts/              # 알람 목록·알림 정책 설정
-    │   ├── playbooks/           # SOAR 플레이북 편집·승인
+    │   ├── playbooks/           # TMS 플레이북 편집·승인
     │   ├── users/               # 테넌트 내 사용자·역할 관리
     │   └── settings/            # IP 화이트리스트·파싱 룰·브랜딩 설정
     ├── components/              # Tenant 전용 PrimeReact 컴포넌트

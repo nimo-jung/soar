@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SOAR 운영 빌드 & 기동 스크립트 (production mode)
+# TMS 운영 빌드 & 기동 스크립트 (production mode)
 # 사용법: ./scripts/prod.sh [service]
 #   ./scripts/prod.sh          → 전체 빌드 후 기동
 #   ./scripts/prod.sh build    → 전체 빌드만 (기동 안 함)
@@ -331,7 +331,7 @@ start_docker() {
   docker compose -f "$REPO_ROOT/docker-compose.yml" --profile prod --env-file "$ENV_FILE" up -d --build
   echo ""
   echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-  echo -e "${BOLD} SOAR 운영 서버 기동 완료 (Docker)${RESET}"
+  echo -e "${BOLD} TMS 운영 서버 기동 완료 (Docker)${RESET}"
   echo -e "  Gateway    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
   echo -e "  Admin UI   → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/admin"
   echo -e "  Tenant UI  → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/tenant"
@@ -389,7 +389,7 @@ case "$SERVICE" in
     start_engine_prod
     echo ""
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${BOLD} SOAR 운영 서버 기동 완료${RESET}"
+    echo -e "${BOLD} TMS 운영 서버 기동 완료${RESET}"
     echo -e "  Backend    → http://localhost:${PORT_BACKEND:-3000}"
     echo -e "  Go Engine  → http://localhost:${PORT_GO_ENGINE:-8081}"
     echo -e "  Admin UI   → frontend-admin/dist/ (별도 웹서버 필요)"

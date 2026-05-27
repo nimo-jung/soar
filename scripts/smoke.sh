@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# SOAR 스모크 테스트 스크립트
+# TMS 스모크 테스트 스크립트
 # 사용법: ./scripts/smoke.sh [dev|prod]
 # =============================================================================
 set -euo pipefail
@@ -64,7 +64,7 @@ post_json() {
 }
 
 failed=0
-info "SOAR 스모크 테스트 시작 (mode=$MODE)"
+info "TMS 스모크 테스트 시작 (mode=$MODE)"
 
 if [[ "$MODE" == "dev" ]]; then
   code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
