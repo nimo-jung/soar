@@ -5,16 +5,16 @@ import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 /**
- * soar_admin DB 마이그레이션 전용 DataSource
+ * tms_admin DB 마이그레이션 전용 DataSource
  * TypeORM CLI에서 사용
  */
 export const AdminDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST ?? 'localhost',
   port: parseInt(process.env.DB_PORT ?? '3306', 10),
-  username: process.env.DB_USER ?? 'soar',
-  password: process.env.DB_PASSWORD ?? 'soarpassword',
-  database: 'soar_admin',
+  username: process.env.DB_USER ?? 'tms',
+  password: process.env.DB_PASSWORD ?? 'tmspassword',
+  database: 'tms_admin',
   entities: [path.join(__dirname, '../**/*.entity{.ts,.js}')],
   migrations: [path.join(__dirname, '../database/migrations/admin/**/*{.ts,.js}')],
   synchronize: false,
@@ -30,8 +30,8 @@ export const TenantDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST ?? 'localhost',
   port: parseInt(process.env.DB_PORT ?? '3306', 10),
-  username: process.env.DB_USER ?? 'soar',
-  password: process.env.DB_PASSWORD ?? 'soarpassword',
+  username: process.env.DB_USER ?? 'tms',
+  password: process.env.DB_PASSWORD ?? 'tmspassword',
   database: process.env.TENANT_DB_NAME ?? 'tenant_db_default',
   entities: [path.join(__dirname, '../tenant/**/*.entity{.ts,.js}')],
   migrations: [path.join(__dirname, '../database/migrations/tenant/**/*{.ts,.js}')],

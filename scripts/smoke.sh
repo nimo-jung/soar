@@ -29,7 +29,7 @@ success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*"; }
 
-MASTER_EMAIL="${MASTER_ADMIN_EMAIL:-admin@soar.io}"
+MASTER_EMAIL="${MASTER_ADMIN_EMAIL:-admin@tms.io}"
 MASTER_PASSWORD="${MASTER_ADMIN_PASSWORD:-ChangeMe1234!}"
 TENANT_SLUG="${SMOKE_TENANT_SLUG:-demo}"
 TENANT_EMAIL="${SMOKE_TENANT_EMAIL:-operator@demo.local}"
@@ -67,34 +67,34 @@ failed=0
 info "TMS 스모크 테스트 시작 (mode=$MODE)"
 
 if [[ "$MODE" == "dev" ]]; then
-  code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
+  code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
   check_code "dev backend docs" 200 "$code" || failed=1
 
-  code=$(post_json "$BACKEND_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/soar_smoke_master_backend.json || echo 000)
+  code=$(post_json "$BACKEND_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_backend.json || echo 000)
   check_code "dev backend master login" 200 "$code" || failed=1
 
-  code=$(post_json "$ADMIN_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/soar_smoke_master_admin_proxy.json || echo 000)
+  code=$(post_json "$ADMIN_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_admin_proxy.json || echo 000)
   check_code "dev admin proxy master login" 200 "$code" || failed=1
 
   if [[ "$RUN_TENANT_LOGIN" == "1" ]]; then
-    code=$(post_json "$TENANT_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/soar_smoke_tenant_proxy.json || echo 000)
+    code=$(post_json "$TENANT_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/tms_smoke_tenant_proxy.json || echo 000)
     check_code "dev tenant proxy login" 200 "$code" || failed=1
   else
     warn "tenant 로그인 점검을 건너뜁니다. (RUN_TENANT_LOGIN=$RUN_TENANT_LOGIN)"
   fi
 else
-  code=$(curl --max-time 10 -sS -o /tmp/soar_smoke_docs_prod.txt -w '%{http_code}' "$GATEWAY_BASE/docs/" || echo 000)
+  code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_prod.txt -w '%{http_code}' "$GATEWAY_BASE/docs/" || echo 000)
   check_code "prod gateway docs" 200 "$code" || failed=1
 
   if [[ "$MASTER_PASSWORD" == replace_with* ]]; then
     warn "MASTER_ADMIN_PASSWORD가 placeholder 값입니다. master login 점검을 건너뜁니다."
   else
-    code=$(post_json "$GATEWAY_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/soar_smoke_master_gateway.json || echo 000)
+    code=$(post_json "$GATEWAY_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_gateway.json || echo 000)
     check_code "prod gateway master login" 200 "$code" || failed=1
   fi
 
   if [[ "$RUN_TENANT_LOGIN" == "1" ]]; then
-    code=$(post_json "$GATEWAY_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/soar_smoke_tenant_gateway.json || echo 000)
+    code=$(post_json "$GATEWAY_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/tms_smoke_tenant_gateway.json || echo 000)
     check_code "prod gateway tenant login" 200 "$code" || failed=1
   else
     warn "tenant 로그인 점검을 건너뜁니다. (RUN_TENANT_LOGIN=$RUN_TENANT_LOGIN)"

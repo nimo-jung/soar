@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/soar/go-engine/internal/ingestion"
-	"github.com/soar/go-engine/internal/publisher"
+	"github.com/tms/go-engine/internal/ingestion"
+	"github.com/tms/go-engine/internal/publisher"
 )
 
 func main() {

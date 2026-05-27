@@ -5,7 +5,7 @@
 #
 # NestJS의 TenantProvisioningService가 신규 테넌트 생성 시
 # QueryRunner를 통해 "CREATE DATABASE tenant_db_{id}" 를 실행합니다.
-# 기본 MYSQL_USER 권한은 soar_admin 에만 한정되므로,
+# 기본 MYSQL_USER 권한은 tms_admin 에만 한정되므로,
 # tenant_db_* 패턴의 DB에 대한 CREATE/ALL 권한을 명시적으로 추가합니다.
 # ─────────────────────────────────────────────────────────────────────────────
 set -e

@@ -41,13 +41,13 @@ TMS 플랫폼.
 ./scripts/dev.sh engine   # Go Engine (go run, 포트 8081)
 
 # 데이터 마운트 권한 자동 보정(가능한 경우 sudo 필요)
-SOAR_PREFLIGHT_AUTOFIX=1 ./scripts/dev.sh infra
+TMS_PREFLIGHT_AUTOFIX=1 ./scripts/dev.sh infra
 
 # dev.sh는 기본적으로 자동 보정을 시도합니다. 비활성화하려면:
-SOAR_PREFLIGHT_AUTOFIX=0 ./scripts/dev.sh infra
+TMS_PREFLIGHT_AUTOFIX=0 ./scripts/dev.sh infra
 
 # 임시로 권한 사전 점검 우회 (권장하지 않음)
-SOAR_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
+TMS_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 ```
 
 기동 후 접속 주소:
@@ -77,10 +77,10 @@ SOAR_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 ./scripts/prod.sh tenant   # Vite 빌드 → frontend-tenant/dist/
 
 # 데이터 마운트 권한 자동 보정(가능한 경우 sudo 필요)
-SOAR_PREFLIGHT_AUTOFIX=1 ./scripts/prod.sh docker
+TMS_PREFLIGHT_AUTOFIX=1 ./scripts/prod.sh docker
 
 # 임시로 권한 사전 점검 우회 (권장하지 않음)
-SOAR_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
+TMS_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 ```
 
 운영 모드 단일 진입점:
@@ -108,8 +108,8 @@ SOAR_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 ./scripts/migrate.sh run                       # 마이그레이션 실행
 ./scripts/migrate.sh revert                    # 마지막 마이그레이션 롤백
 ./scripts/migrate.sh generate CreateUserTable  # 마이그레이션 파일 생성
-./scripts/migrate.sh reset db --yes            # soar_admin DB 재생성 + 마이그레이션 + Seed
-./scripts/migrate.sh reset tables --yes        # soar_admin 테이블 삭제 + 마이그레이션 + Seed
+./scripts/migrate.sh reset db --yes            # tms_admin DB 재생성 + 마이그레이션 + Seed
+./scripts/migrate.sh reset tables --yes        # tms_admin 테이블 삭제 + 마이그레이션 + Seed
 ```
 
 ### 6. 상태 확인
@@ -163,7 +163,7 @@ docker compose down -v
 ## 프로젝트 구조
 
 ```
-soar/
+tms/
 ├── backend/              # NestJS API (포트 3000)
 │   └── src/
 │       ├── admin/        # /admin/* — MasterGuard (공급자 전용)

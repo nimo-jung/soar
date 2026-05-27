@@ -4,7 +4,7 @@ import { MasterUser, MasterUserStatus } from '../../admin/master-users/entities/
 import AdminDataSource from '../admin-data-source';
 
 /**
- * AdminSeeder: soar_admin DB 초기 데이터 삽입
+ * AdminSeeder: tms_admin DB 초기 데이터 삽입
  * - 최고 관리자 계정 생성 (이미 존재할 경우 스킵)
  * - 멱등성 보장: 중복 실행 시 오류 없음
  */

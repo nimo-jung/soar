@@ -28,7 +28,7 @@ func New(brokers []string, tenantID, clickhouseAddr, chUser, chPassword string) 
 	topic := fmt.Sprintf("raw-logs.%s", tenantID)
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  brokers,
-		GroupID:  fmt.Sprintf("soar-consumer-%s", tenantID),
+		GroupID:  fmt.Sprintf("tms-consumer-%s", tenantID),
 		Topic:    topic,
 		MinBytes: 1,
 		MaxBytes: 10 << 20, // 10MB

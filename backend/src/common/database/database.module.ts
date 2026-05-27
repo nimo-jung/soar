@@ -5,7 +5,7 @@ import * as path from 'path';
 import { TenantConnectionService } from './tenant-connection.service';
 
 /**
- * DatabaseModule: soar_admin DB 연결(Global) + 테넌트별 동적 연결 팩토리 제공
+ * DatabaseModule: tms_admin DB 연결(Global) + 테넌트별 동적 연결 팩토리 제공
  */
 @Global()
 @Module({
@@ -18,9 +18,9 @@ import { TenantConnectionService } from './tenant-connection.service';
           type: 'mysql',
           host: config.get<string>('DB_HOST', 'localhost'),
           port: config.get<number>('DB_PORT', 3306),
-          username: config.get<string>('DB_USER', 'soar'),
-          password: config.get<string>('DB_PASSWORD', 'soarpassword'),
-          database: 'soar_admin',
+          username: config.get<string>('DB_USER', 'tms'),
+          password: config.get<string>('DB_PASSWORD', 'tmspassword'),
+          database: 'tms_admin',
           entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
           migrations: [path.join(__dirname, '../../database/migrations/admin/**/*{.ts,.js}')],
           synchronize: false,

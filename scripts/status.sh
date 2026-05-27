@@ -84,24 +84,24 @@ print_mode_summary() {
   local total_running=0
 
   local infra_containers=(
-    soar-mariadb
-    soar-redis
-    soar-clickhouse
-    soar-redpanda
-    soar-redpanda-console
+    tms-mariadb
+    tms-redis
+    tms-clickhouse
+    tms-redpanda
+    tms-redpanda-console
   )
   local dev_containers=(
-    soar-backend-dev
-    soar-go-engine-dev
-    soar-frontend-admin-dev
-    soar-frontend-tenant-dev
+    tms-backend-dev
+    tms-go-engine-dev
+    tms-frontend-admin-dev
+    tms-frontend-tenant-dev
   )
   local prod_containers=(
-    soar-backend-prod
-    soar-go-engine-prod
-    soar-frontend-admin-prod
-    soar-frontend-tenant-prod
-    soar-gateway-prod
+    tms-backend-prod
+    tms-go-engine-prod
+    tms-frontend-admin-prod
+    tms-frontend-tenant-prod
+    tms-gateway-prod
   )
 
   for container in "${infra_containers[@]}"; do
@@ -154,24 +154,24 @@ echo -e "${BOLD} TMS 서비스 상태${RESET}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 
 echo -e "\n${CYAN}[ 인프라 컨테이너 ]${RESET}"
-check_container soar-mariadb    "MariaDB"
-check_container soar-redis      "Redis"
-check_container soar-clickhouse "ClickHouse"
-check_container soar-redpanda   "RedPanda"
-check_container soar-redpanda-console "RedPanda Console"
+check_container tms-mariadb    "MariaDB"
+check_container tms-redis      "Redis"
+check_container tms-clickhouse "ClickHouse"
+check_container tms-redpanda   "RedPanda"
+check_container tms-redpanda-console "RedPanda Console"
 
 echo -e "\n${CYAN}[ Dev 컨테이너 ]${RESET}"
-check_container soar-backend-dev "Backend Dev"
-check_container soar-go-engine-dev "Go Engine Dev"
-check_container soar-frontend-admin-dev "Admin UI Dev"
-check_container soar-frontend-tenant-dev "Tenant UI Dev"
+check_container tms-backend-dev "Backend Dev"
+check_container tms-go-engine-dev "Go Engine Dev"
+check_container tms-frontend-admin-dev "Admin UI Dev"
+check_container tms-frontend-tenant-dev "Tenant UI Dev"
 
 echo -e "\n${CYAN}[ Prod 컨테이너 ]${RESET}"
-check_container soar-backend-prod "Backend Prod"
-check_container soar-go-engine-prod "Go Engine Prod"
-check_container soar-frontend-admin-prod "Admin UI Prod"
-check_container soar-frontend-tenant-prod "Tenant UI Prod"
-check_container soar-gateway-prod "Gateway Prod"
+check_container tms-backend-prod "Backend Prod"
+check_container tms-go-engine-prod "Go Engine Prod"
+check_container tms-frontend-admin-prod "Admin UI Prod"
+check_container tms-frontend-tenant-prod "Tenant UI Prod"
+check_container tms-gateway-prod "Gateway Prod"
 
 echo -e "\n${CYAN}[ 로컬 프로세스 ]${RESET}"
 check_pid backend       "Backend (NestJS)"   "http://localhost:${PORT_BACKEND:-3000}" "${PORT_BACKEND:-3000}"

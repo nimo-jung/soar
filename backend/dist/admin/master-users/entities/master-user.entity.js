@@ -74,6 +74,6 @@ __decorate([
     __metadata("design:type", Date)
 ], MasterUser.prototype, "updatedAt", void 0);
 exports.MasterUser = MasterUser = __decorate([
-    (0, typeorm_1.Entity)('master_users', { comment: '마스터 관리자 계정 (soar_admin DB)' })
+    (0, typeorm_1.Entity)('master_users', { comment: '마스터 관리자 계정 (tms_admin DB)' })
 ], MasterUser);
 //# sourceMappingURL=master-user.entity.js.map

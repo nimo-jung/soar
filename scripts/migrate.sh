@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-MODE="${SOAR_MODE:-dev}"
+MODE="${TMS_MODE:-dev}"
 ENV_FILE="$REPO_ROOT/.env.$MODE"
 
 CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; RESET='\033[0m'
@@ -19,9 +19,9 @@ normalize_runtime_env() {
   # compose host 포트 변경 시 migrate도 동일 포트를 사용하도록 정규화
   DB_HOST="${DB_HOST:-localhost}"
   DB_PORT="${DB_PORT:-${PORT_MARIADB:-3306}}"
-  DB_USER="${DB_USER:-${MARIADB_USER:-soar}}"
-  DB_PASSWORD="${DB_PASSWORD:-${MARIADB_PASSWORD:-soarpassword}}"
-  DB_NAME="${DB_NAME:-soar_admin}"
+  DB_USER="${DB_USER:-${MARIADB_USER:-tms}}"
+  DB_PASSWORD="${DB_PASSWORD:-${MARIADB_PASSWORD:-tmspassword}}"
+  DB_NAME="${DB_NAME:-tms_admin}"
 
   REDIS_HOST="${REDIS_HOST:-localhost}"
   REDIS_PORT="${REDIS_PORT:-${PORT_REDIS:-6379}}"
@@ -64,12 +64,12 @@ confirm_destructive() {
   local message="$1"
   local force_flag="${2:-}"
 
-  if [[ "$force_flag" == "--yes" || "${SOAR_MIGRATE_FORCE:-0}" == "1" ]]; then
+  if [[ "$force_flag" == "--yes" || "${TMS_MIGRATE_FORCE:-0}" == "1" ]]; then
     return 0
   fi
 
   if [[ ! -t 0 ]]; then
-    error "파괴적 작업입니다. --yes 또는 SOAR_MIGRATE_FORCE=1 옵션이 필요합니다."
+    error "파괴적 작업입니다. --yes 또는 TMS_MIGRATE_FORCE=1 옵션이 필요합니다."
     return 1
   fi
 
@@ -83,15 +83,15 @@ confirm_destructive() {
 }
 
 reset_admin_database() {
-  info "soar_admin DB DROP/CREATE 수행 중..."
+  info "tms_admin DB DROP/CREATE 수행 중..."
   node <<'NODE'
 const mysql = require('mysql2/promise');
 
 const host = process.env.DB_HOST || 'localhost';
 const port = Number(process.env.DB_PORT || '3306');
-const user = process.env.DB_USER || 'soar';
-const password = process.env.DB_PASSWORD || 'soarpassword';
-const database = process.env.DB_NAME || 'soar_admin';
+const user = process.env.DB_USER || 'tms';
+const password = process.env.DB_PASSWORD || 'tmspassword';
+const database = process.env.DB_NAME || 'tms_admin';
 
 if (!/^[A-Za-z0-9_]+$/.test(database)) {
   throw new Error(`Unsafe DB name: ${database}`);
@@ -113,7 +113,7 @@ NODE
 }
 
 reset_admin_tables() {
-  info "soar_admin 테이블 스키마 DROP 수행 중..."
+  info "tms_admin 테이블 스키마 DROP 수행 중..."
   npx typeorm-ts-node-commonjs -d src/database/admin-data-source.ts schema:drop
 }
 
@@ -191,7 +191,7 @@ NODE
 }
 
 run_admin_migrate_and_seed() {
-  info "soar_admin 마이그레이션 실행..."
+  info "tms_admin 마이그레이션 실행..."
   npm run migration:run:admin
 }
 
@@ -225,13 +225,13 @@ info "마이그레이션 모드: $MODE (env: $ENV_FILE)"
 
 case "$CMD" in
   run)
-    info "soar_admin 마이그레이션 실행..."
+    info "tms_admin 마이그레이션 실행..."
     npm run migration:run:admin
     success "마이그레이션 완료"
     print_migrate_hint run
     ;;
   revert)
-    info "soar_admin 마이그레이션 롤백..."
+    info "tms_admin 마이그레이션 롤백..."
     npm run migration:revert:admin
     success "롤백 완료"
     print_migrate_hint revert
@@ -254,10 +254,10 @@ case "$CMD" in
     fi
 
     if [[ "$RESET_KIND" == "db" ]]; then
-      confirm_destructive "DB를 삭제 후 재생성합니다: soar_admin" "$FORCE_FLAG" || exit 1
+      confirm_destructive "DB를 삭제 후 재생성합니다: tms_admin" "$FORCE_FLAG" || exit 1
       reset_admin_database
     else
-      confirm_destructive "soar_admin의 모든 테이블을 삭제합니다." "$FORCE_FLAG" || exit 1
+      confirm_destructive "tms_admin의 모든 테이블을 삭제합니다." "$FORCE_FLAG" || exit 1
       reset_admin_tables
     fi
 

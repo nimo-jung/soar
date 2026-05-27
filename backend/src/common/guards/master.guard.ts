@@ -10,7 +10,7 @@ import type { Request } from 'express';
 import { SessionStoreService } from '../session/session-store.service';
 
 /**
- * MasterGuard: soar_admin 권한을 가진 계정만 /admin/* 접근 허용
+ * MasterGuard: tms_admin 권한을 가진 계정만 /admin/* 접근 허용
  */
 @Injectable()
 export class MasterGuard implements CanActivate {

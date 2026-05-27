@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * InitAdminSchema
- * 목적: soar_admin 초기 스키마를 단일 마이그레이션으로 구성한다.
+ * 목적: tms_admin 초기 스키마를 단일 마이그레이션으로 구성한다.
  * 영향도: 프로젝트 초기 단계용 스쿼시 마이그레이션. 분할 마이그레이션 대체.
  */
 export class InitAdminSchema1785100000000 implements MigrationInterface {
@@ -23,7 +23,7 @@ export class InitAdminSchema1785100000000 implements MigrationInterface {
           ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정 일시',
         PRIMARY KEY (\`id\`),
         UNIQUE KEY \`IDX_master_users_email\` (\`email\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='마스터 관리자 계정 (soar_admin DB)'
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='마스터 관리자 계정 (tms_admin DB)'
     `);
 
     await queryRunner.query(`

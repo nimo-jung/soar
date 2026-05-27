@@ -6,7 +6,7 @@
  *   - system_alert_events: 임계치 초과·서비스 다운·무결성 이상 알림 이벤트
  *   - integrity_baselines: 파일 해시 기반 무결성 기준 레지스트리
  *
- * 영향: soar_admin DB에 3개 테이블 신규 생성. 기존 데이터 영향 없음.
+ * 영향: tms_admin DB에 3개 테이블 신규 생성. 기존 데이터 영향 없음.
  */
 import { MigrationInterface, QueryRunner } from 'typeorm';
 

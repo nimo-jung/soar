@@ -65,7 +65,7 @@ const includesEmailLocalPart = (password: string, email?: string): boolean => {
 };
 
 const containsWeakDictionaryWord = (password: string): boolean => {
-  const weakKeywords = ['password', 'qwer', 'admin', 'soar', 'welcome', 'letmein'];
+  const weakKeywords = ['password', 'qwer', 'admin', 'tms', 'welcome', 'letmein'];
   const lower = password.toLowerCase();
   return weakKeywords.some((keyword) => lower.includes(keyword));
 };

@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="${SOAR_ENV_FILE:-$REPO_ROOT/.env.prod}"
+ENV_FILE="${TMS_ENV_FILE:-$REPO_ROOT/.env.prod}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
@@ -72,9 +72,9 @@ mkdir -p "$PID_DIR"
 save_pid() { echo "$!" > "$PID_DIR/$1.pid"; }
 
 # ── 데이터 마운트 사전 점검(권한/쓰기 가능 여부) ─────────────────────────────
-DATA_ROOT="${SOAR_DATA_ROOT:-/home1/soar}"
-PREFLIGHT_AUTOFIX="${SOAR_PREFLIGHT_AUTOFIX:-0}"
-STRICT_OWNER_CHECK="${SOAR_STRICT_OWNER_CHECK:-0}"
+DATA_ROOT="${TMS_DATA_ROOT:-/home1/tms}"
+PREFLIGHT_AUTOFIX="${TMS_PREFLIGHT_AUTOFIX:-0}"
+STRICT_OWNER_CHECK="${TMS_STRICT_OWNER_CHECK:-0}"
 
 is_world_writable() {
   local mode="$1"
@@ -202,8 +202,8 @@ check_redpanda_owner() {
 }
 
 preflight_data_mounts() {
-  if [[ "${SOAR_SKIP_PREFLIGHT:-0}" == "1" ]]; then
-    warn "SOAR_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
+  if [[ "${TMS_SKIP_PREFLIGHT:-0}" == "1" ]]; then
+    warn "TMS_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
     return 0
   fi
 
@@ -248,7 +248,7 @@ preflight_data_mounts() {
 
   if [[ "$failed" -ne 0 ]]; then
     error "데이터 마운트 사전 점검 실패. 권한 조정 후 다시 실행하세요."
-    error "임시 우회가 필요하면 SOAR_SKIP_PREFLIGHT=1 로 실행할 수 있습니다."
+    error "임시 우회가 필요하면 TMS_SKIP_PREFLIGHT=1 로 실행할 수 있습니다."
     return 1
   fi
 

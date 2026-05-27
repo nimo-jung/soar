@@ -16,7 +16,7 @@ applyTo: "**"
 ```
 backend/
 └── src/
-    ├── admin/                   # /admin/* — MasterGuard 적용 (soar_admin 계정 전용)
+    ├── admin/                   # /admin/* — MasterGuard 적용 (tms_admin 계정 전용)
     │   ├── tenants/             # 테넌트 생성·정지·삭제·라이선스
     │   ├── quotas/              # EPS 제한·스토리지 할당·보관 주기
     │   ├── billing/             # 사용량 집계·빌링 리포트

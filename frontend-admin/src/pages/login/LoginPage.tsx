@@ -12,7 +12,7 @@ import type { LicenseWarning } from '../../store/auth.store';
 import { AuthPolicy } from '../../types/auth-policy';
 import { formatDateOnly } from '../../utils/date';
 
-const LOCKOUT_STORAGE_KEY = 'soar_admin_lockout';
+const LOCKOUT_STORAGE_KEY = 'tms_admin_lockout';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();

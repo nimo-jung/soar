@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Upsert billing pricing policies for soar_admin.
+ * Upsert billing pricing policies for tms_admin.
  *
  * Usage examples:
  *   node scripts/upsert-billing-pricing.js
@@ -29,9 +29,9 @@ for (const envPath of envPaths) {
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'soar',
-  password: process.env.DB_PASSWORD || 'soarpassword',
-  database: process.env.DB_NAME || 'soar_admin',
+  user: process.env.DB_USER || 'tms',
+  password: process.env.DB_PASSWORD || 'tmspassword',
+  database: process.env.DB_NAME || 'tms_admin',
 };
 
 const defaults = {

@@ -18,7 +18,7 @@ i18n
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
-      lookupLocalStorage: 'soar-lang',
+      lookupLocalStorage: 'tms-lang',
     },
   });
 

@@ -9,13 +9,13 @@
 #   ./scripts/dev.sh admin    → frontend-admin-dev만
 #   ./scripts/dev.sh tenant   → frontend-tenant-dev만
 #   ./scripts/dev.sh engine   → go-engine-dev만
-#   로컬 실행 강제: SOAR_DEV_RUNTIME=local ./scripts/dev.sh [service]
+#   로컬 실행 강제: TMS_DEV_RUNTIME=local ./scripts/dev.sh [service]
 # =============================================================================
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="${SOAR_ENV_FILE:-$REPO_ROOT/.env.dev}"
-DEV_RUNTIME="${SOAR_DEV_RUNTIME:-docker}"
+ENV_FILE="${TMS_ENV_FILE:-$REPO_ROOT/.env.dev}"
+DEV_RUNTIME="${TMS_DEV_RUNTIME:-docker}"
 
 # ── 색상 출력 헬퍼 ───────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -91,10 +91,10 @@ start_dev_containers() {
 }
 
 # ── 데이터 마운트 사전 점검(권한/쓰기 가능 여부) ─────────────────────────────
-DATA_ROOT="${SOAR_DATA_ROOT:-/home1/soar}"
-PREFLIGHT_AUTOFIX="${SOAR_PREFLIGHT_AUTOFIX:-1}"
-STRICT_OWNER_CHECK="${SOAR_STRICT_OWNER_CHECK:-0}"
-WORKSPACE_AUTOFIX="${SOAR_WORKSPACE_AUTOFIX:-1}"
+DATA_ROOT="${TMS_DATA_ROOT:-/home1/tms}"
+PREFLIGHT_AUTOFIX="${TMS_PREFLIGHT_AUTOFIX:-1}"
+STRICT_OWNER_CHECK="${TMS_STRICT_OWNER_CHECK:-0}"
+WORKSPACE_AUTOFIX="${TMS_WORKSPACE_AUTOFIX:-1}"
 
 is_world_writable() {
   local mode="$1"
@@ -222,8 +222,8 @@ check_redpanda_owner() {
 }
 
 preflight_data_mounts() {
-  if [[ "${SOAR_SKIP_PREFLIGHT:-0}" == "1" ]]; then
-    warn "SOAR_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
+  if [[ "${TMS_SKIP_PREFLIGHT:-0}" == "1" ]]; then
+    warn "TMS_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
     return 0
   fi
 
@@ -268,7 +268,7 @@ preflight_data_mounts() {
 
   if [[ "$failed" -ne 0 ]]; then
     error "데이터 마운트 사전 점검 실패. 권한 조정 후 다시 실행하세요."
-    error "임시 우회가 필요하면 SOAR_SKIP_PREFLIGHT=1 로 실행할 수 있습니다."
+    error "임시 우회가 필요하면 TMS_SKIP_PREFLIGHT=1 로 실행할 수 있습니다."
     return 1
   fi
 
@@ -289,7 +289,7 @@ ensure_workspace_writable() {
 
   warn "$label 경로에 쓰기 권한이 없습니다: $path"
   if [[ "$WORKSPACE_AUTOFIX" != "1" ]]; then
-    error "자동 보정이 비활성화되어 있습니다. (SOAR_WORKSPACE_AUTOFIX=0)"
+    error "자동 보정이 비활성화되어 있습니다. (TMS_WORKSPACE_AUTOFIX=0)"
     error "수동 조치: sudo chown -R $(id -u):$(id -g) $path && sudo chmod -R u+rwX $path"
     return 1
   fi
@@ -382,7 +382,7 @@ start_engine() {
 SERVICE="${1:-all}"
 
 if [[ "$DEV_RUNTIME" != "docker" && "$DEV_RUNTIME" != "local" ]]; then
-  error "SOAR_DEV_RUNTIME 값이 올바르지 않습니다: $DEV_RUNTIME (허용: docker|local)"
+  error "TMS_DEV_RUNTIME 값이 올바르지 않습니다: $DEV_RUNTIME (허용: docker|local)"
   exit 1
 fi
 

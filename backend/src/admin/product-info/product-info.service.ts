@@ -114,7 +114,7 @@ export class ProductInfoService {
       '/app/product.dat',
       `${cwd}/product.dat`,
       `${cwd}/dist/product.dat`,
-      '/opt/soar/product.dat',
+      '/opt/tms/product.dat',
     ].filter((path): path is string => Boolean(path));
   }
 

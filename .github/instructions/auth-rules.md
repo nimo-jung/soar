@@ -6,7 +6,7 @@ applyTo: "**"
 
 ## 1. 계정/비밀번호 기본 규칙
 - 비밀번호 저장은 반드시 bcrypt 해시를 사용한다.
-- Master Admin 계정은 soar_admin.master_users에서 관리한다.
+- Master Admin 계정은 tms_admin.master_users에서 관리한다.
 - Tenant 사용자 계정은 tenant_db_{slug}.tenant_users에서 관리한다.
 
 ## 2. 로그인 엔드포인트 규칙
@@ -28,7 +28,7 @@ applyTo: "**"
 - Prod 경로는 /admin, /tenant, /api, /auth, /docs 로 분리한다.
 
 ## 5. 인증 장애 예방/검증 규칙
-- 로그인 500 에러 발생 시 우선 DB 스키마와 권한(soar_admin, tenant_db_*)을 확인한다.
+- 로그인 500 에러 발생 시 우선 DB 스키마와 권한(tms_admin, tenant_db_*)을 확인한다.
 - 운영 환경에서는 auto-migration을 사용하지 않고 마이그레이션을 명시적으로 수행한다.
 - 배포/변경 후 scripts/smoke.sh dev 또는 scripts/smoke.sh prod 로 인증 스모크 테스트를 수행한다.
 - 프론트에서 ECONNREFUSED가 보이면 Vite proxy target과 backend 서비스 상태를 우선 점검한다.

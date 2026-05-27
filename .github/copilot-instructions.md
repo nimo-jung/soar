@@ -32,7 +32,7 @@
 * Domain-Driven Design(DDD) 구조를 지향하고, Module 단위로 기능을 격리한다.
 * 멀티테넌시는 테넌트별 독립 MariaDB 스키마 `tenant_db_{id}`를 기준으로 구현한다.
 * 요청 헤더 `x-tenant-id` 또는 JWT 기반 **Tenant Context**를 통해 런타임에 DB 연결을 동적으로 전환한다.
-* 테넌트 메타데이터와 연결 정보는 관리용 DB `soar_admin`에서 관리한다.
+* 테넌트 메타데이터와 연결 정보는 관리용 DB `tms_admin`에서 관리한다.
 
 ### Frontend - React
 
@@ -83,7 +83,7 @@
 
 * **TypeORM CLI**: 마이그레이션 파일 생성 시 반드시 TypeORM CLI를 사용하며, 파일명은 목적을 명확히 한다. (예: `CreateUserTable`, `AddColumnToLogs`)
 * **Dual-Track Migration**:
-1. **Admin Migration**: 시스템 관리용 테이블(`soar_admin`)은 표준 마이그레이션 절차를 따른다.
+1. **Admin Migration**: 시스템 관리용 테이블(`tms_admin`)은 표준 마이그레이션 절차를 따른다.
 2. **Tenant Migration**: 테넌트 공통 스키마는 별도의 디렉토리(`migrations/tenant`)에서 관리한다.
 
 
@@ -93,7 +93,7 @@
 ### Backend - Database Initialization & Seeding
 
 * **Bootstrap Script**: 프로젝트 초기 세팅을 위한 `npm run setup` 스크립트를 제공한다.
-* **Admin Seeding**: `soar_admin` DB 생성 후 최초 1회 시딩을 통해 최고 관리자 계정과 필수 권한(Roles)을 생성한다. 이미 데이터가 존재할 경우 중복 실행되지 않도록 처리한다.
+* **Admin Seeding**: `tms_admin` DB 생성 후 최초 1회 시딩을 통해 최고 관리자 계정과 필수 권한(Roles)을 생성한다. 이미 데이터가 존재할 경우 중복 실행되지 않도록 처리한다.
 * **Auto-Migration**: `NODE_ENV=development` 환경에서만 서버 구동 시 마이그레이션을 자동 실행한다. **운영 환경에서는 반드시 명시적으로 실행한다.**
 
 ## 3. 데이터 흐름

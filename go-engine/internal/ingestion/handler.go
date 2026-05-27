@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	tenantctx "github.com/soar/go-engine/internal/context"
-	"github.com/soar/go-engine/internal/parsing"
-	"github.com/soar/go-engine/internal/publisher"
-	"github.com/soar/go-engine/internal/whitelist"
+	tenantctx "github.com/tms/go-engine/internal/context"
+	"github.com/tms/go-engine/internal/parsing"
+	"github.com/tms/go-engine/internal/publisher"
+	"github.com/tms/go-engine/internal/whitelist"
 )
 
 // Handler handles incoming log HTTP requests

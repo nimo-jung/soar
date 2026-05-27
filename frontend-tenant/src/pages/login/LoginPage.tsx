@@ -20,7 +20,7 @@ interface TenantJwtPayload {
   role: string;
 }
 
-const LOCKOUT_STORAGE_KEY = 'soar_tenant_lockout';
+const LOCKOUT_STORAGE_KEY = 'tms_tenant_lockout';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();

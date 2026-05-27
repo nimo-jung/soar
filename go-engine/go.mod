@@ -1,4 +1,4 @@
-module github.com/soar/go-engine
+module github.com/tms/go-engine
 
 go 1.22
 

@@ -50,7 +50,7 @@ export class KafkaProducerService implements OnModuleDestroy {
   private async connect(): Promise<void> {
     const brokers = this.getBrokers();
     const kafka = new Kafka({
-      clientId: this.configService.get<string>('KAFKA_CLIENT_ID', 'soar-backend'),
+      clientId: this.configService.get<string>('KAFKA_CLIENT_ID', 'tms-backend'),
       brokers,
       logLevel: logLevel.NOTHING,
     });

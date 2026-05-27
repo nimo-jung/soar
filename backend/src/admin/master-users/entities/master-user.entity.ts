@@ -11,7 +11,7 @@ export enum MasterUserStatus {
   DELETED = 'DELETED',
 }
 
-@Entity('master_users', { comment: '마스터 관리자 계정 (soar_admin DB)' })
+@Entity('master_users', { comment: '마스터 관리자 계정 (tms_admin DB)' })
 export class MasterUser {
   @PrimaryGeneratedColumn({ comment: '계정 고유 ID' })
   id: number;

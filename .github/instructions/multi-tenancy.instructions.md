@@ -28,12 +28,12 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 
 시스템 공급자가 전체 테넌트를 제어하는 기능이다.
 
-* 테넌트 상태는 `ACTIVE | SUSPENDED | DELETED` Enum으로 관리하며, `soar_admin` DB의 `tenants` 테이블에 저장한다.
+* 테넌트 상태는 `ACTIVE | SUSPENDED | DELETED` Enum으로 관리하며, `tms_admin` DB의 `tenants` 테이블에 저장한다.
 * 테넌트 설정 테이블에는 `eps_limit`(초당 허용 로그 건수), `storage_quota_gb`(스토리지 한도), `retention_days`(보관 주기) 컬럼을 반드시 포함한다.
 * ClickHouse TTL은 테넌트 프로비저닝 시 `retention_days` 값을 기반으로 동적으로 설정한다. 하드코딩된 TTL 값을 사용하지 않는다.
 * EPS·스토리지 실사용량은 별도 집계 테이블(`usage_snapshots`)에 배치(Batch)로 주기적으로 기록하여 빌링 데이터로 활용한다.
 * 글로벌 위협 인텔리전스(TI) 배포는 마스터 관리자가 등록 시 RedPanda 전용 토픽(`ti.global.updates`)을 통해 모든 테넌트의 Go 분석 엔진으로 실시간 전파한다.
-* Master Admin API는 반드시 별도의 `MasterGuard`를 통해 `soar_admin` 권한을 가진 계정만 접근 가능하도록 보호한다.
+* Master Admin API는 반드시 별도의 `MasterGuard`를 통해 `tms_admin` 권한을 가진 계정만 접근 가능하도록 보호한다.
 
 ---
 
