@@ -12,6 +12,7 @@ import AuthSettingsPage from './pages/auth-settings/AuthSettingsPage';
 import UsersPage from './pages/users/UsersPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import BootstrapPage from './pages/login/BootstrapPage';
+import ResetPasswordPage from './pages/login/ResetPasswordPage';
 
 const DashboardPage = () => <div className="p-4"><h1 className="text-2xl font-bold">대시보드</h1><p className="text-gray-400 mt-2">위젯 구성 예정</p></div>;
 
@@ -22,6 +23,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/bootstrap" element={<BootstrapPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/server-error" element={<ServerErrorPage />} />
         <Route element={<RolesGuard />}>
           <Route element={<TenantLayout />}>

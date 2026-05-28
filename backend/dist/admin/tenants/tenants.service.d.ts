@@ -58,6 +58,7 @@ export declare class TenantsService {
     private getMissingTenantTables;
     getTenantDatabaseStatus(tenantId: number): Promise<TenantDatabaseStatus>;
     recoverTenantDatabase(tenantId: number): Promise<TenantDatabaseStatus>;
+    resetTenantDatabase(tenantId: number): Promise<TenantDatabaseStatus>;
     create(dto: CreateTenantDto): Promise<Tenant>;
     findAll(): Promise<Tenant[]>;
     findOne(id: number): Promise<Tenant>;
@@ -79,6 +80,7 @@ export declare class TenantsService {
         tenantSlug: string;
         email: string | null;
         token: string;
+        registrationUrl: string | null;
         expiresAt: string;
         deliveredToEmail: boolean;
         mailDeliveryError: string | null;

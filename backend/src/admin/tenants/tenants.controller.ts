@@ -292,7 +292,7 @@ export class TenantsController {
   }
 
   @Post(':id/database-recover')
-  @ApiOperation({ summary: '테넌트 DB 복구/재생성 (DB 생성 + 테넌트 마이그레이션 실행)' })
+  @ApiOperation({ summary: '테넌트 DB 복구 (DB 존재 보장 + 테넌트 마이그레이션 실행)' })
   async recoverDatabase(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: CurrentUserPayload,
@@ -305,7 +305,7 @@ export class TenantsController {
       resourceType: 'TENANT_DATABASE',
       resourceId: String(id),
       message: [
-        '테넌트 DB 복구/재생성',
+        '테넌트 DB 복구',
         `tenantId=${recovered.tenantId}`,
         `tenantSlug=${this.safe(recovered.tenantSlug)}`,
         `exists=${recovered.exists ? 'Y' : 'N'}`,
@@ -315,6 +315,32 @@ export class TenantsController {
       metadata: { ...recovered },
     });
     return recovered;
+  }
+
+  @Post(':id/database-reset')
+  @ApiOperation({ summary: '테넌트 DB 초기화 (DB 삭제 후 재생성 + 테넌트 마이그레이션 실행)' })
+  async resetDatabase(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
+    const reset = await this.tenantsService.resetTenantDatabase(id);
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'TENANT_DB_RESET',
+      resourceType: 'TENANT_DATABASE',
+      resourceId: String(id),
+      message: [
+        '테넌트 DB 초기화',
+        `tenantId=${reset.tenantId}`,
+        `tenantSlug=${this.safe(reset.tenantSlug)}`,
+        `exists=${reset.exists ? 'Y' : 'N'}`,
+        `isReady=${reset.isReady ? 'Y' : 'N'}`,
+        `missingTables=${reset.missingTables.join(',') || '-'}`,
+      ].join(' | '),
+      metadata: { ...reset },
+    });
+    return reset;
   }
 
   @Post(':id/bootstrap-token')
@@ -345,6 +371,7 @@ export class TenantsController {
         tenantId: issued.tenantId,
         tenantSlug: issued.tenantSlug,
         email: issued.email,
+        hasRegistrationUrl: Boolean(issued.registrationUrl),
         deliveredToEmail: issued.deliveredToEmail,
         mailDeliveryError: issued.mailDeliveryError,
         expiresAt: issued.expiresAt,

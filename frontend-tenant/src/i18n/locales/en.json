@@ -75,6 +75,22 @@
       "success": "First admin registration completed. Redirecting to login.",
       "errorEmpty": "Please fill in all fields.",
       "errorFailed": "Failed to register first admin. Please check token and input values."
+    },
+    "resetPassword": {
+      "move": "Reset Password",
+      "title": "Tenant Admin Password Reset",
+      "subtitle": "Change your password using the issued reset token.",
+      "token": "Reset Token",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "passwordPolicy": "Password must be at least 8 characters long.",
+      "submit": "Reset Password",
+      "goLogin": "Go To Login",
+      "success": "Password reset completed. Redirecting to login.",
+      "errorEmpty": "Please fill in all fields.",
+      "errorPasswordTooShort": "New password must be at least 8 characters long.",
+      "errorPasswordMismatch": "New password and confirmation do not match.",
+      "errorFailed": "Password reset failed. Please check token and input values."
     }
   },
   "collectors": {

@@ -44,7 +44,8 @@ api.interceptors.response.use(
       const isAuthRequest = requestUrl.includes('/auth/tenant/login')
         || requestUrl.includes('/auth/tenant/bootstrap')
         || requestUrl.includes('/auth/tenant/bootstrap/status')
-        || requestUrl.includes('/auth/tenant/lock-status');
+        || requestUrl.includes('/auth/tenant/lock-status')
+        || requestUrl.includes('/auth/tenant/password/reset');
       if (!isAuthRequest) {
         useBrandingStore.getState().reset();
         useAuthStore.getState().logout();

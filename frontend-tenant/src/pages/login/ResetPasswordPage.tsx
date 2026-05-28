@@ -7,30 +7,37 @@ import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import api from '../../api';
 
-const BootstrapPage: React.FC = () => {
+const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
 
   const defaultTenantSlug = useMemo(() => searchParams.get('tenantSlug') ?? '', [searchParams]);
   const defaultEmail = useMemo(() => searchParams.get('email') ?? '', [searchParams]);
-  const defaultInvitationToken = useMemo(
-    () => searchParams.get('invitationToken') ?? searchParams.get('token') ?? '',
-    [searchParams],
-  );
+  const defaultResetToken = useMemo(() => searchParams.get('resetToken') ?? '', [searchParams]);
 
   const [tenantSlug, setTenantSlug] = useState(defaultTenantSlug);
-  const [invitationToken, setInvitationToken] = useState(defaultInvitationToken);
   const [email, setEmail] = useState(defaultEmail);
-  const [displayName, setDisplayName] = useState('');
-  const [password, setPassword] = useState('');
+  const [resetToken, setResetToken] = useState(defaultResetToken);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!tenantSlug || !invitationToken || !email || !displayName || !password) {
-      setError(t('auth.bootstrap.errorEmpty'));
+    if (!tenantSlug || !email || !resetToken || !newPassword || !confirmPassword) {
+      setError(t('auth.resetPassword.errorEmpty'));
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError(t('auth.resetPassword.errorPasswordTooShort'));
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError(t('auth.resetPassword.errorPasswordMismatch'));
       return;
     }
 
@@ -39,33 +46,32 @@ const BootstrapPage: React.FC = () => {
     setSuccess('');
 
     try {
-      await api.post('/auth/tenant/bootstrap', {
+      await api.post('/auth/tenant/password/reset', {
         tenantSlug,
-        invitationToken,
+        resetToken,
         email,
-        displayName,
-        password,
+        newPassword,
       });
 
-      setSuccess(t('auth.bootstrap.success'));
+      setSuccess(t('auth.resetPassword.success'));
 
       window.setTimeout(() => {
         navigate(`/login?tenantSlug=${encodeURIComponent(tenantSlug)}&email=${encodeURIComponent(email)}`);
       }, 800);
     } catch {
-      setError(t('auth.bootstrap.errorFailed'));
+      setError(t('auth.resetPassword.errorFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="layout-login-verona layout-login-bootstrap">
+    <div className="layout-login-verona layout-login-reset">
       <div className="layout-login-right">
         <div className="login-right-content">
           <div className="login-right-header">
-            <h2>{t('auth.bootstrap.title')}</h2>
-            <p>{t('auth.bootstrap.subtitle')}</p>
+            <h2>{t('auth.resetPassword.title')}</h2>
+            <p>{t('auth.resetPassword.subtitle')}</p>
           </div>
 
           <div className="login-form">
@@ -78,26 +84,35 @@ const BootstrapPage: React.FC = () => {
             </div>
 
             <div className="field">
-              <label htmlFor="invitationToken">{t('auth.bootstrap.invitationToken')}</label>
-              <InputText id="invitationToken" value={invitationToken} onChange={(e) => setInvitationToken(e.target.value)} className="w-full" />
-            </div>
-
-            <div className="field">
               <label htmlFor="email">{t('common.email')}</label>
               <InputText id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" />
             </div>
 
             <div className="field">
-              <label htmlFor="displayName">{t('users.dialog.displayName')}</label>
-              <InputText id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full" />
+              <label htmlFor="resetToken">{t('auth.resetPassword.token')}</label>
+              <InputText id="resetToken" value={resetToken} onChange={(e) => setResetToken(e.target.value)} className="w-full" />
             </div>
 
             <div className="field">
-              <label htmlFor="password">{t('common.password')}</label>
+              <label htmlFor="newPassword">{t('auth.resetPassword.newPassword')}</label>
               <Password
-                inputId="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                inputId="newPassword"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full"
+                inputClassName="w-full"
+                feedback={false}
+                toggleMask
+              />
+              <small className="text-color-secondary">{t('auth.resetPassword.passwordPolicy')}</small>
+            </div>
+
+            <div className="field">
+              <label htmlFor="confirmPassword">{t('auth.resetPassword.confirmPassword')}</label>
+              <Password
+                inputId="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full"
                 inputClassName="w-full"
                 feedback={false}
@@ -110,13 +125,13 @@ const BootstrapPage: React.FC = () => {
                 type="button"
                 outlined
                 className="w-full"
-                label={t('auth.bootstrap.goLogin')}
+                label={t('auth.resetPassword.goLogin')}
                 onClick={() => navigate('/login')}
               />
               <Button
                 type="button"
                 className="w-full"
-                label={t('auth.bootstrap.submit')}
+                label={t('auth.resetPassword.submit')}
                 icon="pi pi-check"
                 loading={loading}
                 onClick={handleSubmit}
@@ -129,4 +144,4 @@ const BootstrapPage: React.FC = () => {
   );
 };
 
-export default BootstrapPage;
+export default ResetPasswordPage;

@@ -24,6 +24,8 @@ import type { AdminAuthSettings } from '../../types/auth-policy';
 import ResultDialog from '../../components/ResultDialog';
 import ActionConfirmDialog from '../../components/ActionConfirmDialog';
 
+type DatabaseActionMode = 'recover' | 'reset';
+
 interface TenantTier {
   id: number;
   code: string;
@@ -60,6 +62,17 @@ interface TenantBootstrapIssueResponse {
   tenantId: number;
   tenantSlug: string;
   email: string | null;
+  token: string;
+  registrationUrl: string | null;
+  expiresAt: string;
+  deliveredToEmail: boolean;
+  mailDeliveryError: string | null;
+}
+
+interface TenantPasswordResetIssueResponse {
+  tenantId: number;
+  tenantSlug: string;
+  email: string;
   token: string;
   expiresAt: string;
   deliveredToEmail: boolean;
@@ -257,6 +270,8 @@ const DEFAULT_STORAGE_QUOTA_GB = 100;
 const DEFAULT_RETENTION_DAYS = 90;
 const BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES = 10;
 const BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES = 2880;
+const PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES = 5;
+const PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES = 1440;
 
 const TenantsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -281,6 +296,14 @@ const TenantsPage: React.FC = () => {
   const [bootstrapIssueExpiresMinutes, setBootstrapIssueExpiresMinutes] = useState(60);
   const [showBootstrapIssueValidation, setShowBootstrapIssueValidation] = useState(false);
   const [issuedBootstrapToken, setIssuedBootstrapToken] = useState<TenantBootstrapIssueResponse | null>(null);
+  const [showPasswordResetIssueDialog, setShowPasswordResetIssueDialog] = useState(false);
+  const [issuingPasswordResetToken, setIssuingPasswordResetToken] = useState(false);
+  const [passwordResetIssueTenant, setPasswordResetIssueTenant] = useState<Tenant | null>(null);
+  const [passwordResetIssueEmail, setPasswordResetIssueEmail] = useState('');
+  const [passwordResetIssueExpiresMinutes, setPasswordResetIssueExpiresMinutes] = useState(30);
+  const [showPasswordResetIssueValidation, setShowPasswordResetIssueValidation] = useState(false);
+  const [showPasswordResetIssueConfirm, setShowPasswordResetIssueConfirm] = useState(false);
+  const [issuedPasswordResetToken, setIssuedPasswordResetToken] = useState<TenantPasswordResetIssueResponse | null>(null);
   const [resultDialog, setResultDialog] = useState({
     visible: false,
     title: '',
@@ -298,7 +321,7 @@ const TenantsPage: React.FC = () => {
   const [bootstrapHistoryStatusFilter, setBootstrapHistoryStatusFilter] = useState<BootstrapHistoryStatusFilter>('ALL');
   const [bootstrapHistoryVisibleFields, setBootstrapHistoryVisibleFields] = useState<BootstrapHistoryVisibleField[]>(bootstrapHistoryFieldOrder);
   const [tenantDatabaseBusy, setTenantDatabaseBusy] = useState<Record<number, boolean>>({});
-  const [recoverDatabaseConfirmTarget, setRecoverDatabaseConfirmTarget] = useState<Tenant | null>(null);
+  const [databaseConfirmState, setDatabaseConfirmState] = useState<{ mode: DatabaseActionMode; tenant: Tenant } | null>(null);
   const [isMultiTenantEnabled, setIsMultiTenantEnabled] = useState(true);
   const [form, setForm] = useState({
     slug: '',
@@ -321,6 +344,14 @@ const TenantsPage: React.FC = () => {
       !Number.isInteger(bootstrapIssueExpiresMinutes)
       || bootstrapIssueExpiresMinutes < BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES
       || bootstrapIssueExpiresMinutes > BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES
+    );
+  const passwordResetIssueEmailInvalid = showPasswordResetIssueValidation
+    && !isValidEmail(passwordResetIssueEmail.trim());
+  const passwordResetIssueExpiresInvalid = showPasswordResetIssueValidation
+    && (
+      !Number.isInteger(passwordResetIssueExpiresMinutes)
+      || passwordResetIssueExpiresMinutes < PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES
+      || passwordResetIssueExpiresMinutes > PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES
     );
 
   const openResultDialog = (title: string, message: string) => {
@@ -454,7 +485,76 @@ const TenantsPage: React.FC = () => {
     setIssuedBootstrapToken(null);
   };
 
+  const openPasswordResetIssueDialog = (tenant: Tenant) => {
+    setPasswordResetIssueTenant(tenant);
+    setPasswordResetIssueEmail(tenant.contactEmail && isValidEmail(tenant.contactEmail) ? tenant.contactEmail : '');
+    setPasswordResetIssueExpiresMinutes(30);
+    setShowPasswordResetIssueValidation(false);
+    setIssuedPasswordResetToken(null);
+    setShowPasswordResetIssueDialog(true);
+  };
+
+  const closePasswordResetIssueDialog = () => {
+    setShowPasswordResetIssueDialog(false);
+    setPasswordResetIssueTenant(null);
+    setPasswordResetIssueEmail('');
+    setPasswordResetIssueExpiresMinutes(30);
+    setShowPasswordResetIssueValidation(false);
+    setShowPasswordResetIssueConfirm(false);
+    setIssuedPasswordResetToken(null);
+  };
+
   const handleIssueBootstrapToken = async () => {
+    if (!bootstrapIssueTenant) return;
+
+    const currentTenant = bootstrapIssueTenant;
+
+    setShowBootstrapIssueValidation(true);
+
+    if (bootstrapIssueEmailInvalid) {
+      return;
+    }
+
+    if (bootstrapIssueExpiresInvalid) {
+      return;
+    }
+
+    const hasActiveBootstrapToken = async (tenantId: number): Promise<boolean> => {
+      const res = await api.get<TenantBootstrapHistoryResponse>(`/admin/tenants/${tenantId}/bootstrap-tokens`, {
+        params: {
+          page: 1,
+          limit: 20,
+        },
+      });
+
+      const now = Date.now();
+      return res.data.items.some((item) => !item.usedAt && new Date(item.expiresAt).getTime() >= now);
+    };
+
+    try {
+      const alreadyHasActiveToken = await hasActiveBootstrapToken(bootstrapIssueTenant.id);
+      if (alreadyHasActiveToken) {
+        confirmDialog({
+          header: t('tenants.bootstrap.issueOverwriteConfirmTitle'),
+          message: t('tenants.bootstrap.issueOverwriteConfirmMessage', { name: currentTenant.name }),
+          icon: 'pi pi-exclamation-triangle',
+          acceptClassName: 'p-button-warning',
+          acceptLabel: t('tenants.bootstrap.issueSubmit'),
+          rejectLabel: t('common.cancel'),
+          accept: () => {
+            void handleIssueBootstrapTokenForced();
+          },
+        });
+        return;
+      }
+    } catch {
+      // 이력 사전 조회 실패는 발급 자체를 막지 않는다.
+    }
+
+    await handleIssueBootstrapTokenForced();
+  };
+
+  const handleIssueBootstrapTokenForced = async () => {
     if (!bootstrapIssueTenant) return;
 
     const currentTenant = bootstrapIssueTenant;
@@ -521,6 +621,89 @@ const TenantsPage: React.FC = () => {
       openResultDialog(t('tenants.bootstrap.copySuccessTitle'), t('tenants.bootstrap.copySuccessDetail'));
     } catch {
       openResultDialog(t('tenants.bootstrap.copyFailedTitle'), t('tenants.bootstrap.copyFailedDetail'));
+    }
+  };
+
+  const handleCopyBootstrapRegistrationUrl = async () => {
+    if (!issuedBootstrapToken?.registrationUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(issuedBootstrapToken.registrationUrl);
+      openResultDialog(t('tenants.bootstrap.copyRegistrationLinkSuccessTitle'), t('tenants.bootstrap.copyRegistrationLinkSuccessDetail'));
+    } catch {
+      openResultDialog(t('tenants.bootstrap.copyRegistrationLinkFailedTitle'), t('tenants.bootstrap.copyRegistrationLinkFailedDetail'));
+    }
+  };
+
+  const requestIssuePasswordResetToken = () => {
+    if (!passwordResetIssueTenant) return;
+
+    setShowPasswordResetIssueValidation(true);
+
+    const normalizedEmail = passwordResetIssueEmail.trim();
+    const isEmailValid = normalizedEmail.length > 0 && isValidEmail(normalizedEmail);
+    const isExpiresValid = Number.isInteger(passwordResetIssueExpiresMinutes)
+      && passwordResetIssueExpiresMinutes >= PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES
+      && passwordResetIssueExpiresMinutes <= PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES;
+
+    if (!isEmailValid || !isExpiresValid) {
+      return;
+    }
+
+    setShowPasswordResetIssueConfirm(true);
+  };
+
+  const handleIssuePasswordResetToken = async () => {
+    if (!passwordResetIssueTenant) return;
+
+    const normalizedEmail = passwordResetIssueEmail.trim();
+    const isEmailValid = normalizedEmail.length > 0 && isValidEmail(normalizedEmail);
+    if (!isEmailValid) {
+      return;
+    }
+
+    const isExpiresValid = Number.isInteger(passwordResetIssueExpiresMinutes)
+      && passwordResetIssueExpiresMinutes >= PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES
+      && passwordResetIssueExpiresMinutes <= PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES;
+    if (!isExpiresValid) {
+      return;
+    }
+
+    setShowPasswordResetIssueConfirm(false);
+    setIssuingPasswordResetToken(true);
+    try {
+      const res = await api.post<TenantPasswordResetIssueResponse>(`/admin/tenants/${passwordResetIssueTenant.id}/password-reset-token`, {
+        email: normalizedEmail,
+        expiresMinutes: passwordResetIssueExpiresMinutes,
+      });
+      setIssuedPasswordResetToken(res.data);
+      const issueDetail = res.data.deliveredToEmail
+        ? t('tenants.passwordReset.issueSuccessDetailSent', { email: res.data.email })
+        : t('tenants.passwordReset.issueSuccessDetailNotSent', {
+          email: res.data.email,
+          reason: res.data.mailDeliveryError ?? '-',
+        });
+      openResultDialog(t('tenants.passwordReset.issueSuccessTitle'), issueDetail);
+    } catch (error: unknown) {
+      const { message } = getApiErrorStatusAndMessage(error);
+      openResultDialog(t('tenants.passwordReset.issueFailedTitle'), message ?? t('tenants.passwordReset.issueFailedDetail'));
+    } finally {
+      setIssuingPasswordResetToken(false);
+    }
+  };
+
+  const handleCopyIssuedPasswordResetToken = async () => {
+    if (!issuedPasswordResetToken?.token) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(issuedPasswordResetToken.token);
+      openResultDialog(t('tenants.passwordReset.copySuccessTitle'), t('tenants.passwordReset.copySuccessDetail'));
+    } catch {
+      openResultDialog(t('tenants.passwordReset.copyFailedTitle'), t('tenants.passwordReset.copyFailedDetail'));
     }
   };
 
@@ -809,8 +992,28 @@ const TenantsPage: React.FC = () => {
     }
   };
 
+  const resetTenantDatabase = async (row: Tenant) => {
+    setTenantDatabaseBusyState(row.id, true);
+    try {
+      const res = await api.post<TenantDatabaseStatus>(`/admin/tenants/${row.id}/database-reset`);
+      openResultDialog(t('tenants.database.resetSuccessTitle'), getDatabaseStatusMessage(row.name, res.data));
+    } catch (error: unknown) {
+      getApiErrorStatusAndMessage(error);
+      openResultDialog(
+        t('tenants.database.resetFailedTitle'),
+        t('tenants.database.resetFailedDetail', { name: row.name }),
+      );
+    } finally {
+      setTenantDatabaseBusyState(row.id, false);
+    }
+  };
+
   const confirmRecoverTenantDatabase = (row: Tenant) => {
-    setRecoverDatabaseConfirmTarget(row);
+    setDatabaseConfirmState({ mode: 'recover', tenant: row });
+  };
+
+  const confirmResetTenantDatabase = (row: Tenant) => {
+    setDatabaseConfirmState({ mode: 'reset', tenant: row });
   };
 
   const filteredTenants = useMemo(() => {
@@ -1019,6 +1222,13 @@ const TenantsPage: React.FC = () => {
       },
     },
     {
+      label: t('tenants.passwordReset.issueAction'),
+      icon: 'pi pi-unlock',
+      command: () => {
+        openPasswordResetIssueDialog(row);
+      },
+    },
+    {
       separator: true,
     },
     {
@@ -1036,6 +1246,15 @@ const TenantsPage: React.FC = () => {
       disabled: tenantDatabaseBusy[row.id] === true,
       command: () => {
         confirmRecoverTenantDatabase(row);
+      },
+    },
+    {
+      label: t('tenants.database.resetAction'),
+      icon: 'pi pi-trash',
+      className: 'tenant-menu-action-danger',
+      disabled: tenantDatabaseBusy[row.id] === true,
+      command: () => {
+        confirmResetTenantDatabase(row);
       },
     },
     {
@@ -1063,19 +1282,43 @@ const TenantsPage: React.FC = () => {
         onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
       />
       <ActionConfirmDialog
-        visible={recoverDatabaseConfirmTarget !== null}
-        title={t('tenants.database.recoverConfirmTitle')}
-        message={t('tenants.database.recoverConfirmMessage', { name: recoverDatabaseConfirmTarget?.name ?? '' })}
-        confirmLabel={t('tenants.database.recoverAction')}
+        visible={databaseConfirmState !== null}
+        title={databaseConfirmState?.mode === 'reset' ? t('tenants.database.resetConfirmTitle') : t('tenants.database.recoverConfirmTitle')}
+        message={
+          databaseConfirmState?.mode === 'reset'
+            ? t('tenants.database.resetConfirmMessage', { name: databaseConfirmState?.tenant.name ?? '' })
+            : t('tenants.database.recoverConfirmMessage', { name: databaseConfirmState?.tenant.name ?? '' })
+        }
+        confirmLabel={databaseConfirmState?.mode === 'reset' ? t('tenants.database.resetAction') : t('tenants.database.recoverAction')}
         cancelLabel={t('common.cancel')}
-        icon="pi pi-database"
-        severity="warn"
-        onCancel={() => setRecoverDatabaseConfirmTarget(null)}
+        icon={databaseConfirmState?.mode === 'reset' ? 'pi pi-trash' : 'pi pi-database'}
+        severity={databaseConfirmState?.mode === 'reset' ? 'danger' : 'warn'}
+        onCancel={() => setDatabaseConfirmState(null)}
         onConfirm={() => {
-          if (recoverDatabaseConfirmTarget) {
-            void recoverTenantDatabase(recoverDatabaseConfirmTarget);
+          if (databaseConfirmState) {
+            if (databaseConfirmState.mode === 'reset') {
+              void resetTenantDatabase(databaseConfirmState.tenant);
+            } else {
+              void recoverTenantDatabase(databaseConfirmState.tenant);
+            }
           }
-          setRecoverDatabaseConfirmTarget(null);
+          setDatabaseConfirmState(null);
+        }}
+      />
+      <ActionConfirmDialog
+        visible={showPasswordResetIssueConfirm}
+        title={t('tenants.passwordReset.confirmTitle')}
+        message={t('tenants.passwordReset.confirmMessage', {
+          name: passwordResetIssueTenant?.name ?? '',
+          email: passwordResetIssueEmail.trim(),
+        })}
+        confirmLabel={t('tenants.passwordReset.issueSubmit')}
+        cancelLabel={t('common.cancel')}
+        icon="pi pi-unlock"
+        severity="warn"
+        onCancel={() => setShowPasswordResetIssueConfirm(false)}
+        onConfirm={() => {
+          void handleIssuePasswordResetToken();
         }}
       />
       <ConfirmDialog />
@@ -1648,6 +1891,27 @@ const TenantsPage: React.FC = () => {
                   })}
                 </small>
               )}
+              {issuedBootstrapToken.registrationUrl && (
+                <div className="mt-3">
+                  <div className="text-sm mb-2"><strong>{t('tenants.bootstrap.registrationLinkLabel')}</strong></div>
+                  <div className="flex gap-2 align-items-center">
+                    <InputText value={issuedBootstrapToken.registrationUrl} readOnly className="w-full" />
+                    <Button
+                      type="button"
+                      icon="pi pi-link"
+                      text
+                      rounded
+                      severity="secondary"
+                      aria-label={t('tenants.bootstrap.copyRegistrationLink')}
+                      tooltip={t('tenants.bootstrap.copyRegistrationLink')}
+                      tooltipOptions={{ position: 'top' }}
+                      onClick={() => {
+                        void handleCopyBootstrapRegistrationUrl();
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1812,6 +2076,102 @@ const TenantsPage: React.FC = () => {
             <Column field="issuedByMasterUserId" header={t('tenants.bootstrap.issuedBy')} body={(row: TenantBootstrapHistoryItem) => row.issuedByMasterUserId ?? '-'} />
           )}
           </CommonDataTable>
+        </div>
+      </Dialog>
+
+      <Dialog
+        header={t('tenants.passwordReset.issueTitle')}
+        visible={showPasswordResetIssueDialog}
+        style={{ width: '520px', maxWidth: '96vw' }}
+        onHide={closePasswordResetIssueDialog}
+      >
+        <div className="flex flex-column gap-3 pt-2">
+          <div>
+            <label className="admin-form-label">{t('tenants.table.name')}</label>
+            <InputText value={passwordResetIssueTenant?.name ?? ''} disabled className="w-full" />
+          </div>
+          <div>
+            <label className="admin-form-label">
+              {t('common.email')}
+              <span className="p-error ml-1">*</span>
+            </label>
+            <InputText
+              value={passwordResetIssueEmail}
+              onChange={(e) => {
+                setPasswordResetIssueEmail(e.target.value);
+              }}
+              className={`w-full ${passwordResetIssueEmailInvalid ? 'p-invalid' : ''}`}
+              placeholder={t('tenants.passwordReset.emailPlaceholder')}
+            />
+            {passwordResetIssueEmailInvalid && <small className="p-error block mt-1">{t('tenants.passwordReset.issueInvalidEmailDetail')}</small>}
+          </div>
+          <div>
+            <label className="admin-form-label">{t('tenants.passwordReset.expiresMinutes')}</label>
+            <InputText
+              type="number"
+              min={PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES}
+              max={PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES}
+              value={String(passwordResetIssueExpiresMinutes)}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                setPasswordResetIssueExpiresMinutes(Number.isFinite(value) ? Math.trunc(value) : 30);
+              }}
+              className={`w-full ${passwordResetIssueExpiresInvalid ? 'p-invalid' : ''}`}
+            />
+            {passwordResetIssueExpiresInvalid && (
+              <small className="p-error block mt-1">
+                {t('tenants.passwordReset.issueInvalidExpiresDetail', { min: PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES, max: PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES })}
+              </small>
+            )}
+            <small className="text-color-secondary">
+              {t('tenants.passwordReset.expiresMinutesHint', { min: PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES, max: PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES })}
+            </small>
+          </div>
+
+          {issuedPasswordResetToken && (
+            <div className="p-3 border-1 border-round surface-border">
+              <div className="text-sm mb-2"><strong>{t('tenants.passwordReset.tokenLabel')}</strong></div>
+              <div className="flex gap-2 align-items-center">
+                <InputText value={issuedPasswordResetToken.token} readOnly className="w-full font-mono" />
+                <Button
+                  type="button"
+                  icon="pi pi-copy"
+                  text
+                  rounded
+                  severity="secondary"
+                  aria-label={t('tenants.passwordReset.copyToken')}
+                  tooltip={t('tenants.passwordReset.copyToken')}
+                  tooltipOptions={{ position: 'top' }}
+                  onClick={() => {
+                    void handleCopyIssuedPasswordResetToken();
+                  }}
+                />
+              </div>
+              <small className="block mt-2">
+                {t('tenants.passwordReset.expiresAt')}: {formatDateTimeSeconds(issuedPasswordResetToken.expiresAt)}
+              </small>
+              {!issuedPasswordResetToken.deliveredToEmail && (
+                <small className="block mt-2 text-orange-600">
+                  {t('tenants.passwordReset.issueSuccessDetailNotSent', {
+                    email: issuedPasswordResetToken.email,
+                    reason: issuedPasswordResetToken.mailDeliveryError ?? '-',
+                  })}
+                </small>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-content-end gap-2">
+            <Button outlined label={t('common.cancel')} onClick={closePasswordResetIssueDialog} />
+            <Button
+              label={t('tenants.passwordReset.issueSubmit')}
+              icon="pi pi-unlock"
+              loading={issuingPasswordResetToken}
+              onClick={() => {
+                requestIssuePasswordResetToken();
+              }}
+            />
+          </div>
         </div>
       </Dialog>
     </div>

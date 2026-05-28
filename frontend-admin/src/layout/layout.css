@@ -1099,6 +1099,15 @@ body {
     margin: 0.2rem 0;
 }
 
+.tenant-row-menu .p-menuitem-link {
+    font-size: 0.875rem;
+}
+
+.tenant-row-menu .p-menuitem-text,
+.tenant-row-menu .p-menuitem-icon {
+    font-size: 0.875rem;
+}
+
 .tenant-row-menu .tenant-menu-action-warning > .p-menuitem-content > .p-menuitem-link {
     color: color-mix(in srgb, var(--orange-300) 84%, #ffffff 16%);
 }

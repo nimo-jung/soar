@@ -39,6 +39,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [tenantWarning, setTenantWarning] = useState<TenantWarning | null>(null);
   const [bootstrapRequired, setBootstrapRequired] = useState(false);
+  const [bootstrapPrecheckRequired, setBootstrapPrecheckRequired] = useState(false);
   const [lockSecondsRemaining, setLockSecondsRemaining] = useState<number>(0);
   const lockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -150,6 +151,37 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const checkTenantBootstrapStatus = useCallback(async (rawTenantSlug: string) => {
+    const slug = rawTenantSlug.trim();
+    if (!slug) {
+      setBootstrapPrecheckRequired(false);
+      return;
+    }
+
+    try {
+      const res = await api.get<{ requiresBootstrap: boolean }>(`/auth/tenant/bootstrap/status?tenantSlug=${encodeURIComponent(slug)}`);
+      setBootstrapPrecheckRequired(res.data.requiresBootstrap);
+    } catch {
+      setBootstrapPrecheckRequired(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const trimmed = tenantSlug.trim();
+    if (!trimmed) {
+      setBootstrapPrecheckRequired(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void checkTenantBootstrapStatus(trimmed);
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [tenantSlug, checkTenantBootstrapStatus]);
+
   const handleLogin = async () => {
     if (!tenantSlug || !email || !password) {
       setError(t('auth.errorEmpty'));
@@ -218,6 +250,7 @@ const LoginPage: React.FC = () => {
         startLockCountdown(lockedUntil);
       } else if (code === 'TENANT_BOOTSTRAP_REQUIRED') {
         setBootstrapRequired(true);
+        setBootstrapPrecheckRequired(true);
         setError(t('auth.bootstrap.required'));
       } else if (code === 'SESSION_LIMIT_EXCEEDED') {
         const confirmed = await requestForceLoginConfirm(message || t('auth.errorInvalid'));
@@ -398,6 +431,7 @@ const LoginPage: React.FC = () => {
                 onBlur={(e) => {
                   void checkTenantExpiry(e.target.value);
                   void checkTenantLockStatus(e.target.value, email);
+                  void checkTenantBootstrapStatus(e.target.value);
                 }}
                 className="w-full"
                 placeholder={t('auth.tenantSlugPlaceholder')}
@@ -405,6 +439,10 @@ const LoginPage: React.FC = () => {
                 disabled={lockSecondsRemaining > 0}
               />
             </div>
+
+            {(bootstrapPrecheckRequired || bootstrapRequired) && (
+              <Message severity="warn" text={t('auth.bootstrap.required')} className="w-full" />
+            )}
 
             <div className="field">
               <label htmlFor="email">{t('common.email')}</label>
@@ -434,24 +472,36 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <Button
-              label={t('auth.submit')}
-              icon="pi pi-sign-in"
-              onClick={handleLogin}
-              loading={loading}
-              disabled={lockSecondsRemaining > 0}
-              className="w-full"
-            />
-            {bootstrapRequired && (
+            <div className="login-action-row">
               <Button
-                type="button"
-                className="w-full"
-                outlined
-                icon="pi pi-user-plus"
-                label={t('auth.bootstrap.move')}
-                onClick={() => navigate(`/bootstrap?tenantSlug=${encodeURIComponent(tenantSlug)}&email=${encodeURIComponent(email)}`)}
+                label={t('auth.submit')}
+                icon="pi pi-sign-in"
+                onClick={handleLogin}
+                loading={loading}
+                disabled={lockSecondsRemaining > 0}
+                className="login-action-btn"
               />
-            )}
+              {!(bootstrapPrecheckRequired || bootstrapRequired) && (
+                <Button
+                  type="button"
+                  className="login-action-btn"
+                  text
+                  icon="pi pi-unlock"
+                  label={t('auth.resetPassword.move')}
+                  onClick={() => navigate(`/reset-password?tenantSlug=${encodeURIComponent(tenantSlug)}&email=${encodeURIComponent(email)}`)}
+                />
+              )}
+              {(bootstrapPrecheckRequired || bootstrapRequired) && (
+                <Button
+                  type="button"
+                  className="login-action-btn"
+                  outlined
+                  icon="pi pi-user-plus"
+                  label={t('auth.bootstrap.move')}
+                  onClick={() => navigate(`/bootstrap?tenantSlug=${encodeURIComponent(tenantSlug)}&email=${encodeURIComponent(email)}`)}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -54,4 +54,10 @@ export class UpdateSmtpSettingsDto {
   @MaxLength(500)
   @IsOptional()
   tenantBootstrapUrl?: string;
+
+  @ApiPropertyOptional({ description: '테넌트 비밀번호 재설정 링크', example: 'https://tenant.example.com/reset-password' })
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  tenantPasswordResetUrl?: string;
 }

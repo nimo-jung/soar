@@ -248,6 +248,29 @@ let TenantsService = TenantsService_1 = class TenantsService {
         await this.tenantConnectionService.runMigrationsForTenant(tenantKey);
         return this.getTenantDatabaseStatus(tenantId);
     }
+    async resetTenantDatabase(tenantId) {
+        const tenant = await this.findOne(tenantId);
+        const tenantKey = tenant.slug.replace(/-/g, '_');
+        const databaseName = this.buildTenantDatabaseName(tenant.slug);
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        try {
+            await this.dropTenantDatabase(queryRunner, databaseName);
+            await this.createTenantDatabase(queryRunner, databaseName);
+        }
+        catch (err) {
+            if (this.isTenantDbAccessDenied(err)) {
+                throw new common_1.BadRequestException('MariaDB 권한 부족으로 테넌트 DB를 초기화할 수 없습니다. DB 사용자에 tenant_db_% 권한(GRANT ALL, GRANT CREATE)을 부여한 뒤 다시 시도하세요.');
+            }
+            throw err;
+        }
+        finally {
+            await queryRunner.release();
+        }
+        await this.tenantConnectionService.closeConnection(tenantKey);
+        await this.tenantConnectionService.runMigrationsForTenant(tenantKey);
+        return this.getTenantDatabaseStatus(tenantId);
+    }
     async create(dto) {
         if (!(await this.isMultiTenantEnabled())) {
             throw new common_1.BadRequestException('멀티테넌트 모드가 비활성화되어 있어 신규 테넌트를 생성할 수 없습니다.');
@@ -509,15 +532,17 @@ let TenantsService = TenantsService_1 = class TenantsService {
         if (await this.hasAnyActiveTenantUser(tenant.slug)) {
             throw new common_1.ConflictException('활성 사용자가 이미 존재하므로 최초 관리자 등록 토큰을 발급할 수 없습니다. 비밀번호 분실 시 재설정 토큰을 사용하세요.');
         }
-        const activeToken = await this.tenantBootstrapTokenRepo
-            .createQueryBuilder('token')
-            .where('token.tenant_id = :tenantId', { tenantId })
-            .andWhere('token.used_at IS NULL')
-            .andWhere('token.expires_at >= :now', { now: new Date().toISOString() })
-            .orderBy('token.expires_at', 'DESC')
-            .getOne();
-        if (activeToken) {
-            throw new common_1.ConflictException('이미 유효한 최초 관리자 등록 토큰이 있습니다. 기존 토큰 만료 후 다시 발급하세요.');
+        const now = new Date();
+        const invalidateResult = await this.tenantBootstrapTokenRepo
+            .createQueryBuilder()
+            .update(tenant_bootstrap_token_entity_1.TenantBootstrapToken)
+            .set({ usedAt: now })
+            .where('tenant_id = :tenantId', { tenantId })
+            .andWhere('used_at IS NULL')
+            .andWhere('expires_at >= :now', { now })
+            .execute();
+        if ((invalidateResult.affected ?? 0) > 0) {
+            this.logger.log(`기존 유효 bootstrap 토큰 ${invalidateResult.affected}건 강제 만료 후 재발급: tenantId=${tenant.id}, tenantSlug=${tenant.slug}`);
         }
         const rawToken = (0, crypto_1.randomBytes)(24).toString('hex');
         const tokenHash = await bcrypt.hash(rawToken, 12);
@@ -534,6 +559,11 @@ let TenantsService = TenantsService_1 = class TenantsService {
         }));
         let deliveredToEmail = false;
         let mailDeliveryError = null;
+        const registrationUrl = await this.bootstrapTokenMailService.getBootstrapRegistrationUrl({
+            tenantSlug: tenant.slug,
+            email: normalizedEmail,
+            token: rawToken,
+        });
         if (normalizedEmail) {
             try {
                 await this.bootstrapTokenMailService.sendBootstrapToken({
@@ -556,6 +586,7 @@ let TenantsService = TenantsService_1 = class TenantsService {
             tenantSlug: tenant.slug,
             email: normalizedEmail,
             token: rawToken,
+            registrationUrl,
             expiresAt: expiresAt.toISOString(),
             deliveredToEmail,
             mailDeliveryError,

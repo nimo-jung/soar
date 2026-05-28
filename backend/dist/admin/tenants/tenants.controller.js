@@ -235,7 +235,7 @@ let TenantsController = class TenantsController {
             resourceType: 'TENANT_DATABASE',
             resourceId: String(id),
             message: [
-                '테넌트 DB 복구/재생성',
+                '테넌트 DB 복구',
                 `tenantId=${recovered.tenantId}`,
                 `tenantSlug=${this.safe(recovered.tenantSlug)}`,
                 `exists=${recovered.exists ? 'Y' : 'N'}`,
@@ -245,6 +245,25 @@ let TenantsController = class TenantsController {
             metadata: { ...recovered },
         });
         return recovered;
+    }
+    async resetDatabase(id, user, req) {
+        const reset = await this.tenantsService.resetTenantDatabase(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_DB_RESET',
+            resourceType: 'TENANT_DATABASE',
+            resourceId: String(id),
+            message: [
+                '테넌트 DB 초기화',
+                `tenantId=${reset.tenantId}`,
+                `tenantSlug=${this.safe(reset.tenantSlug)}`,
+                `exists=${reset.exists ? 'Y' : 'N'}`,
+                `isReady=${reset.isReady ? 'Y' : 'N'}`,
+                `missingTables=${reset.missingTables.join(',') || '-'}`,
+            ].join(' | '),
+            metadata: { ...reset },
+        });
+        return reset;
     }
     async issueBootstrapToken(id, dto, user, req) {
         const issued = await this.tenantsService.issueBootstrapToken(id, dto, user.sub);
@@ -266,6 +285,7 @@ let TenantsController = class TenantsController {
                 tenantId: issued.tenantId,
                 tenantSlug: issued.tenantSlug,
                 email: issued.email,
+                hasRegistrationUrl: Boolean(issued.registrationUrl),
                 deliveredToEmail: issued.deliveredToEmail,
                 mailDeliveryError: issued.mailDeliveryError,
                 expiresAt: issued.expiresAt,
@@ -425,7 +445,7 @@ __decorate([
 ], TenantsController.prototype, "getDatabaseStatus", null);
 __decorate([
     (0, common_1.Post)(':id/database-recover'),
-    (0, swagger_1.ApiOperation)({ summary: '테넌트 DB 복구/재생성 (DB 생성 + 테넌트 마이그레이션 실행)' }),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 DB 복구 (DB 존재 보장 + 테넌트 마이그레이션 실행)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __param(2, (0, common_1.Req)()),
@@ -433,6 +453,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object, Object]),
     __metadata("design:returntype", Promise)
 ], TenantsController.prototype, "recoverDatabase", null);
+__decorate([
+    (0, common_1.Post)(':id/database-reset'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 DB 초기화 (DB 삭제 후 재생성 + 테넌트 마이그레이션 실행)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TenantsController.prototype, "resetDatabase", null);
 __decorate([
     (0, common_1.Post)(':id/bootstrap-token'),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록용 토큰 발급' }),

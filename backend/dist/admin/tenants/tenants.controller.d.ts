@@ -31,11 +31,13 @@ export declare class TenantsController {
     }>;
     getDatabaseStatus(id: number): Promise<import("./tenants.service").TenantDatabaseStatus>;
     recoverDatabase(id: number, user: CurrentUserPayload, req: Request): Promise<import("./tenants.service").TenantDatabaseStatus>;
+    resetDatabase(id: number, user: CurrentUserPayload, req: Request): Promise<import("./tenants.service").TenantDatabaseStatus>;
     issueBootstrapToken(id: number, dto: IssueTenantBootstrapTokenDto, user: CurrentUserPayload, req: Request): Promise<{
         tenantId: number;
         tenantSlug: string;
         email: string | null;
         token: string;
+        registrationUrl: string | null;
         expiresAt: string;
         deliveredToEmail: boolean;
         mailDeliveryError: string | null;

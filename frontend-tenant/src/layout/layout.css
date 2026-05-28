@@ -1008,6 +1008,28 @@ body {
     z-index: 4;
 }
 
+.layout-login-verona.layout-login-bootstrap,
+.layout-login-verona.layout-login-reset {
+    min-height: 100vh;
+    padding: 2rem 1rem;
+}
+
+.layout-login-verona.layout-login-bootstrap .layout-login-right,
+.layout-login-verona.layout-login-reset .layout-login-right {
+    position: relative;
+    top: auto;
+    right: auto;
+    transform: none;
+    width: min(100%, 44rem);
+    margin: 0 auto;
+}
+
+.layout-login-verona.layout-login-bootstrap .login-right-content,
+.layout-login-verona.layout-login-reset .login-right-content {
+    max-height: none;
+    overflow: visible;
+}
+
 .login-right-content {
     position: relative;
     z-index: 2;
@@ -1309,6 +1331,24 @@ body {
 
 .layout-login-verona .login-form .p-button.p-button-loading {
     filter: saturate(1.05);
+}
+
+.login-action-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.login-action-row .login-action-btn {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+@media (max-width: 900px) {
+    .login-action-row {
+        flex-direction: column;
+    }
 }
 
 /* ── Field wrapper: label + input 수직 정렬, 완전 너비 보장 ── */

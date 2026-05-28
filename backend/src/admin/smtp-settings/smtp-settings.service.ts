@@ -15,6 +15,7 @@ export interface AdminSmtpSettingsResponse {
   smtpUser: string | null;
   smtpFrom: string | null;
   tenantBootstrapUrl: string | null;
+  tenantPasswordResetUrl: string | null;
   hasSmtpPass: boolean;
 }
 
@@ -117,6 +118,7 @@ export class SmtpSettingsService {
     const smtpUser = smtpMap.get(SMTP_SETTINGS_KEYS.user)?.value ?? null;
     const smtpFrom = smtpMap.get(SMTP_SETTINGS_KEYS.from)?.value ?? null;
     const tenantBootstrapUrl = smtpMap.get(SMTP_SETTINGS_KEYS.tenantBootstrapUrl)?.value ?? null;
+    const tenantPasswordResetUrl = smtpMap.get(SMTP_SETTINGS_KEYS.tenantPasswordResetUrl)?.value ?? null;
     const hasSmtpPass = Boolean(smtpMap.get(SMTP_SETTINGS_KEYS.pass)?.value);
 
     return {
@@ -127,6 +129,7 @@ export class SmtpSettingsService {
       smtpUser,
       smtpFrom,
       tenantBootstrapUrl,
+      tenantPasswordResetUrl,
       hasSmtpPass,
     };
   }
@@ -191,6 +194,9 @@ export class SmtpSettingsService {
     const normalizedTenantBootstrapUrl = dto.tenantBootstrapUrl !== undefined
       ? this.trimOrNull(dto.tenantBootstrapUrl)
       : undefined;
+    const normalizedTenantPasswordResetUrl = dto.tenantPasswordResetUrl !== undefined
+      ? this.trimOrNull(dto.tenantPasswordResetUrl)
+      : undefined;
 
     const smtpMap = await this.getSmtpSettingsMap();
     const effectiveSmtpMode: SmtpMode = normalizedSmtpMode
@@ -248,6 +254,13 @@ export class SmtpSettingsService {
       await this.upsertSmtpSetting(
         SMTP_SETTINGS_KEYS.tenantBootstrapUrl,
         normalizedTenantBootstrapUrl,
+        SMTP_VTYPE.text,
+      );
+    }
+    if (normalizedTenantPasswordResetUrl !== undefined) {
+      await this.upsertSmtpSetting(
+        SMTP_SETTINGS_KEYS.tenantPasswordResetUrl,
+        normalizedTenantPasswordResetUrl,
         SMTP_VTYPE.text,
       );
     }

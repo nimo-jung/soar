@@ -20,6 +20,7 @@ interface SmtpSettingsForm {
   smtpPass: string;
   smtpFrom: string;
   tenantBootstrapUrl: string;
+  tenantPasswordResetUrl: string;
   hasSmtpPass: boolean;
   clearSmtpPass: boolean;
 }
@@ -64,6 +65,7 @@ const SmtpSettingsPage: React.FC = () => {
     smtpPass: '',
     smtpFrom: '',
     tenantBootstrapUrl: '',
+    tenantPasswordResetUrl: '',
     hasSmtpPass: false,
     clearSmtpPass: false,
   });
@@ -118,6 +120,7 @@ const SmtpSettingsPage: React.FC = () => {
         smtpPass: '',
         smtpFrom: response.data.smtpFrom ?? '',
         tenantBootstrapUrl: response.data.tenantBootstrapUrl ?? '',
+        tenantPasswordResetUrl: response.data.tenantPasswordResetUrl ?? '',
         hasSmtpPass: response.data.hasSmtpPass ?? false,
         clearSmtpPass: false,
       }));
@@ -164,6 +167,7 @@ const SmtpSettingsPage: React.FC = () => {
         clearSmtpPass: form.clearSmtpPass,
         smtpFrom: smtpFrom || undefined,
         tenantBootstrapUrl: form.tenantBootstrapUrl.trim() || undefined,
+        tenantPasswordResetUrl: form.tenantPasswordResetUrl.trim() || undefined,
       };
 
       const response = await api.patch<SmtpSettingsForm>('/admin/smtp-settings', payload);
@@ -176,6 +180,7 @@ const SmtpSettingsPage: React.FC = () => {
         smtpPass: '',
         smtpFrom: response.data.smtpFrom ?? '',
         tenantBootstrapUrl: response.data.tenantBootstrapUrl ?? '',
+        tenantPasswordResetUrl: response.data.tenantPasswordResetUrl ?? '',
         hasSmtpPass: response.data.hasSmtpPass ?? false,
         clearSmtpPass: false,
       }));
@@ -370,6 +375,19 @@ const SmtpSettingsPage: React.FC = () => {
               placeholder={t('smtpSettings.bootstrapUrlPlaceholder')}
             />
             <small className="text-color-secondary">{t('smtpSettings.bootstrapUrlHelp')}</small>
+          </div>
+
+          <div className="col-12">
+            <label htmlFor="tenant-password-reset-url" className="admin-form-label">{t('smtpSettings.passwordResetUrlLabel')}</label>
+            <InputText
+              id="tenant-password-reset-url"
+              value={form.tenantPasswordResetUrl}
+              onChange={(event) => setForm((prev) => ({ ...prev, tenantPasswordResetUrl: event.target.value }))}
+              className="w-full"
+              disabled={loading}
+              placeholder={t('smtpSettings.passwordResetUrlPlaceholder')}
+            />
+            <small className="text-color-secondary">{t('smtpSettings.passwordResetUrlHelp')}</small>
           </div>
 
           <div className="col-12">

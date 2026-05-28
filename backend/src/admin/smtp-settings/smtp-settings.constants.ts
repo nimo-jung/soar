@@ -9,6 +9,7 @@ export const SMTP_SETTINGS_KEYS = {
   pass: 'pass',
   from: 'from',
   tenantBootstrapUrl: 'tenant_bootstrap_url',
+  tenantPasswordResetUrl: 'tenant_password_reset_url',
 } as const;
 
 export const SMTP_VTYPE = {

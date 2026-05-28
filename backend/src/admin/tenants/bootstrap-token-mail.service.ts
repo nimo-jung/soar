@@ -22,6 +22,12 @@ interface PasswordResetTokenMailPayload {
   expiresAtIso: string;
 }
 
+interface BootstrapRegistrationUrlPayload {
+  tenantSlug: string;
+  email: string | null;
+  token: string;
+}
+
 @Injectable()
 export class BootstrapTokenMailService {
   private readonly logger = new Logger(BootstrapTokenMailService.name);
@@ -68,12 +74,14 @@ export class BootstrapTokenMailService {
     const envUser = this.configService.get<string>('SMTP_USER')?.trim();
     const envPass = this.configService.get<string>('SMTP_PASS')?.trim();
     const envBootstrapBaseUrl = this.configService.get<string>('TENANT_BOOTSTRAP_URL')?.trim();
+    const envPasswordResetBaseUrl = this.configService.get<string>('TENANT_PASSWORD_RESET_URL')?.trim();
 
     const dbHost = settingMap.get(SMTP_SETTINGS_KEYS.host)?.trim();
     const dbFrom = settingMap.get(SMTP_SETTINGS_KEYS.from)?.trim();
     const dbUser = settingMap.get(SMTP_SETTINGS_KEYS.user)?.trim();
     const dbPass = settingMap.get(SMTP_SETTINGS_KEYS.pass)?.trim();
     const dbBootstrapBaseUrl = settingMap.get(SMTP_SETTINGS_KEYS.tenantBootstrapUrl)?.trim();
+    const dbPasswordResetBaseUrl = settingMap.get(SMTP_SETTINGS_KEYS.tenantPasswordResetUrl)?.trim();
 
     const host = mode === SMTP_MODE.local ? envHost : dbHost;
     const from = mode === SMTP_MODE.local ? envFrom : dbFrom;
@@ -102,6 +110,7 @@ export class BootstrapTokenMailService {
       ? envPass
       : dbPass;
     const bootstrapBaseUrl = mode === SMTP_MODE.local ? envBootstrapBaseUrl : dbBootstrapBaseUrl;
+    const passwordResetBaseUrl = mode === SMTP_MODE.local ? envPasswordResetBaseUrl : dbPasswordResetBaseUrl;
 
     return {
       mode,
@@ -112,6 +121,7 @@ export class BootstrapTokenMailService {
       user,
       pass,
       bootstrapBaseUrl,
+      passwordResetBaseUrl,
     };
   }
 
@@ -134,9 +144,11 @@ export class BootstrapTokenMailService {
       auth: user && pass ? { user, pass } : undefined,
     });
 
-    const tokenUrl = bootstrapBaseUrl
-      ? `${bootstrapBaseUrl.replace(/\/$/, '')}?token=${encodeURIComponent(payload.token)}`
-      : null;
+    const tokenUrl = await this.getBootstrapRegistrationUrl({
+      tenantSlug: payload.tenantSlug,
+      email: payload.to,
+      token: payload.token,
+    });
 
     const subject = `[TMS] ${payload.tenantName} 초기 관리자 등록 토큰`;
     const lines = [
@@ -164,6 +176,24 @@ export class BootstrapTokenMailService {
     }
   }
 
+  async getBootstrapRegistrationUrl(payload: BootstrapRegistrationUrlPayload): Promise<string | null> {
+    const { bootstrapBaseUrl } = await this.resolveMailConfig();
+    if (!bootstrapBaseUrl) {
+      return null;
+    }
+
+    const base = bootstrapBaseUrl.replace(/\/$/, '');
+    const params = new URLSearchParams();
+    params.set('tenantSlug', payload.tenantSlug);
+    if (payload.email) {
+      params.set('email', payload.email);
+    }
+    params.set('invitationToken', payload.token);
+    params.set('token', payload.token);
+
+    return `${base}${base.includes('?') ? '&' : '?'}${params.toString()}`;
+  }
+
   async sendPasswordResetToken(payload: PasswordResetTokenMailPayload): Promise<void> {
     const {
       mode,
@@ -173,6 +203,7 @@ export class BootstrapTokenMailService {
       secure,
       user,
       pass,
+      passwordResetBaseUrl,
     } = await this.resolveMailConfig();
 
     const transporter = nodemailer.createTransport({
@@ -182,14 +213,19 @@ export class BootstrapTokenMailService {
       auth: user && pass ? { user, pass } : undefined,
     });
 
+    const resetUrl = passwordResetBaseUrl
+      ? `${passwordResetBaseUrl.replace(/\/$/, '')}?tenantSlug=${encodeURIComponent(payload.tenantSlug)}&email=${encodeURIComponent(payload.to)}&resetToken=${encodeURIComponent(payload.token)}`
+      : null;
+
     const subject = `[TMS] ${payload.tenantName} 비밀번호 재설정 토큰`;
     const lines = [
       `${payload.tenantName} (${payload.tenantSlug}) 비밀번호 재설정 토큰입니다.`,
       `토큰: ${payload.token}`,
       `만료시각(UTC): ${payload.expiresAtIso}`,
+      resetUrl ? `재설정 URL: ${resetUrl}` : undefined,
       '',
       '이 토큰은 1회만 사용할 수 있습니다.',
-    ];
+    ].filter((line): line is string => Boolean(line));
 
     try {
       this.logger.log(`password reset 토큰 이메일 발송 시도: mode=${mode}, host=${host}, port=${port}, secure=${secure}, to=${payload.to}, tenant=${payload.tenantSlug}`);
