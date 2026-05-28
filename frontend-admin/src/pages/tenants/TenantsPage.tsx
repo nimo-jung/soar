@@ -22,6 +22,7 @@ import CommonDataTable from '../../components/CommonDataTable';
 import { formatDateTimeSeconds } from '../../utils/date';
 import type { AdminAuthSettings } from '../../types/auth-policy';
 import ResultDialog from '../../components/ResultDialog';
+import ActionConfirmDialog from '../../components/ActionConfirmDialog';
 
 interface TenantTier {
   id: number;
@@ -297,6 +298,7 @@ const TenantsPage: React.FC = () => {
   const [bootstrapHistoryStatusFilter, setBootstrapHistoryStatusFilter] = useState<BootstrapHistoryStatusFilter>('ALL');
   const [bootstrapHistoryVisibleFields, setBootstrapHistoryVisibleFields] = useState<BootstrapHistoryVisibleField[]>(bootstrapHistoryFieldOrder);
   const [tenantDatabaseBusy, setTenantDatabaseBusy] = useState<Record<number, boolean>>({});
+  const [recoverDatabaseConfirmTarget, setRecoverDatabaseConfirmTarget] = useState<Tenant | null>(null);
   const [isMultiTenantEnabled, setIsMultiTenantEnabled] = useState(true);
   const [form, setForm] = useState({
     slug: '',
@@ -808,17 +810,7 @@ const TenantsPage: React.FC = () => {
   };
 
   const confirmRecoverTenantDatabase = (row: Tenant) => {
-    confirmDialog({
-      header: t('tenants.database.recoverConfirmTitle'),
-      message: t('tenants.database.recoverConfirmMessage', { name: row.name }),
-      icon: 'pi pi-database',
-      acceptClassName: 'p-button-warning',
-      acceptLabel: t('tenants.database.recoverAction'),
-      rejectLabel: t('common.cancel'),
-      accept: () => {
-        void recoverTenantDatabase(row);
-      },
-    });
+    setRecoverDatabaseConfirmTarget(row);
   };
 
   const filteredTenants = useMemo(() => {
@@ -1069,6 +1061,22 @@ const TenantsPage: React.FC = () => {
         tone="info"
         confirmLabel={t('common.confirm')}
         onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+      />
+      <ActionConfirmDialog
+        visible={recoverDatabaseConfirmTarget !== null}
+        title={t('tenants.database.recoverConfirmTitle')}
+        message={t('tenants.database.recoverConfirmMessage', { name: recoverDatabaseConfirmTarget?.name ?? '' })}
+        confirmLabel={t('tenants.database.recoverAction')}
+        cancelLabel={t('common.cancel')}
+        icon="pi pi-database"
+        severity="warn"
+        onCancel={() => setRecoverDatabaseConfirmTarget(null)}
+        onConfirm={() => {
+          if (recoverDatabaseConfirmTarget) {
+            void recoverTenantDatabase(recoverDatabaseConfirmTarget);
+          }
+          setRecoverDatabaseConfirmTarget(null);
+        }}
       />
       <ConfirmDialog />
       <div className="admin-page-header page-header">
