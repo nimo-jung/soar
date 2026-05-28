@@ -48,7 +48,7 @@
     "brandSubtext": "Master Console"
   },
   "auth": {
-    "title": "TMS Master Admin",
+    "title": "Sniper TMS Master",
     "badge": "Master Control",
     "emailPlaceholder": "admin@tms.io",
     "submit": "로그인",

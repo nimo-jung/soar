@@ -43,8 +43,15 @@ const navSections = [
   },
 ];
 
-function getBreadcrumbItem(pathname: string) {
-  return navSections.flatMap((section) => section.items).find((item) => pathname.startsWith(item.path));
+function getBreadcrumb(pathname: string) {
+  for (const section of navSections) {
+    const item = section.items.find((menuItem) => pathname.startsWith(menuItem.path));
+    if (item) {
+      return { section, item };
+    }
+  }
+
+  return null;
 }
 
 function getSectionLabelKeyByPath(pathname: string) {
@@ -78,7 +85,7 @@ const AdminLayout: React.FC = () => {
     return initialSectionKey ? [initialSectionKey] : [];
   });
 
-  const breadcrumbItem = useMemo(() => getBreadcrumbItem(location.pathname), [location.pathname]);
+  const breadcrumb = useMemo(() => getBreadcrumb(location.pathname), [location.pathname]);
   const activeSectionKey = useMemo(() => getSectionLabelKeyByPath(location.pathname), [location.pathname]);
 
   useEffect(() => {
@@ -132,7 +139,7 @@ const AdminLayout: React.FC = () => {
             <i className="pi pi-shield" style={{ fontSize: '1.15rem', color: 'var(--primary-color)' }} />
           </div>
           <div className="layout-sidebar-logo-copy">
-            <span>TMS Admin</span>
+            <span>Sniper TMS</span>
             <small>{t('layout.brandSubtext')}</small>
           </div>
         </div>
@@ -193,12 +200,13 @@ const AdminLayout: React.FC = () => {
               <i className="pi pi-bars" />
             </button>
             <div className="layout-topbar-breadcrumb">
-              <i className="pi pi-home breadcrumb-home" />
-              {breadcrumbItem && (
+              {breadcrumb && (
                 <>
+                  <i className={`${breadcrumb.section.sectionIcon} breadcrumb-menu-icon`} />
+                  <span className="breadcrumb-parent">{t(breadcrumb.section.sectionLabelKey)}</span>
                   <i className="pi pi-chevron-right breadcrumb-separator" />
-                  <i className={`${breadcrumbItem.icon} breadcrumb-menu-icon`} />
-                  <span className="breadcrumb-current">{t(breadcrumbItem.labelKey)}</span>
+                  <i className={`${breadcrumb.item.icon} breadcrumb-menu-icon`} />
+                  <span className="breadcrumb-current">{t(breadcrumb.item.labelKey)}</span>
                 </>
               )}
             </div>

@@ -356,10 +356,18 @@ body {
     opacity: 0.95;
 }
 
+.layout-topbar-breadcrumb .breadcrumb-parent,
+.layout-topbar-breadcrumb .breadcrumb-current {
+    font-size: 0.84rem;
+}
+
+.layout-topbar-breadcrumb .breadcrumb-parent {
+    font-weight: 400;
+}
+
 .layout-topbar-breadcrumb .breadcrumb-current {
     display: inline-flex;
     align-items: center;
-    font-size: 0.84rem;
     font-weight: 600;
     line-height: 1;
     color: var(--text-color);
@@ -1415,7 +1423,7 @@ body {
     font-weight: 800;
     letter-spacing: 0.015em;
     color: #f8fafc;
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
     isolation: isolate;
 }
 

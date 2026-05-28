@@ -178,7 +178,7 @@ Tenant 앱은 로그인 응답의 `brandingConfig`를 기반으로 CSS 변수를
 ### Admin 로그인 (Sakai 스타일)
 
 - `layout-login` → `layout-login-card` 단일 카드 구조를 유지한다.
-- 카드 상단에 `pi pi-shield` 아이콘 + "TMS Master Admin" 제목을 표시한다.
+- 카드 상단에 `pi pi-shield` 아이콘 + "Sniper TMS Master Console" 제목을 표시한다.
 - 브랜딩 변수를 적용하지 않는다.
 
 ### Tenant 로그인 (Verona 스플릿 스타일)
