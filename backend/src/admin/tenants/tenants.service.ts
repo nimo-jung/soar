@@ -320,6 +320,7 @@ export class TenantsService {
 
     let dbCreatedInRequest = false;
     const dbName = this.buildTenantDatabaseName(dto.slug);
+    const tenantKey = dto.slug.replace(/-/g, '_');
 
     try {
       const tier = dto.tierId
@@ -332,6 +333,10 @@ export class TenantsService {
       const dbExistsBefore = await this.tenantDatabaseExists(dbName);
       await this.createTenantDatabase(queryRunner, dbName);
       dbCreatedInRequest = !dbExistsBefore;
+
+      // 테넌트 생성 성공 시점에 스키마가 보장되도록 프로비저닝 중 마이그레이션을 즉시 실행한다.
+      await this.tenantConnectionService.closeConnection(tenantKey);
+      await this.tenantConnectionService.runMigrationsForTenant(tenantKey);
 
       const tenant = this.tenantRepo.create({
         slug: dto.slug,
@@ -356,6 +361,7 @@ export class TenantsService {
       return saved;
     } catch (err) {
       await queryRunner.rollbackTransaction();
+      await this.tenantConnectionService.closeConnection(tenantKey);
       if (dbCreatedInRequest) {
         try {
           await this.dropTenantDatabase(queryRunner, dbName);

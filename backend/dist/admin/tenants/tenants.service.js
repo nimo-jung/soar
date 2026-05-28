@@ -287,6 +287,7 @@ let TenantsService = TenantsService_1 = class TenantsService {
         await queryRunner.startTransaction();
         let dbCreatedInRequest = false;
         const dbName = this.buildTenantDatabaseName(dto.slug);
+        const tenantKey = dto.slug.replace(/-/g, '_');
         try {
             const tier = dto.tierId
                 ? await this.findTierForTenantById(dto.tierId)
@@ -297,6 +298,8 @@ let TenantsService = TenantsService_1 = class TenantsService {
             const dbExistsBefore = await this.tenantDatabaseExists(dbName);
             await this.createTenantDatabase(queryRunner, dbName);
             dbCreatedInRequest = !dbExistsBefore;
+            await this.tenantConnectionService.closeConnection(tenantKey);
+            await this.tenantConnectionService.runMigrationsForTenant(tenantKey);
             const tenant = this.tenantRepo.create({
                 slug: dto.slug,
                 name: dto.name,
@@ -318,6 +321,7 @@ let TenantsService = TenantsService_1 = class TenantsService {
         }
         catch (err) {
             await queryRunner.rollbackTransaction();
+            await this.tenantConnectionService.closeConnection(tenantKey);
             if (dbCreatedInRequest) {
                 try {
                     await this.dropTenantDatabase(queryRunner, dbName);
