@@ -54,6 +54,7 @@ const TenantLayout: React.FC = () => {
   const location = useLocation();
   const token = useAuthStore((s) => s.accessToken);
   const logout = useAuthStore((s) => s.logout);
+  const resetBranding = useBrandingStore((s) => s.reset);
   const branding = useBrandingStore((s) => s.branding);
   const user = useAuthStore((s) => s.user);
 
@@ -133,6 +134,7 @@ const TenantLayout: React.FC = () => {
     } catch {
       // 로그아웃 감사로그 실패와 관계없이 클라이언트 세션은 정리한다.
     } finally {
+      resetBranding();
       logout();
       navigate('/login');
     }

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/auth.store';
+import { useBrandingStore } from '../store/branding.store';
 
 const stringifyErrorMessage = (value: unknown): string => {
   if (typeof value === 'string') {
@@ -45,6 +46,7 @@ api.interceptors.response.use(
         || requestUrl.includes('/auth/tenant/bootstrap/status')
         || requestUrl.includes('/auth/tenant/lock-status');
       if (!isAuthRequest) {
+        useBrandingStore.getState().reset();
         useAuthStore.getState().logout();
         window.location.href = '/login';
       }

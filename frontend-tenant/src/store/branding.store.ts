@@ -15,7 +15,8 @@ interface BrandingState {
 }
 
 const DEFAULT_BRANDING: BrandingConfig = {
-  primaryColor: '#3B82F6',
+  // Keep tenant fallback aligned with Verona palette used by frontend-tenant layout.
+  primaryColor: '#34d3c3',
   logoUrl: undefined,
   faviconUrl: undefined,
   companyName: 'TMS',

@@ -25,9 +25,11 @@ const LOCKOUT_STORAGE_KEY = 'tms_tenant_lockout';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const accessToken = useAuthStore((s) => s.accessToken);
   const setAuth = useAuthStore((s) => s.setAuth);
   const applyBranding = useBrandingStore((s) => s.applyBranding);
   const branding = useBrandingStore((s) => s.branding);
+  const resetBranding = useBrandingStore((s) => s.reset);
 
   const [tenantSlug, setTenantSlug] = useState('');
   const [email, setEmail] = useState('');
@@ -105,6 +107,12 @@ const LoginPage: React.FC = () => {
     },
     [startLockCountdown],
   );
+
+  React.useEffect(() => {
+    if (!accessToken) {
+      resetBranding();
+    }
+  }, [accessToken, resetBranding]);
 
   React.useEffect(() => {
     const stored = localStorage.getItem(LOCKOUT_STORAGE_KEY);

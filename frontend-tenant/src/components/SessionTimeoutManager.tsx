@@ -5,6 +5,7 @@ import { Button } from 'primereact/button';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useAuthStore } from '../store/auth.store';
+import { useBrandingStore } from '../store/branding.store';
 import { parseJwt } from '../utils/jwt';
 import { AuthPolicy } from '../types/auth-policy';
 
@@ -32,6 +33,7 @@ const SessionTimeoutManager: React.FC = () => {
   const replaceToken = useAuthStore((s) => s.replaceToken);
   const setAuthSettings = useAuthStore((s) => s.setAuthSettings);
   const logout = useAuthStore((s) => s.logout);
+  const resetBranding = useBrandingStore((s) => s.reset);
 
   const tokenRef = useRef<string | null>(token);
   const authSettingsRef = useRef<AuthPolicy | null>(authSettings);
@@ -56,6 +58,7 @@ const SessionTimeoutManager: React.FC = () => {
   }, [warningVisible]);
 
   const forceLogout = () => {
+    resetBranding();
     logout();
     navigate('/login');
   };
