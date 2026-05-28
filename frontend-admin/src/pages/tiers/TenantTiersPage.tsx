@@ -156,7 +156,22 @@ const TenantTiersPage: React.FC = () => {
   };
 
   const renderTierFilterOption = (option: { label: string; value: TierCodeFilter }) => {
-    return <span className={`tenant-filter-pill tenant-filter-pill-${option.value.toLowerCase()}`}>{option.label}</span>;
+    const colorClass =
+      option.value === 'ALL'
+        ? 'tenant-filter-pill-all'
+        : option.value === 'LITE'
+          ? 'tenant-filter-pill-active'
+          : option.value === 'PREMIUM'
+            ? 'tenant-filter-pill-suspended'
+            : 'tenant-filter-pill-deleted';
+
+    return <span className={`tenant-filter-pill ${colorClass}`}>{option.label}</span>;
+  };
+
+  const getTierCodeTagClass = (code: TierCode): string => {
+    if (code === 'LITE') return 'tier-code-tag tier-code-tag-active';
+    if (code === 'PREMIUM') return 'tier-code-tag tier-code-tag-suspended';
+    return 'tier-code-tag tier-code-tag-deleted';
   };
 
   const fieldOptions = useMemo(
@@ -466,7 +481,13 @@ const TenantTiersPage: React.FC = () => {
               field="code"
               header={t('tenants.tiers.code')}
               style={{ width: '10rem' }}
-              body={(row: TenantTier) => getTierCodeLabel(row.code)}
+              body={(row: TenantTier) => (
+                <Tag
+                  value={getTierCodeLabel(row.code)}
+                  rounded
+                  className={getTierCodeTagClass(row.code)}
+                />
+              )}
             />
           )}
           {isFieldVisible('name') && (

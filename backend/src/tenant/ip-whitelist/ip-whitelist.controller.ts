@@ -32,11 +32,11 @@ export class IpWhitelistController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -54,7 +54,7 @@ export class IpWhitelistController {
   @ApiOperation({ summary: 'IP 화이트리스트 항목 추가' })
   async create(
     @Body() dto: CreateIpWhitelistDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const created = await this.ipWhitelistService.create(dto.ipAddress, dto.description);
@@ -79,7 +79,7 @@ export class IpWhitelistController {
   @ApiOperation({ summary: 'IP 화이트리스트 항목 비활성화' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     await this.ipWhitelistService.remove(id);

@@ -346,7 +346,9 @@
     "refresh": "Refresh",
     "filters": {
       "allActorTypes": "All actors",
-      "actionPlaceholder": "Search action code"
+      "actionPlaceholder": "Search action code",
+      "allTenants": "All",
+      "tenantSelectPlaceholder": "Select tenant"
     },
     "table": {
       "createdAt": "Created At",

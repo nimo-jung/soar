@@ -27,6 +27,7 @@ const navModel = [
     categoryKey: 'nav.categories.management',
     items: [
       { labelKey: 'nav.users', path: '/users', icon: 'pi pi-users' },
+      { labelKey: 'nav.auditLogs', path: '/audit-logs', icon: 'pi pi-book' },
       { labelKey: 'nav.settings', path: '/settings', icon: 'pi pi-cog' },
       { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
     ],

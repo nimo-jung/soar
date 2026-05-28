@@ -55,7 +55,7 @@ let PlaybooksController = class PlaybooksController {
         return {
             actorType: audit_log_entity_1.AuditActorType.TENANT,
             actorId: user.sub,
-            tenantSlug: user.tenantId ?? null,
+            tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
             ipAddress: req.ip ?? null,
             userAgent: req.headers['user-agent'] ?? null,
         };

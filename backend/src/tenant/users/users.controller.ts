@@ -33,11 +33,11 @@ export class UsersController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -55,7 +55,7 @@ export class UsersController {
   @ApiOperation({ summary: '테넌트 사용자 생성' })
   async create(
     @Body() dto: CreateTenantUserDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const created = await this.usersService.create(dto);
@@ -80,7 +80,7 @@ export class UsersController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTenantUserDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const updated = await this.usersService.update(id, dto);
@@ -106,7 +106,7 @@ export class UsersController {
   @ApiOperation({ summary: '테넌트 사용자 비활성화' })
   async deactivate(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     await this.usersService.deactivate(id);

@@ -13,6 +13,7 @@ import UsersPage from './pages/users/UsersPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import BootstrapPage from './pages/login/BootstrapPage';
 import ResetPasswordPage from './pages/login/ResetPasswordPage';
+import AuditLogsPage from './pages/audit-logs/AuditLogsPage';
 
 const DashboardPage = () => <div className="p-4"><h1 className="text-2xl font-bold">대시보드</h1><p className="text-gray-400 mt-2">위젯 구성 예정</p></div>;
 
@@ -34,6 +35,7 @@ const App: React.FC = () => {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/auth-settings" element={<AuthSettingsPage />} />
+            <Route path="/audit-logs" element={<AuditLogsPage />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Route>

@@ -13,10 +13,12 @@ export declare class IpWhitelistController {
     findAll(): Promise<import("./entities/ip-whitelist.entity").IpWhitelist[]>;
     create(dto: CreateIpWhitelistDto, user: {
         sub: number;
+        tenantSlug?: string;
         tenantId?: string;
     }, req: Request): Promise<import("./entities/ip-whitelist.entity").IpWhitelist>;
     remove(id: number, user: {
         sub: number;
+        tenantSlug?: string;
         tenantId?: string;
     }, req: Request): Promise<void>;
 }

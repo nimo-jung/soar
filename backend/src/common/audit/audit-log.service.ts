@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { AuditActorType, AuditLog } from './entities/audit-log.entity';
+import { TenantConnectionService } from '../database/tenant-connection.service';
+import { TenantAuditLog } from '../../tenant/audit-logs/entities/tenant-audit-log.entity';
 
 export interface AuditLogRecordInput {
   actorType?: AuditActorType;
@@ -21,6 +23,7 @@ export interface AuditLogListQuery {
   limit?: number;
   action?: string;
   actorType?: AuditActorType;
+  tenantSlug?: string;
 }
 
 @Injectable()
@@ -28,6 +31,7 @@ export class AuditLogService {
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepo: Repository<AuditLog>,
+    private readonly tenantConnectionService: TenantConnectionService,
   ) {}
 
   async record(input: AuditLogRecordInput): Promise<AuditLog> {
@@ -45,7 +49,10 @@ export class AuditLogService {
       userAgent: input.userAgent ?? null,
     });
 
-    return this.auditLogRepo.save(log);
+    const saved = await this.auditLogRepo.save(log);
+
+    await this.recordToTenantDb(log);
+    return saved;
   }
 
   async findAll(query: AuditLogListQuery): Promise<AuditLog[]> {
@@ -68,5 +75,43 @@ export class AuditLogService {
     if (query.actorType) {
       qb.andWhere('audit.actor_type = :actorType', { actorType: query.actorType });
     }
+
+    if (query.tenantSlug) {
+      qb.andWhere('audit.tenant_slug = :tenantSlug', { tenantSlug: query.tenantSlug });
+    }
+  }
+
+  private async recordToTenantDb(log: AuditLog): Promise<void> {
+    if (log.actorType !== AuditActorType.TENANT || !log.tenantSlug) {
+      return;
+    }
+
+    try {
+      const tenantId = this.toTenantId(log.tenantSlug);
+      const conn = await this.tenantConnectionService.getConnection(tenantId);
+      const tenantAuditRepo = conn.getRepository(TenantAuditLog);
+
+      await tenantAuditRepo.save(
+        tenantAuditRepo.create({
+          actorType: log.actorType,
+          actorId: log.actorId,
+          actorEmail: log.actorEmail,
+          tenantSlug: log.tenantSlug,
+          action: log.action,
+          resourceType: log.resourceType,
+          resourceId: log.resourceId,
+          message: log.message,
+          metadata: log.metadata,
+          ipAddress: log.ipAddress,
+          userAgent: log.userAgent,
+        }),
+      );
+    } catch {
+      // 테넌트 감사 로그 저장 실패가 원본(admin) 감사 로그 저장을 막지 않도록 무시한다.
+    }
+  }
+
+  private toTenantId(tenantSlug: string): string {
+    return tenantSlug.replace(/-/g, '_');
   }
 }

@@ -14,10 +14,12 @@ export declare class PlaybooksController {
     findAll(): Promise<import("./entities/playbook.entity").Playbook[]>;
     create(dto: CreatePlaybookDto, user: {
         sub: number;
+        tenantSlug?: string;
         tenantId?: string;
     }, req: Request): Promise<import("./entities/playbook.entity").Playbook>;
     execute(id: number, user: {
         sub: number;
+        tenantSlug?: string;
         tenantId?: string;
     }, req: Request): Promise<import("./entities/playbook-run.entity").PlaybookRun>;
 }

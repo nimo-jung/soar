@@ -20,11 +20,11 @@ export class TenantAuthSettingsController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -42,7 +42,7 @@ export class TenantAuthSettingsController {
   @ApiOperation({ summary: '테넌트 인증 설정 수정' })
   async updateSettings(
     @Body() dto: UpdateAuthPolicyDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const before = await this.tenantAuthSettingsService.getSettings();
@@ -52,7 +52,7 @@ export class TenantAuthSettingsController {
       ...this.buildAuditContext(user, req),
       action: 'TENANT_AUTH_SETTINGS_UPDATE',
       resourceType: 'AUTH_SETTINGS',
-      resourceId: user.tenantId ?? 'UNKNOWN_TENANT',
+      resourceId: user.tenantSlug ?? user.tenantId ?? 'UNKNOWN_TENANT',
       message: '테넌트 인증 설정 수정',
       metadata: {
         changedFields: Object.keys(dto),

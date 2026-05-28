@@ -33,11 +33,11 @@ export class ParsingRulesController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -55,7 +55,7 @@ export class ParsingRulesController {
   @ApiOperation({ summary: '파싱 룰 생성 및 Redis 캐시 반영' })
   async create(
     @Body() dto: CreateParsingRuleDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const created = await this.parsingRulesService.create(dto);
@@ -80,7 +80,7 @@ export class ParsingRulesController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateParsingRuleDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const updated = await this.parsingRulesService.update(id, dto);
@@ -105,7 +105,7 @@ export class ParsingRulesController {
   @ApiOperation({ summary: '파싱 룰 비활성화 및 Redis 캐시 반영' })
   async deactivate(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     await this.parsingRulesService.deactivate(id);

@@ -3,6 +3,7 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { SelectButton } from 'primereact/selectbutton';
+import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
 import { IconField } from 'primereact/iconfield';
@@ -51,11 +52,13 @@ interface AuditLogRow {
   createdAt: string;
 }
 
-const actorSeverity: Record<ActorType, 'info' | 'success' | 'warning'> = {
-  MASTER: 'info',
-  TENANT: 'success',
-  SYSTEM: 'warning',
-};
+interface TenantDto {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+const ALL_TENANTS_VALUE = '__ALL__';
 
 const AuditLogsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -64,6 +67,8 @@ const AuditLogsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchActionInput, setSearchActionInput] = useState('');
   const [searchAction, setSearchAction] = useState('');
+  const [tenantSlug, setTenantSlug] = useState(ALL_TENANTS_VALUE);
+  const [tenantOptions, setTenantOptions] = useState<Array<{ label: string; value: string }>>([]);
   const [actorTypeFilter, setActorTypeFilter] = useState<'ALL' | ActorType>('ALL');
   const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
   const [visibleFields, setVisibleFields] = useState<AuditVisibleField[]>(auditFieldOrder);
@@ -72,13 +77,19 @@ const AuditLogsPage: React.FC = () => {
 
   const load = async () => {
     setLoading(true);
+
     try {
+      const selectedTenantSlug = tenantSlug === ALL_TENANTS_VALUE ? '' : tenantSlug;
       const params: Record<string, string | number> = { limit: 100 };
+      params.source = selectedTenantSlug.trim() ? 'TENANT' : 'GLOBAL';
       if (searchAction.trim()) {
         params.action = searchAction.trim();
       }
       if (actorTypeFilter !== 'ALL') {
         params.actorType = actorTypeFilter;
+      }
+      if (selectedTenantSlug.trim()) {
+        params.tenantSlug = selectedTenantSlug.trim();
       }
 
       const res = await api.get<AuditLogRow[]>('/admin/audit-logs', { params });
@@ -88,8 +99,18 @@ const AuditLogsPage: React.FC = () => {
     }
   };
 
+  const loadTenants = async () => {
+    const res = await api.get<TenantDto[]>('/admin/tenants');
+    const options = [
+      { label: t('auditLogs.filters.allTenants'), value: ALL_TENANTS_VALUE },
+      ...res.data.map((tenant) => ({ label: tenant.name, value: tenant.slug })),
+    ];
+    setTenantOptions(options);
+  };
+
   useEffect(() => {
     void load();
+    void loadTenants();
   }, []);
 
   useEffect(() => {
@@ -104,7 +125,7 @@ const AuditLogsPage: React.FC = () => {
 
   useEffect(() => {
     void load();
-  }, [searchAction, actorTypeFilter]);
+  }, [searchAction, actorTypeFilter, tenantSlug]);
 
   const actorTypeOptions = useMemo(
     () => [
@@ -130,8 +151,17 @@ const AuditLogsPage: React.FC = () => {
   );
 
   const renderActorTypeFilterOption = (option: { label: string; value: 'ALL' | ActorType }) => {
+    const colorClass =
+      option.value === 'ALL'
+        ? 'tenant-filter-pill-all'
+        : option.value === 'MASTER'
+          ? 'tenant-filter-pill-active'
+          : option.value === 'TENANT'
+            ? 'tenant-filter-pill-suspended'
+            : 'tenant-filter-pill-deleted';
+
     return (
-      <span className={`tenant-filter-pill tenant-filter-pill-${option.value.toLowerCase()}`}>
+      <span className={`tenant-filter-pill ${colorClass}`}>
         {option.label}
       </span>
     );
@@ -154,11 +184,6 @@ const AuditLogsPage: React.FC = () => {
     setVisibleFields(next);
   };
 
-  const handleClearSearch = () => {
-    setSearchActionInput('');
-    setSearchAction('');
-  };
-
   const renderActor = (row: AuditLogRow) => {
     if (row.actorEmail) {
       return row.actorEmail;
@@ -173,6 +198,12 @@ const AuditLogsPage: React.FC = () => {
     return '-';
   };
 
+  const getActorTypeTagClass = (actorType: ActorType): string => {
+    if (actorType === 'MASTER') return 'audit-actor-type-tag audit-actor-type-tag-active';
+    if (actorType === 'TENANT') return 'audit-actor-type-tag audit-actor-type-tag-suspended';
+    return 'audit-actor-type-tag audit-actor-type-tag-deleted';
+  };
+
   return (
     <div className="admin-page tenants-page">
       <div className="admin-page-header page-header">
@@ -182,30 +213,42 @@ const AuditLogsPage: React.FC = () => {
       <div className="admin-table-shell">
         <div className="admin-table-toolbar">
           <div className="tenants-toolbar-left">
-            <div className="tenants-search-shell">
-              <IconField iconPosition="left" className="tenants-search">
-                <InputIcon className="pi pi-search" />
-                <InputText
-                  value={searchActionInput}
-                  onChange={(e) => setSearchActionInput(e.target.value)}
-                  className="w-full tenants-search-input p-inputtext-sm"
-                  placeholder={t('auditLogs.filters.actionPlaceholder')}
-                />
-              </IconField>
-              {!!searchActionInput && (
-                <Button
-                  type="button"
-                  icon="pi pi-times"
-                  text
-                  rounded
-                  severity="secondary"
-                  className="tenants-search-clear"
-                  aria-label={t('tenants.toolbar.clearSearch')}
-                  tooltip={t('tenants.toolbar.clearSearch')}
-                  tooltipOptions={{ position: 'top' }}
-                  onClick={handleClearSearch}
-                />
-              )}
+            <div className="audit-log-filter-inline">
+              <div className="tenants-search-shell">
+                <IconField iconPosition="left" className="tenants-search">
+                  <InputIcon className="pi pi-search" />
+                  <InputText
+                    value={searchActionInput}
+                    onChange={(e) => setSearchActionInput(e.target.value)}
+                    className="w-full tenants-search-input p-inputtext-sm"
+                    placeholder={t('auditLogs.filters.actionPlaceholder')}
+                  />
+                </IconField>
+                {!!searchActionInput && (
+                  <Button
+                    type="button"
+                    icon="pi pi-times"
+                    text
+                    rounded
+                    severity="secondary"
+                    className="tenants-search-clear"
+                    aria-label={t('tenants.toolbar.clearSearch')}
+                    tooltip={t('tenants.toolbar.clearSearch')}
+                    tooltipOptions={{ position: 'top' }}
+                    onClick={() => {
+                      setSearchActionInput('');
+                      setSearchAction('');
+                    }}
+                  />
+                )}
+              </div>
+              <Dropdown
+                value={tenantSlug}
+                options={tenantOptions}
+                onChange={(e) => setTenantSlug((e.value as string) ?? '')}
+                placeholder={t('auditLogs.filters.tenantSelectPlaceholder')}
+                className="audit-tenant-select audit-tenant-dropdown p-inputtext-sm"
+              />
             </div>
           </div>
           <div className="tenants-quick-filters">
@@ -286,7 +329,11 @@ const AuditLogsPage: React.FC = () => {
               header={t('auditLogs.table.actorType')}
               style={{ width: '8rem' }}
               body={(row: AuditLogRow) => (
-                <Tag value={row.actorType} severity={actorSeverity[row.actorType]} />
+                <Tag
+                  value={row.actorType}
+                  rounded
+                  className={getActorTypeTagClass(row.actorType)}
+                />
               )}
             />
           )}

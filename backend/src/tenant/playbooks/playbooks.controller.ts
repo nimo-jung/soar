@@ -35,11 +35,11 @@ export class PlaybooksController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -57,7 +57,7 @@ export class PlaybooksController {
   @ApiOperation({ summary: '플레이북 생성' })
   async create(
     @Body() dto: CreatePlaybookDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const created = await this.playbooksService.create(dto.name, dto.definition, user.sub, dto.description);
@@ -81,7 +81,7 @@ export class PlaybooksController {
   @ApiOperation({ summary: '플레이북 즉시 실행 (정의 동적 로드)' })
   async execute(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const result = await this.playbooksService.execute(id);

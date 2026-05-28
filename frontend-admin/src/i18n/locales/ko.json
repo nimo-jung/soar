@@ -346,7 +346,9 @@
     "refresh": "새로고침",
     "filters": {
       "allActorTypes": "전체 행위자",
-      "actionPlaceholder": "행위 코드(action) 검색"
+      "actionPlaceholder": "행위 코드(action) 검색",
+      "allTenants": "전체",
+      "tenantSelectPlaceholder": "테넌트 선택"
     },
     "table": {
       "createdAt": "발생 시각",

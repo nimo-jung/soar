@@ -521,6 +521,72 @@ body {
     background: var(--surface-card);
 }
 
+.admin-table-toolbar,
+.tenants-table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.95rem 1rem 0.65rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--surface-border) 72%, transparent 28%);
+}
+
+.tenants-toolbar-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.tenants-search-shell {
+    position: relative;
+    width: min(22rem, 100%);
+}
+
+.tenants-search {
+    width: 100%;
+}
+
+.tenants-search .p-inputtext {
+    width: 100%;
+}
+
+.tenants-search-input {
+    padding-right: 2.3rem;
+}
+
+.tenants-search .p-input-icon {
+    color: var(--text-color-secondary);
+}
+
+.tenants-search-clear {
+    position: absolute;
+    right: 0.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.85rem;
+    height: 1.85rem;
+    z-index: 2;
+}
+
+.tenants-quick-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.admin-icon-button-xs.p-button,
+.tenants-icon-button-xs.p-button {
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+}
+
+.admin-icon-button-xs.p-button .p-button-icon,
+.tenants-icon-button-xs.p-button .p-button-icon {
+    font-size: 0.84rem;
+}
+
 .tenant-form-label {
     display: block;
     margin-bottom: 0.5rem;
@@ -682,6 +748,22 @@ body {
     }
     .layout-wrapper.layout-mobile-active .layout-mask {
         display: block;
+    }
+}
+
+@media (max-width: 980px) {
+    .tenants-table-toolbar,
+    .admin-table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tenants-search {
+        width: 100%;
+    }
+
+    .tenants-quick-filters {
+        flex-wrap: wrap;
     }
 }
 

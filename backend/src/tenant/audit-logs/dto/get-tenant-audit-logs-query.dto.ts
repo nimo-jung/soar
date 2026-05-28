@@ -3,12 +3,7 @@ import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { AuditActorType } from '../../../common/audit/entities/audit-log.entity';
 
-export enum AuditLogSource {
-  GLOBAL = 'GLOBAL',
-  TENANT = 'TENANT',
-}
-
-export class GetAuditLogsQueryDto {
+export class GetTenantAuditLogsQueryDto {
   @ApiPropertyOptional({ description: '조회 개수(기본 50, 최대 200)', minimum: 1, maximum: 200 })
   @IsOptional()
   @Transform(({ value }) => Number(value))
@@ -26,14 +21,4 @@ export class GetAuditLogsQueryDto {
   @IsOptional()
   @IsEnum(AuditActorType)
   actorType?: AuditActorType;
-
-  @ApiPropertyOptional({ enum: AuditLogSource, description: '조회 소스 (GLOBAL | TENANT)' })
-  @IsOptional()
-  @IsEnum(AuditLogSource)
-  source?: AuditLogSource;
-
-  @ApiPropertyOptional({ description: '테넌트 slug 필터 (GLOBAL 필터 또는 TENANT 단건 조회 대상)' })
-  @IsOptional()
-  @IsString()
-  tenantSlug?: string;
 }

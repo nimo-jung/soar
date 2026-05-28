@@ -21,11 +21,11 @@ export class CollectorsController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -36,7 +36,7 @@ export class CollectorsController {
   @ApiOperation({ summary: 'Collector 등록 및 API Key 발급 (plain key 단 1회 반환)' })
   async create(
     @Body() dto: CreateCollectorDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const created = await this.collectorsService.create(dto);
@@ -68,7 +68,7 @@ export class CollectorsController {
   @ApiOperation({ summary: 'Collector 비활성화' })
   async deactivate(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     await this.collectorsService.deactivate(id);

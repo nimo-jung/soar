@@ -33,11 +33,11 @@ export class AlertsController {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  private buildAuditContext(user: { sub: number; tenantId?: string }, req: Request) {
+  private buildAuditContext(user: { sub: number; tenantSlug?: string; tenantId?: string }, req: Request) {
     return {
       actorType: AuditActorType.TENANT,
       actorId: user.sub,
-      tenantSlug: user.tenantId ?? null,
+      tenantSlug: user.tenantSlug ?? user.tenantId ?? null,
       ipAddress: req.ip ?? null,
       userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
     };
@@ -55,7 +55,7 @@ export class AlertsController {
   @ApiOperation({ summary: '알림 생성 및 알림 채널 전송 이력 기록' })
   async create(
     @Body() dto: CreateAlertDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const created = await this.alertsService.create(dto);
@@ -80,7 +80,7 @@ export class AlertsController {
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAlertStatusDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const updated = await this.alertsService.updateStatus(id, dto);
@@ -107,7 +107,7 @@ export class AlertsController {
   @ApiOperation({ summary: '알림 채널/수신자 정책 수정' })
   async updateNotificationPolicy(
     @Body() dto: UpdateAlertNotificationPolicyDto,
-    @CurrentUser() user: { sub: number; tenantId?: string },
+    @CurrentUser() user: { sub: number; tenantSlug?: string; tenantId?: string },
     @Req() req: Request,
   ) {
     const updated = await this.alertsService.updateNotificationPolicy(dto);

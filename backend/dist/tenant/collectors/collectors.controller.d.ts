@@ -9,6 +9,7 @@ export declare class CollectorsController {
     private buildAuditContext;
     create(dto: CreateCollectorDto, user: {
         sub: number;
+        tenantSlug?: string;
         tenantId?: string;
     }, req: Request): Promise<import("./entities/collector.entity").Collector & {
         plainApiKey: string;
@@ -16,6 +17,7 @@ export declare class CollectorsController {
     findAll(): Promise<import("./entities/collector.entity").Collector[]>;
     deactivate(id: number, user: {
         sub: number;
+        tenantSlug?: string;
         tenantId?: string;
     }, req: Request): Promise<void>;
 }

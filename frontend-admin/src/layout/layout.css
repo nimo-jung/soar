@@ -706,6 +706,19 @@ body {
     width: min(22rem, 100%);
 }
 
+.audit-log-filter-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: min(44rem, 100%);
+}
+
+.audit-log-filter-inline .tenants-search-shell {
+    width: auto;
+    flex: 0 0 calc(50% - 0.25rem);
+    max-width: calc(50% - 0.25rem);
+}
+
 .tenants-search {
     width: 100%;
 }
@@ -721,6 +734,39 @@ body {
 
 .tenants-search .p-input-icon {
     color: var(--text-color-secondary);
+}
+
+.audit-tenant-select.p-dropdown {
+    min-width: 0;
+    width: auto;
+    flex: 0 0 calc(50% - 0.25rem);
+    max-width: calc(50% - 0.25rem);
+    height: 2.0625rem;
+    min-height: 2.0625rem;
+}
+
+.audit-tenant-select.p-dropdown .p-dropdown-label {
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+    line-height: 1.1;
+}
+
+.audit-tenant-dropdown.p-dropdown {
+    border-color: color-mix(in srgb, var(--surface-border) 74%, transparent 26%);
+    background: color-mix(in srgb, var(--surface-card) 94%, #ffffff 6%);
+}
+
+.audit-tenant-dropdown.p-dropdown:hover {
+    border-color: color-mix(in srgb, var(--primary-400) 42%, var(--surface-border) 58%);
+}
+
+.audit-tenant-dropdown.p-dropdown.p-focus {
+    box-shadow: 0 0 0 0.08rem color-mix(in srgb, var(--primary-400) 30%, transparent 70%);
+}
+
+.audit-log-filter-inline .tenants-search .p-inputtext {
+    height: 2.0625rem;
+    min-height: 2.0625rem;
 }
 
 .tenants-search-clear {
@@ -882,6 +928,35 @@ body {
 
 .tenants-status-select .p-button .tenant-filter-pill-deleted {
     color: color-mix(in srgb, var(--red-300) 88%, #ffffff 12%);
+}
+
+.tier-code-tag.p-tag,
+.audit-actor-type-tag.p-tag {
+    min-width: 4.5rem;
+    justify-content: center;
+    padding: 0.1rem 0.48rem;
+    border: 1px solid transparent;
+}
+
+.tier-code-tag-active,
+.audit-actor-type-tag-active {
+    background: color-mix(in srgb, var(--green-500) 20%, transparent 80%);
+    color: color-mix(in srgb, var(--green-300) 88%, #ffffff 12%);
+    border-color: color-mix(in srgb, var(--green-400) 36%, transparent 64%);
+}
+
+.tier-code-tag-suspended,
+.audit-actor-type-tag-suspended {
+    background: color-mix(in srgb, var(--yellow-500) 22%, transparent 78%);
+    color: color-mix(in srgb, var(--yellow-200) 90%, #ffffff 10%);
+    border-color: color-mix(in srgb, var(--yellow-400) 36%, transparent 64%);
+}
+
+.tier-code-tag-deleted,
+.audit-actor-type-tag-deleted {
+    background: color-mix(in srgb, var(--red-500) 20%, transparent 80%);
+    color: color-mix(in srgb, var(--red-300) 90%, #ffffff 10%);
+    border-color: color-mix(in srgb, var(--red-400) 34%, transparent 66%);
 }
 
 .admin-table .p-datatable-header,

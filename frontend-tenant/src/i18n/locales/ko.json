@@ -31,6 +31,7 @@
     "playbooks": "플레이북",
     "collectors": "Collector",
     "users": "사용자",
+    "auditLogs": "감사로그",
     "settings": "설정",
     "authSettings": "인증 설정"
   },
@@ -262,6 +263,29 @@
       "loadFailed": "사용자 목록을 불러오지 못했습니다.",
       "saveFailed": "사용자 저장 중 오류가 발생했습니다.",
       "deactivateFailed": "사용자 비활성화 중 오류가 발생했습니다."
+    }
+  },
+  "auditLogs": {
+    "title": "감사로그",
+    "subtitle": "테넌트 로그인/설정/CUD 이벤트를 조회합니다.",
+    "actions": {
+      "refresh": "새로고침",
+      "clearSearch": "검색어 지우기"
+    },
+    "filters": {
+      "actionPlaceholder": "행위 코드(action) 검색"
+    },
+    "table": {
+      "createdAt": "발생 시각",
+      "actorType": "행위자 유형",
+      "actor": "행위자",
+      "action": "행위",
+      "resource": "대상",
+      "message": "메시지",
+      "ipAddress": "IP"
+    },
+    "actor": {
+      "idPrefix": "행위자 ID"
     }
   },
   "tenantWarning": {

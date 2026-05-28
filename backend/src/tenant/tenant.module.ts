@@ -21,6 +21,8 @@ import { AlertsService } from './alerts/alerts.service';
 import { ParsingRulesController } from './parsing-rules/parsing-rules.controller';
 import { ParsingRulesService } from './parsing-rules/parsing-rules.service';
 import { TenantMiddleware } from '../common/middleware/tenant.middleware';
+import { TenantAuditLogsController } from './audit-logs/tenant-audit-logs.controller';
+import { TenantAuditLogsService } from './audit-logs/tenant-audit-logs.service';
 
 @Module({
   imports: [
@@ -40,6 +42,7 @@ import { TenantMiddleware } from '../common/middleware/tenant.middleware';
     UsersController,
     AlertsController,
     ParsingRulesController,
+    TenantAuditLogsController,
   ],
   providers: [
     CollectorsService,
@@ -49,6 +52,7 @@ import { TenantMiddleware } from '../common/middleware/tenant.middleware';
     UsersService,
     AlertsService,
     ParsingRulesService,
+    TenantAuditLogsService,
     AuditLogService,
     TenantMiddleware,
   ],
@@ -65,6 +69,7 @@ export class TenantModule implements NestModule {
         UsersController,
         AlertsController,
         ParsingRulesController,
+        TenantAuditLogsController,
       );
   }
 }

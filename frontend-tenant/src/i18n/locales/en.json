@@ -31,6 +31,7 @@
     "playbooks": "Playbooks",
     "collectors": "Collector",
     "users": "Users",
+    "auditLogs": "Audit Logs",
     "settings": "Settings",
     "authSettings": "Auth Settings"
   },
@@ -262,6 +263,29 @@
       "loadFailed": "Failed to load user list.",
       "saveFailed": "An error occurred while saving user.",
       "deactivateFailed": "An error occurred while deactivating user."
+    }
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "subtitle": "View tenant login/settings/CUD events.",
+    "actions": {
+      "refresh": "Refresh",
+      "clearSearch": "Clear search"
+    },
+    "filters": {
+      "actionPlaceholder": "Search action code"
+    },
+    "table": {
+      "createdAt": "Created At",
+      "actorType": "Actor Type",
+      "actor": "Actor",
+      "action": "Action",
+      "resource": "Resource",
+      "message": "Message",
+      "ipAddress": "IP"
+    },
+    "actor": {
+      "idPrefix": "Actor ID"
     }
   },
   "tenantWarning": {

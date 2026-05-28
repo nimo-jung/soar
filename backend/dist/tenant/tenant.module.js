@@ -30,11 +30,13 @@ const alerts_service_1 = require("./alerts/alerts.service");
 const parsing_rules_controller_1 = require("./parsing-rules/parsing-rules.controller");
 const parsing_rules_service_1 = require("./parsing-rules/parsing-rules.service");
 const tenant_middleware_1 = require("../common/middleware/tenant.middleware");
+const tenant_audit_logs_controller_1 = require("./audit-logs/tenant-audit-logs.controller");
+const tenant_audit_logs_service_1 = require("./audit-logs/tenant-audit-logs.service");
 let TenantModule = class TenantModule {
     configure(consumer) {
         consumer
             .apply(tenant_middleware_1.TenantMiddleware)
-            .forRoutes(collectors_controller_1.CollectorsController, ip_whitelist_controller_1.IpWhitelistController, playbooks_controller_1.PlaybooksController, auth_settings_controller_1.TenantAuthSettingsController, users_controller_1.UsersController, alerts_controller_1.AlertsController, parsing_rules_controller_1.ParsingRulesController);
+            .forRoutes(collectors_controller_1.CollectorsController, ip_whitelist_controller_1.IpWhitelistController, playbooks_controller_1.PlaybooksController, auth_settings_controller_1.TenantAuthSettingsController, users_controller_1.UsersController, alerts_controller_1.AlertsController, parsing_rules_controller_1.ParsingRulesController, tenant_audit_logs_controller_1.TenantAuditLogsController);
     }
 };
 exports.TenantModule = TenantModule;
@@ -57,6 +59,7 @@ exports.TenantModule = TenantModule = __decorate([
             users_controller_1.UsersController,
             alerts_controller_1.AlertsController,
             parsing_rules_controller_1.ParsingRulesController,
+            tenant_audit_logs_controller_1.TenantAuditLogsController,
         ],
         providers: [
             collectors_service_1.CollectorsService,
@@ -66,6 +69,7 @@ exports.TenantModule = TenantModule = __decorate([
             users_service_1.UsersService,
             alerts_service_1.AlertsService,
             parsing_rules_service_1.ParsingRulesService,
+            tenant_audit_logs_service_1.TenantAuditLogsService,
             audit_log_service_1.AuditLogService,
             tenant_middleware_1.TenantMiddleware,
         ],
