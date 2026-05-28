@@ -43,10 +43,10 @@ export class UpdateTenantDto {
   @IsOptional()
   retentionDays?: number;
 
-  @ApiPropertyOptional({ description: '사용 기한(ISO-8601)' })
+  @ApiPropertyOptional({ description: '사용 기한(ISO-8601). 무제한 등급 또는 system 테넌트는 null 허용' })
   @IsDateString()
   @IsOptional()
-  expiresAt?: string;
+  expiresAt?: string | null;
 
   @ApiPropertyOptional({ description: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)' })
   @IsString()

@@ -1,6 +1,8 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { MasterUser, MasterUserStatus } from '../../admin/master-users/entities/master-user.entity';
+import { MasterSetting } from '../../admin/auth-settings/entities/master-setting.entity';
+import { SMTP_MODE, SMTP_SETTINGS_KEYS, SMTP_SETTINGS_SECTION, SMTP_VTYPE } from '../../admin/smtp-settings/smtp-settings.constants';
 import AdminDataSource from '../admin-data-source';
 
 /**
@@ -10,6 +12,26 @@ import AdminDataSource from '../admin-data-source';
  */
 export async function runAdminSeed(dataSource: DataSource): Promise<void> {
   const masterUserRepo = dataSource.getRepository(MasterUser);
+  const masterSettingRepo = dataSource.getRepository(MasterSetting);
+
+  const smtpModeSetting = await masterSettingRepo.findOne({
+    where: {
+      section: SMTP_SETTINGS_SECTION,
+      identy: SMTP_SETTINGS_KEYS.mode,
+    },
+  });
+
+  if (!smtpModeSetting) {
+    await masterSettingRepo.save(
+      masterSettingRepo.create({
+        section: SMTP_SETTINGS_SECTION,
+        identy: SMTP_SETTINGS_KEYS.mode,
+        value: SMTP_MODE.local,
+        vtype: SMTP_VTYPE.text,
+      }),
+    );
+    console.log('[Seed] SMTP 모드 기본값(local)이 설정되었습니다.');
+  }
 
   const existing = await masterUserRepo.findOne({
     where: { email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@tms.io' },

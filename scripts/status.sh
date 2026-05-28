@@ -89,6 +89,7 @@ print_mode_summary() {
     tms-clickhouse
     tms-redpanda
     tms-redpanda-console
+    tms-mailpit-dev
   )
   local dev_containers=(
     tms-backend-dev
@@ -159,6 +160,7 @@ check_container tms-redis      "Redis"
 check_container tms-clickhouse "ClickHouse"
 check_container tms-redpanda   "RedPanda"
 check_container tms-redpanda-console "RedPanda Console"
+check_container tms-mailpit-dev "Mailpit (Dev SMTP)"
 
 echo -e "\n${CYAN}[ Dev 컨테이너 ]${RESET}"
 check_container tms-backend-dev "Backend Dev"

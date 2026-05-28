@@ -72,10 +72,10 @@ __decorate([
     __metadata("design:type", Number)
 ], UpdateTenantDto.prototype, "retentionDays", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601)' }),
+    (0, swagger_1.ApiPropertyOptional)({ description: '사용 기한(ISO-8601). 무제한 등급 또는 system 테넌트는 null 허용' }),
     (0, class_validator_1.IsDateString)(),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UpdateTenantDto.prototype, "expiresAt", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)' }),

@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
 import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
+import { ResetTenantPasswordDto } from './dto/reset-tenant-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -90,6 +91,13 @@ export class AuthController {
   @ApiOperation({ summary: '테넌트 최초 관리자 등록(1회성 토큰)' })
   tenantBootstrap(@Body() dto: BootstrapTenantDto, @Req() req: Request) {
     return this.authService.bootstrapTenant(dto, this.getRequestContext(req));
+  }
+
+  @Post('tenant/password/reset')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '테넌트 관리자 비밀번호 재설정(1회성 토큰)' })
+  resetTenantPassword(@Body() dto: ResetTenantPasswordDto, @Req() req: Request) {
+    return this.authService.resetTenantPassword(dto, this.getRequestContext(req));
   }
 
   @Post('logout')

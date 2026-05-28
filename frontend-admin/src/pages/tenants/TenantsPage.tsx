@@ -16,7 +16,6 @@ import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { InputNumber } from 'primereact/inputnumber';
 import { Message } from 'primereact/message';
-import { Toast } from 'primereact/toast';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
@@ -60,6 +59,8 @@ interface TenantBootstrapIssueResponse {
   email: string | null;
   token: string;
   expiresAt: string;
+  deliveredToEmail: boolean;
+  mailDeliveryError: string | null;
 }
 
 interface TenantBootstrapHistoryItem {
@@ -77,6 +78,16 @@ interface TenantBootstrapHistoryResponse {
   limit: number;
   total: number;
 }
+
+type BootstrapHistoryVisibleField =
+  | 'createdAt'
+  | 'status'
+  | 'email'
+  | 'expiresAt'
+  | 'usedAt'
+  | 'issuedByMasterUserId';
+
+type BootstrapHistoryStatusFilter = 'ALL' | 'ACTIVE' | 'EXPIRED' | 'USED';
 
 type TenantFormErrors = {
   slug?: string;
@@ -113,6 +124,15 @@ const tenantFieldOrder: TenantVisibleField[] = [
   'createdAt',
 ];
 
+const bootstrapHistoryFieldOrder: BootstrapHistoryVisibleField[] = [
+  'createdAt',
+  'status',
+  'email',
+  'expiresAt',
+  'usedAt',
+  'issuedByMasterUserId',
+];
+
 const statusSeverity = (status: string) => {
   if (status === 'ACTIVE') return 'success';
   if (status === 'SUSPENDED') return 'warning';
@@ -139,6 +159,22 @@ const statusLabelKey = (status: Tenant['status']) => {
 };
 
 const isValidTenantSlug = (value: string) => /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/.test(value);
+
+const getApiErrorStatusAndMessage = (error: unknown): { status?: number; message?: string } => {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  const rawMessage = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+
+  if (typeof rawMessage === 'string') {
+    return { status, message: rawMessage };
+  }
+
+  if (Array.isArray(rawMessage)) {
+    const joined = rawMessage.filter((item): item is string => typeof item === 'string').join(', ');
+    return { status, message: joined || undefined };
+  }
+
+  return { status };
+};
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -193,15 +229,27 @@ const formatTierLimit = (value: number, unit: string, unlimitedLabel: string): s
   return `${value}${unit}`;
 };
 
+const isUnlimitedTier = (tier: TenantTier | null): boolean => {
+  if (!tier) {
+    return false;
+  }
+
+  return tier.dailyLogQuotaGb === 0 && tier.maxUsers === 0;
+};
+
+const isSystemTenant = (tenant: Tenant): boolean => tenant.slug.trim().toLowerCase() === 'system';
+
 const DEFAULT_EPS_LIMIT = 1000;
 const DEFAULT_STORAGE_QUOTA_GB = 100;
 const DEFAULT_RETENTION_DAYS = 90;
+const BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES = 10;
+const BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES = 2880;
 
 const TenantsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const rowMenusRef = React.useRef<Record<number, Menu | null>>({});
   const fieldPanelRef = React.useRef<OverlayPanel | null>(null);
-  const toast = React.useRef<Toast>(null);
+  const bootstrapHistoryFieldPanelRef = React.useRef<OverlayPanel | null>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tiers, setTiers] = useState<TenantTier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,7 +266,13 @@ const TenantsPage: React.FC = () => {
   const [bootstrapIssueTenant, setBootstrapIssueTenant] = useState<Tenant | null>(null);
   const [bootstrapIssueEmail, setBootstrapIssueEmail] = useState('');
   const [bootstrapIssueExpiresMinutes, setBootstrapIssueExpiresMinutes] = useState(60);
+  const [showBootstrapIssueValidation, setShowBootstrapIssueValidation] = useState(false);
   const [issuedBootstrapToken, setIssuedBootstrapToken] = useState<TenantBootstrapIssueResponse | null>(null);
+  const [resultDialog, setResultDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
 
   const [showBootstrapHistoryDialog, setShowBootstrapHistoryDialog] = useState(false);
   const [loadingBootstrapHistory, setLoadingBootstrapHistory] = useState(false);
@@ -227,8 +281,9 @@ const TenantsPage: React.FC = () => {
   const [bootstrapHistoryPage, setBootstrapHistoryPage] = useState(1);
   const [bootstrapHistoryLimit] = useState(10);
   const [bootstrapHistoryTotal, setBootstrapHistoryTotal] = useState(0);
-  const [bootstrapHistoryFromDate, setBootstrapHistoryFromDate] = useState<Date | null>(null);
-  const [bootstrapHistoryToDate, setBootstrapHistoryToDate] = useState<Date | null>(null);
+  const [bootstrapHistoryDateRange, setBootstrapHistoryDateRange] = useState<[Date | null, Date | null] | null>(null);
+  const [bootstrapHistoryStatusFilter, setBootstrapHistoryStatusFilter] = useState<BootstrapHistoryStatusFilter>('ALL');
+  const [bootstrapHistoryVisibleFields, setBootstrapHistoryVisibleFields] = useState<BootstrapHistoryVisibleField[]>(bootstrapHistoryFieldOrder);
   const [form, setForm] = useState({
     slug: '',
     name: '',
@@ -242,6 +297,24 @@ const TenantsPage: React.FC = () => {
   });
 
   const locale = i18n.language.startsWith('ko') ? 'ko-KR' : 'en-US';
+  const bootstrapIssueEmailInvalid = showBootstrapIssueValidation
+    && bootstrapIssueEmail.trim().length > 0
+    && !isValidEmail(bootstrapIssueEmail.trim());
+  const bootstrapIssueExpiresInvalid = showBootstrapIssueValidation
+    && (
+      !Number.isInteger(bootstrapIssueExpiresMinutes)
+      || bootstrapIssueExpiresMinutes < BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES
+      || bootstrapIssueExpiresMinutes > BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES
+    );
+
+  const openResultDialog = (title: string, message: string) => {
+    setResultDialog({
+      visible: true,
+      title,
+      message,
+    });
+  };
+
   const minSelectableDate = useMemo(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -330,38 +403,85 @@ const TenantsPage: React.FC = () => {
     setFormErrors({});
   };
 
-  const openBootstrapIssueDialog = (tenant: Tenant) => {
-    setBootstrapIssueTenant(tenant);
-    setBootstrapIssueEmail(tenant.contactEmail ?? '');
-    setBootstrapIssueExpiresMinutes(60);
-    setIssuedBootstrapToken(null);
-    setShowBootstrapIssueDialog(true);
-  };
+    const openBootstrapIssueDialog = async (tenant: Tenant) => {
+      const res = await api.get<{ requiresBootstrap: boolean }>('/auth/tenant/bootstrap/status', {
+        params: { tenantSlug: tenant.slug },
+      });
+
+      if (!res.data.requiresBootstrap) {
+        openResultDialog(t('tenants.bootstrap.issueBlockedTitle'), t('tenants.bootstrap.issueBlockedDetail'));
+        return;
+      }
+
+      setBootstrapIssueTenant(tenant);
+      setBootstrapIssueEmail(tenant.contactEmail && isValidEmail(tenant.contactEmail) ? tenant.contactEmail : '');
+      setBootstrapIssueExpiresMinutes(60);
+      setShowBootstrapIssueValidation(false);
+      setIssuedBootstrapToken(null);
+      setShowBootstrapIssueDialog(true);
+    };
 
   const closeBootstrapIssueDialog = () => {
     setShowBootstrapIssueDialog(false);
     setBootstrapIssueTenant(null);
     setBootstrapIssueEmail('');
     setBootstrapIssueExpiresMinutes(60);
+    setShowBootstrapIssueValidation(false);
     setIssuedBootstrapToken(null);
   };
 
   const handleIssueBootstrapToken = async () => {
     if (!bootstrapIssueTenant) return;
 
+    const currentTenant = bootstrapIssueTenant;
+
+    setShowBootstrapIssueValidation(true);
+
+    const normalizedEmail = bootstrapIssueEmail.trim();
+    if (bootstrapIssueEmailInvalid) {
+      return;
+    }
+
+    if (bootstrapIssueExpiresInvalid) {
+      return;
+    }
+
     setIssuingBootstrapToken(true);
     try {
       const res = await api.post<TenantBootstrapIssueResponse>(`/admin/tenants/${bootstrapIssueTenant.id}/bootstrap-token`, {
-        email: bootstrapIssueEmail.trim() || undefined,
+        email: normalizedEmail || undefined,
         expiresMinutes: bootstrapIssueExpiresMinutes,
       });
       setIssuedBootstrapToken(res.data);
-      toast.current?.show({
-        severity: 'success',
-        summary: t('tenants.bootstrap.issueSuccessTitle'),
-        detail: t('tenants.bootstrap.issueSuccessDetail'),
-        life: 3000,
-      });
+      const issueDetail = res.data.deliveredToEmail && res.data.email
+        ? t('tenants.bootstrap.issueSuccessDetailSent', { email: res.data.email })
+        : res.data.email
+          ? t('tenants.bootstrap.issueSuccessDetailNotSent', {
+            email: res.data.email,
+            reason: res.data.mailDeliveryError ?? '-',
+          })
+          : t('tenants.bootstrap.issueSuccessDetail');
+      openResultDialog(t('tenants.bootstrap.issueSuccessTitle'), issueDetail);
+    } catch (error: unknown) {
+      const { status, message } = getApiErrorStatusAndMessage(error);
+
+      if (status === 409) {
+        confirmDialog({
+          header: t('tenants.bootstrap.issueConflictTitle'),
+          message: message ?? t('tenants.bootstrap.issueConflictDetail'),
+          icon: 'pi pi-exclamation-triangle',
+          acceptClassName: 'p-button-warning',
+          acceptLabel: t('tenants.bootstrap.historyAction'),
+          rejectLabel: t('common.cancel'),
+          accept: () => {
+            closeBootstrapIssueDialog();
+            void openBootstrapHistoryDialog(currentTenant);
+          },
+        });
+        return;
+      }
+
+      openResultDialog(t('tenants.bootstrap.issueFailedTitle'), message ?? t('tenants.bootstrap.issueFailedDetail'));
     } finally {
       setIssuingBootstrapToken(false);
     }
@@ -374,30 +494,22 @@ const TenantsPage: React.FC = () => {
 
     try {
       await navigator.clipboard.writeText(issuedBootstrapToken.token);
-      toast.current?.show({
-        severity: 'success',
-        summary: t('tenants.bootstrap.copySuccessTitle'),
-        detail: t('tenants.bootstrap.copySuccessDetail'),
-        life: 2500,
-      });
+      openResultDialog(t('tenants.bootstrap.copySuccessTitle'), t('tenants.bootstrap.copySuccessDetail'));
     } catch {
-      toast.current?.show({
-        severity: 'error',
-        summary: t('tenants.bootstrap.copyFailedTitle'),
-        detail: t('tenants.bootstrap.copyFailedDetail'),
-        life: 3500,
-      });
+      openResultDialog(t('tenants.bootstrap.copyFailedTitle'), t('tenants.bootstrap.copyFailedDetail'));
     }
   };
 
   const loadBootstrapHistory = async (
     tenant: Tenant,
     page = 1,
-    fromDate: Date | null = bootstrapHistoryFromDate,
-    toDate: Date | null = bootstrapHistoryToDate,
+    dateRange: [Date | null, Date | null] | null = bootstrapHistoryDateRange,
+    status: BootstrapHistoryStatusFilter = bootstrapHistoryStatusFilter,
   ) => {
     setLoadingBootstrapHistory(true);
     try {
+      const fromDate = dateRange?.[0] ?? null;
+      const toDate = dateRange?.[1] ?? null;
       const from = fromDate ? new Date(fromDate) : null;
       const to = toDate ? new Date(toDate) : null;
       if (to) {
@@ -410,6 +522,7 @@ const TenantsPage: React.FC = () => {
           limit: bootstrapHistoryLimit,
           from: from ? from.toISOString() : undefined,
           to: to ? to.toISOString() : undefined,
+          status: status === 'ALL' ? undefined : status,
         },
       });
 
@@ -423,13 +536,13 @@ const TenantsPage: React.FC = () => {
 
   const openBootstrapHistoryDialog = async (tenant: Tenant) => {
     setBootstrapHistoryTenant(tenant);
-    setBootstrapHistoryFromDate(null);
-    setBootstrapHistoryToDate(null);
+    setBootstrapHistoryDateRange(null);
+    setBootstrapHistoryStatusFilter('ALL');
     setBootstrapHistoryPage(1);
     setBootstrapHistoryTotal(0);
     setBootstrapHistoryItems([]);
     setShowBootstrapHistoryDialog(true);
-    await loadBootstrapHistory(tenant, 1, null, null);
+    await loadBootstrapHistory(tenant, 1, null, 'ALL');
   };
 
   const validateTenantForm = () => {
@@ -472,10 +585,12 @@ const TenantsPage: React.FC = () => {
       nextErrors.retentionDays = t('tenants.validation.retentionDaysInvalid');
     }
 
-    if (!form.expiresAt) {
-      nextErrors.expiresAt = t('tenants.validation.expiresAtRequired');
-    } else if (Number.isNaN(form.expiresAt.getTime())) {
-      nextErrors.expiresAt = t('tenants.validation.expiresAtInvalid');
+    if (!isExpiresAtOptional) {
+      if (!form.expiresAt) {
+        nextErrors.expiresAt = t('tenants.validation.expiresAtRequired');
+      } else if (Number.isNaN(form.expiresAt.getTime())) {
+        nextErrors.expiresAt = t('tenants.validation.expiresAtInvalid');
+      }
     }
 
     if (!trimmedCidr) {
@@ -500,6 +615,10 @@ const TenantsPage: React.FC = () => {
 
     setSaving(true);
     try {
+      const expiresAtPayload = isExpiresAtOptional
+        ? null
+        : (form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined);
+
       if (editingTenant) {
         await api.patch(`/admin/tenants/${editingTenant.id}`, {
           name: form.name.trim(),
@@ -508,7 +627,7 @@ const TenantsPage: React.FC = () => {
           epsLimit: form.epsLimit,
           storageQuotaGb: form.storageQuotaGb,
           retentionDays: form.retentionDays,
-          expiresAt: form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined,
+          expiresAt: expiresAtPayload,
           ipCidr: normalizedIpCidrs.join(','),
         });
       } else {
@@ -520,7 +639,7 @@ const TenantsPage: React.FC = () => {
           epsLimit: form.epsLimit,
           storageQuotaGb: form.storageQuotaGb,
           retentionDays: form.retentionDays,
-          expiresAt: form.expiresAt ? form.expiresAt.toISOString().slice(0, 10) : undefined,
+          expiresAt: expiresAtPayload,
           ipCidr: normalizedIpCidrs.join(','),
         });
       }
@@ -660,7 +779,14 @@ const TenantsPage: React.FC = () => {
     [tiers, form.tierId],
   );
 
+  const isExpiresAtOptional = useMemo(
+    () => form.slug.trim() === 'system' || isUnlimitedTier(selectedTier),
+    [form.slug, selectedTier],
+  );
+
   const isFieldVisible = (field: TenantVisibleField) => visibleFields.includes(field);
+
+  const isBootstrapHistoryFieldVisible = (field: BootstrapHistoryVisibleField) => bootstrapHistoryVisibleFields.includes(field);
 
   const handleToggleField = (field: TenantVisibleField) => {
     const exists = visibleFields.includes(field);
@@ -675,6 +801,21 @@ const TenantsPage: React.FC = () => {
       (a, b) => tenantFieldOrder.indexOf(a) - tenantFieldOrder.indexOf(b),
     );
     setVisibleFields(next);
+  };
+
+  const handleToggleBootstrapHistoryField = (field: BootstrapHistoryVisibleField) => {
+    const exists = bootstrapHistoryVisibleFields.includes(field);
+
+    if (exists) {
+      if (bootstrapHistoryVisibleFields.length === 1) return;
+      setBootstrapHistoryVisibleFields(bootstrapHistoryVisibleFields.filter((item) => item !== field));
+      return;
+    }
+
+    const next = [...bootstrapHistoryVisibleFields, field].sort(
+      (a, b) => bootstrapHistoryFieldOrder.indexOf(a) - bootstrapHistoryFieldOrder.indexOf(b),
+    );
+    setBootstrapHistoryVisibleFields(next);
   };
 
   const handleClearSearch = () => {
@@ -692,6 +833,44 @@ const TenantsPage: React.FC = () => {
     [tenants],
   );
 
+  const bootstrapHistoryFieldOptions = useMemo(
+    () => [
+      { label: t('tenants.bootstrap.issuedAt'), value: 'createdAt' as const },
+      { label: t('common.status'), value: 'status' as const },
+      { label: t('common.email'), value: 'email' as const },
+      { label: t('tenants.bootstrap.expiresAt'), value: 'expiresAt' as const },
+      { label: t('tenants.bootstrap.usedAt'), value: 'usedAt' as const },
+      { label: t('tenants.bootstrap.issuedBy'), value: 'issuedByMasterUserId' as const },
+    ],
+    [t],
+  );
+
+  const bootstrapHistoryStatusFilterOptions = useMemo(
+    () => [
+      { label: t('tenants.filters.all'), value: 'ALL' as const },
+      { label: t('tenants.bootstrap.status.active'), value: 'ACTIVE' as const },
+      { label: t('tenants.bootstrap.status.expired'), value: 'EXPIRED' as const },
+      { label: t('tenants.bootstrap.status.used'), value: 'USED' as const },
+    ],
+    [t],
+  );
+
+  const renderBootstrapHistoryStatusFilterOption = (option: { label: string; value: BootstrapHistoryStatusFilter }) => {
+    const suffix = option.value === 'ACTIVE'
+      ? 'active'
+      : option.value === 'EXPIRED'
+        ? 'suspended'
+        : option.value === 'USED'
+          ? 'deleted'
+          : 'all';
+
+    return (
+      <span className={`tenant-filter-pill tenant-filter-pill-${suffix}`}>
+        {option.label}
+      </span>
+    );
+  };
+
   const buildTenantActions = (row: Tenant): MenuItem[] => [
     {
       label: t('tenants.actions.edit'),
@@ -705,7 +884,7 @@ const TenantsPage: React.FC = () => {
       label: row.status === 'ACTIVE' ? t('tenants.table.suspendBtn') : t('tenants.table.activateBtn'),
       icon: row.status === 'ACTIVE' ? 'pi pi-pause' : 'pi pi-play',
       className: row.status === 'ACTIVE' ? 'tenant-menu-action-warning' : 'tenant-menu-action-safe',
-      disabled: row.status === 'DELETED',
+        disabled: row.status === 'DELETED' || isSystemTenant(row),
       command: () => {
         confirmStatusToggle(row);
       },
@@ -744,7 +923,7 @@ const TenantsPage: React.FC = () => {
       label: t('tenants.actions.delete'),
       icon: 'pi pi-trash',
       className: 'tenant-menu-action-danger',
-      disabled: row.status === 'DELETED',
+        disabled: row.status === 'DELETED' || isSystemTenant(row),
       command: () => {
         confirmDeleteTenant(row);
       },
@@ -753,7 +932,19 @@ const TenantsPage: React.FC = () => {
 
   return (
     <div className="admin-page tenants-page">
-      <Toast ref={toast} />
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '460px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
       <ConfirmDialog />
       <div className="admin-page-header page-header">
         <h1>{t('tenants.title')}</h1>
@@ -981,6 +1172,7 @@ const TenantsPage: React.FC = () => {
                       ? t('tenants.table.suspendBtn')
                       : t('tenants.table.activateBtn')
                 }
+                  disabled={row.status !== 'DELETED' && isSystemTenant(row)}
                 onClick={() => (row.status === 'DELETED' ? confirmRestoreTenant(row) : confirmStatusToggle(row))}
               />
               <Button
@@ -1090,10 +1282,14 @@ const TenantsPage: React.FC = () => {
                 onChange={(e) => {
                   const nextTierId = e.value ? Number(e.value) : undefined;
                   const nextTier = tiers.find((tier) => tier.id === nextTierId);
+                  const nextExpiresAt = isUnlimitedTier(nextTier ?? null)
+                    ? null
+                    : (form.expiresAt ?? getDefaultExpiresAt());
                   setForm({
                     ...form,
                     tierId: nextTierId,
                     storageQuotaGb: nextTier?.dailyLogQuotaGb ?? form.storageQuotaGb,
+                    expiresAt: nextExpiresAt,
                   });
                   if (formErrors.tierId) {
                     setFormErrors({ ...formErrors, tierId: undefined });
@@ -1118,9 +1314,13 @@ const TenantsPage: React.FC = () => {
                 touchUI={false}
                 minDate={minSelectableDate}
                 inputClassName="w-full"
+                disabled={isExpiresAtOptional}
                 className={`w-full ${formErrors.expiresAt ? 'p-invalid' : ''}`}
               />
               {formErrors.expiresAt && <small className="p-error">{formErrors.expiresAt}</small>}
+              {isExpiresAtOptional && (
+                <small className="text-color-secondary">{t('tenants.dialog.expiresAtOptionalUnlimited')}</small>
+              )}
             </div>
           </div>
           <Message
@@ -1239,24 +1439,36 @@ const TenantsPage: React.FC = () => {
             <label className="admin-form-label">{t('common.email')}</label>
             <InputText
               value={bootstrapIssueEmail}
-              onChange={(e) => setBootstrapIssueEmail(e.target.value)}
+              onChange={(e) => {
+                setBootstrapIssueEmail(e.target.value);
+              }}
               className="w-full"
+              invalid={bootstrapIssueEmailInvalid}
               placeholder={t('tenants.bootstrap.emailPlaceholder')}
             />
+            {bootstrapIssueEmailInvalid && <small className="p-error block mt-1">{t('tenants.bootstrap.issueInvalidEmailDetail')}</small>}
           </div>
           <div>
             <label className="admin-form-label">{t('tenants.bootstrap.expiresMinutes')}</label>
             <InputText
               type="number"
-              min={10}
-              max={1440}
+              min={BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES}
+              max={BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES}
               value={String(bootstrapIssueExpiresMinutes)}
               onChange={(e) => {
                 const value = Number(e.target.value);
-                setBootstrapIssueExpiresMinutes(Number.isFinite(value) ? value : 60);
+                setBootstrapIssueExpiresMinutes(Number.isFinite(value) ? Math.trunc(value) : 60);
               }}
-              className="w-full"
+              className={`w-full ${bootstrapIssueExpiresInvalid ? 'p-invalid' : ''}`}
             />
+            {bootstrapIssueExpiresInvalid && (
+              <small className="p-error block mt-1">
+                {t('tenants.bootstrap.issueInvalidExpiresDetail', { min: BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES, max: BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES })}
+              </small>
+            )}
+            <small className="text-color-secondary">
+              {t('tenants.bootstrap.expiresMinutesHint', { min: BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES, max: BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES })}
+            </small>
           </div>
 
           {issuedBootstrapToken && (
@@ -1281,6 +1493,14 @@ const TenantsPage: React.FC = () => {
               <small className="block mt-2">
                 {t('tenants.bootstrap.expiresAt')}: {formatDateTimeSeconds(issuedBootstrapToken.expiresAt)}
               </small>
+              {issuedBootstrapToken.email && !issuedBootstrapToken.deliveredToEmail && (
+                <small className="block mt-2 text-orange-600">
+                  {t('tenants.bootstrap.issueSuccessDetailNotSent', {
+                    email: issuedBootstrapToken.email,
+                    reason: issuedBootstrapToken.mailDeliveryError ?? '-',
+                  })}
+                </small>
+              )}
             </div>
           )}
 
@@ -1301,7 +1521,7 @@ const TenantsPage: React.FC = () => {
       <Dialog
         header={t('tenants.bootstrap.historyTitle')}
         visible={showBootstrapHistoryDialog}
-        style={{ width: '860px', maxWidth: '96vw' }}
+        style={{ width: '1120px', maxWidth: '96vw' }}
         onHide={() => {
           setShowBootstrapHistoryDialog(false);
           setBootstrapHistoryTenant(null);
@@ -1309,81 +1529,143 @@ const TenantsPage: React.FC = () => {
         }}
       >
         <div className="text-sm mb-3">{bootstrapHistoryTenant?.name ?? ''}</div>
-        <div className="grid m-0 mb-3 gap-2">
-          <div className="col-12 md:col-4 p-0 md:pr-2">
-            <label className="admin-form-label">{t('tenants.bootstrap.filterFrom')}</label>
-            <Calendar
-              value={bootstrapHistoryFromDate}
-              onChange={(e) => setBootstrapHistoryFromDate((e.value as Date | null) ?? null)}
-              dateFormat="yy-mm-dd"
-              showIcon
-              className="w-full"
-            />
+        <div className="admin-table-shell">
+          <div className="admin-table-toolbar">
+            <div className="tenants-toolbar-left">
+              <div className="tenants-search-shell" style={{ maxWidth: '420px', width: '100%' }}>
+                <IconField iconPosition="left" className="tenants-search">
+                  <InputIcon className="pi pi-calendar" />
+                  <Calendar
+                    value={bootstrapHistoryDateRange as Date[] | null}
+                    onChange={(e) => {
+                      const value = e.value as Date[] | null;
+                      const nextRange = !value || value.length === 0
+                        ? null
+                        : [value[0] ?? null, value[1] ?? null] as [Date | null, Date | null];
+                      setBootstrapHistoryDateRange(nextRange);
+
+                      if (!bootstrapHistoryTenant) return;
+                      void loadBootstrapHistory(bootstrapHistoryTenant, 1, nextRange, bootstrapHistoryStatusFilter);
+                    }}
+                    selectionMode="range"
+                    dateFormat="yy-mm-dd"
+                    readOnlyInput
+                    hideOnRangeSelection
+                    className="w-full"
+                    placeholder={t('tenants.bootstrap.filterRangePlaceholder')}
+                  />
+                </IconField>
+              </div>
+            </div>
+            <div className="tenants-quick-filters">
+              <SelectButton
+                value={bootstrapHistoryStatusFilter}
+                options={bootstrapHistoryStatusFilterOptions}
+                optionLabel="label"
+                optionValue="value"
+                className="tenants-status-select"
+                itemTemplate={renderBootstrapHistoryStatusFilterOption}
+                onChange={(e) => {
+                  const nextStatus = e.value as BootstrapHistoryStatusFilter;
+                  setBootstrapHistoryStatusFilter(nextStatus);
+
+                  if (!bootstrapHistoryTenant) return;
+                  void loadBootstrapHistory(bootstrapHistoryTenant, 1, bootstrapHistoryDateRange, nextStatus);
+                }}
+              />
+              <Button
+                type="button"
+                icon="pi pi-refresh"
+                outlined
+                severity="secondary"
+                className="admin-icon-button-xs"
+                aria-label={t('tenants.toolbar.refresh')}
+                tooltip={t('tenants.toolbar.refresh')}
+                tooltipOptions={{ position: 'top' }}
+                loading={loadingBootstrapHistory}
+                onClick={() => {
+                  if (!bootstrapHistoryTenant) return;
+                  void loadBootstrapHistory(bootstrapHistoryTenant, bootstrapHistoryPage, bootstrapHistoryDateRange, bootstrapHistoryStatusFilter);
+                }}
+              />
+              <Button
+                type="button"
+                icon="pi pi-sliders-h"
+                outlined
+                severity="secondary"
+                className="admin-icon-button-xs"
+                aria-label={t('tenants.toolbar.fieldSettings')}
+                tooltip={t('tenants.toolbar.fieldSettings')}
+                tooltipOptions={{ position: 'top' }}
+                onClick={(event) => bootstrapHistoryFieldPanelRef.current?.toggle(event)}
+              />
+              <OverlayPanel ref={bootstrapHistoryFieldPanelRef} className="tenants-field-panel">
+                <div className="tenants-field-panel-list">
+                  {bootstrapHistoryFieldOptions.map((fieldOption) => (
+                    <label
+                      key={fieldOption.value}
+                      className="tenants-field-option"
+                      htmlFor={`bootstrap-history-field-${fieldOption.value}`}
+                    >
+                      <Checkbox
+                        inputId={`bootstrap-history-field-${fieldOption.value}`}
+                        checked={bootstrapHistoryVisibleFields.includes(fieldOption.value)}
+                        onChange={() => handleToggleBootstrapHistoryField(fieldOption.value)}
+                      />
+                      <span>{fieldOption.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </OverlayPanel>
+            </div>
           </div>
-          <div className="col-12 md:col-4 p-0 md:pr-2">
-            <label className="admin-form-label">{t('tenants.bootstrap.filterTo')}</label>
-            <Calendar
-              value={bootstrapHistoryToDate}
-              onChange={(e) => setBootstrapHistoryToDate((e.value as Date | null) ?? null)}
-              dateFormat="yy-mm-dd"
-              showIcon
-              className="w-full"
-            />
-          </div>
-          <div className="col-12 md:col-4 p-0 flex align-items-end gap-2">
-            <Button
-              label={t('tenants.bootstrap.filterApply')}
-              icon="pi pi-search"
-              onClick={() => {
-                if (!bootstrapHistoryTenant) return;
-                void loadBootstrapHistory(bootstrapHistoryTenant, 1, bootstrapHistoryFromDate, bootstrapHistoryToDate);
-              }}
-            />
-            <Button
-              outlined
-              label={t('tenants.bootstrap.filterReset')}
-              onClick={() => {
-                if (!bootstrapHistoryTenant) return;
-                setBootstrapHistoryFromDate(null);
-                setBootstrapHistoryToDate(null);
-                void loadBootstrapHistory(bootstrapHistoryTenant, 1, null, null);
-              }}
-            />
-          </div>
-        </div>
-        <CommonDataTable
-          value={bootstrapHistoryItems}
-          loading={loadingBootstrapHistory}
-          paginator
-          lazy
-          first={(bootstrapHistoryPage - 1) * bootstrapHistoryLimit}
-          rows={bootstrapHistoryLimit}
-          totalRecords={bootstrapHistoryTotal}
-          onPage={(event) => {
-            if (!bootstrapHistoryTenant) return;
-            const nextPage = Math.floor((event.first ?? 0) / bootstrapHistoryLimit) + 1;
-            void loadBootstrapHistory(bootstrapHistoryTenant, nextPage);
-          }}
-        >
-          <Column field="createdAt" header={t('common.createdAt')} body={(row: TenantBootstrapHistoryItem) => formatDateTimeSeconds(row.createdAt)} />
-          <Column
-            header={t('common.status')}
-            body={(row: TenantBootstrapHistoryItem) => {
-              const status = bootstrapTokenStatus(row);
-              return (
-                <Tag
-                  value={t(`tenants.bootstrap.status.${status.toLowerCase()}`)}
-                  severity={bootstrapTokenStatusSeverity(status) as any}
-                  rounded
-                />
-              );
+          <CommonDataTable
+            value={bootstrapHistoryItems}
+            loading={loadingBootstrapHistory}
+            paginator
+            lazy
+            first={(bootstrapHistoryPage - 1) * bootstrapHistoryLimit}
+            rows={bootstrapHistoryLimit}
+            totalRecords={bootstrapHistoryTotal}
+            onPage={(event) => {
+              if (!bootstrapHistoryTenant) return;
+              const nextPage = Math.floor((event.first ?? 0) / bootstrapHistoryLimit) + 1;
+              void loadBootstrapHistory(bootstrapHistoryTenant, nextPage, bootstrapHistoryDateRange, bootstrapHistoryStatusFilter);
             }}
-          />
-          <Column field="email" header={t('common.email')} body={(row: TenantBootstrapHistoryItem) => row.email ?? '-'} />
-          <Column field="expiresAt" header={t('tenants.bootstrap.expiresAt')} body={(row: TenantBootstrapHistoryItem) => formatDateTimeSeconds(row.expiresAt)} />
-          <Column field="usedAt" header={t('tenants.bootstrap.usedAt')} body={(row: TenantBootstrapHistoryItem) => (row.usedAt ? formatDateTimeSeconds(row.usedAt) : '-')} />
-          <Column field="issuedByMasterUserId" header={t('tenants.bootstrap.issuedBy')} body={(row: TenantBootstrapHistoryItem) => row.issuedByMasterUserId ?? '-'} />
-        </CommonDataTable>
+            className="admin-table"
+          >
+          {isBootstrapHistoryFieldVisible('createdAt') && (
+            <Column field="createdAt" header={t('tenants.bootstrap.issuedAt')} body={(row: TenantBootstrapHistoryItem) => formatDateTimeSeconds(row.createdAt)} />
+          )}
+          {isBootstrapHistoryFieldVisible('status') && (
+            <Column
+              header={t('common.status')}
+              body={(row: TenantBootstrapHistoryItem) => {
+                const status = bootstrapTokenStatus(row);
+                return (
+                  <Tag
+                    value={t(`tenants.bootstrap.status.${status.toLowerCase()}`)}
+                    severity={bootstrapTokenStatusSeverity(status) as any}
+                    rounded
+                  />
+                );
+              }}
+            />
+          )}
+          {isBootstrapHistoryFieldVisible('email') && (
+            <Column field="email" header={t('common.email')} body={(row: TenantBootstrapHistoryItem) => row.email ?? '-'} />
+          )}
+          {isBootstrapHistoryFieldVisible('expiresAt') && (
+            <Column field="expiresAt" header={t('tenants.bootstrap.expiresAt')} body={(row: TenantBootstrapHistoryItem) => formatDateTimeSeconds(row.expiresAt)} />
+          )}
+          {isBootstrapHistoryFieldVisible('usedAt') && (
+            <Column field="usedAt" header={t('tenants.bootstrap.usedAt')} body={(row: TenantBootstrapHistoryItem) => (row.usedAt ? formatDateTimeSeconds(row.usedAt) : '-')} />
+          )}
+          {isBootstrapHistoryFieldVisible('issuedByMasterUserId') && (
+            <Column field="issuedByMasterUserId" header={t('tenants.bootstrap.issuedBy')} body={(row: TenantBootstrapHistoryItem) => row.issuedByMasterUserId ?? '-'} />
+          )}
+          </CommonDataTable>
+        </div>
       </Dialog>
     </div>
   );

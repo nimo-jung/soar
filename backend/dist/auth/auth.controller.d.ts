@@ -4,6 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
 import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
+import { ResetTenantPasswordDto } from './dto/reset-tenant-password.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -54,6 +55,11 @@ export declare class AuthController {
         requiresBootstrap: boolean;
     }>;
     tenantBootstrap(dto: BootstrapTenantDto, req: Request): Promise<{
+        success: true;
+        tenantSlug: string;
+        email: string;
+    }>;
+    resetTenantPassword(dto: ResetTenantPasswordDto, req: Request): Promise<{
         success: true;
         tenantSlug: string;
         email: string;

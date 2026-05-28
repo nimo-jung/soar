@@ -40,6 +40,7 @@
     "systemManagement": "System Settings",
     "userManagement": "Admin Settings",
     "authSettings": "Auth Settings",
+    "smtpSettings": "SMTP Settings",
     "productInfo": "Product Info",
     "masterAdmin": "Master Admin"
   },
@@ -74,6 +75,10 @@
     "title": "Product Info",
     "subtitle": "View release information and license data, then upload a license file to update it.",
     "loadFailed": "Failed to load product information.",
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
     "product": {
       "title": "Release Information",
       "productName": "Product Name",
@@ -154,6 +159,7 @@
       "quotaSectionHelp": "The selected tier suggests starting limits, and you can adjust the fields below for this tenant as needed.",
       "tierDefaults": "Selected tier baseline: daily log {{dailyLogQuotaGb}}, max users {{maxUsers}}",
       "expiresAt": "Expiration",
+      "expiresAtOptionalUnlimited": "Unlimited tiers or the system tenant do not require an expiration date.",
       "ipCidr": "Log Collection Target IP Ranges",
       "ipCidrPlaceholder": "e.g. 10.0.0.10, 10.0.1.0/24",
       "ipCidrHelp": "Press Enter or type a comma to add multiple entries.",
@@ -229,25 +235,40 @@
       }
     },
     "bootstrap": {
-      "issueAction": "Issue First Admin Token",
+      "issueAction": "First Admin Token",
       "historyAction": "Token Issue History",
       "issueTitle": "Issue First Admin Registration Token",
       "historyTitle": "Token Issue History",
       "emailPlaceholder": "Invite email (optional)",
       "expiresMinutes": "Expires In (minutes)",
+      "expiresMinutesHint": "Enter between {{min}} and {{max}} minutes (up to 48 hours).",
       "issueSubmit": "Issue Token",
       "issueSuccessTitle": "Token Issued",
       "issueSuccessDetail": "First-admin registration token has been issued.",
+      "issueSuccessDetailSent": "The first-admin registration token was sent to {{email}}.",
+      "issueSuccessDetailNotSent": "Token was issued, but email delivery to {{email}} failed. Reason: {{reason}}",
+      "issueConflictTitle": "An active token already exists",
+      "issueConflictDetail": "A valid first-admin registration token already exists. Issue a new token after the current one expires.",
+      "issueFailedTitle": "Token Issue Failed",
+      "issueFailedDetail": "An error occurred while issuing the first-admin registration token.",
+      "issueInvalidEmailTitle": "Invalid Email",
+      "issueInvalidEmailDetail": "If email is provided, it must be a valid email format.",
+      "issueInvalidExpiresTitle": "Invalid Expiration",
+      "issueInvalidExpiresDetail": "Expiration must be between {{min}} and {{max}} minutes.",
+      "issueBlockedTitle": "Cannot Issue",
+      "issueBlockedDetail": "An active user already exists, so a first-admin token cannot be issued. Use a password reset token for account recovery.",
       "tokenLabel": "Issued Token (shown once)",
       "copyToken": "Copy Token",
       "copySuccessTitle": "Copied",
       "copySuccessDetail": "Token copied to clipboard.",
       "copyFailedTitle": "Copy Failed",
       "copyFailedDetail": "Failed to copy token.",
+      "filterRangePlaceholder": "Select issue date range",
       "filterFrom": "Issued From",
       "filterTo": "Issued To",
       "filterApply": "Search",
       "filterReset": "Reset",
+      "issuedAt": "Issued At",
       "expiresAt": "Expires At",
       "usedAt": "Used At",
       "issuedBy": "Issuer ID",
@@ -318,6 +339,20 @@
         "DISPATCHED": "Dispatched",
         "FAILED": "Failed"
       }
+    },
+    "validation": {
+      "typeRequired": "Type is required.",
+      "indicatorRequired": "Indicator is required.",
+      "severityRequired": "Severity is required."
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed",
+      "loadFailed": "Failed to load TI feed list.",
+      "createSuccess": "TI feed has been registered.",
+      "createFailed": "An error occurred while registering TI feed.",
+      "deactivateSuccess": "TI feed has been deactivated.",
+      "deactivateFailed": "An error occurred while deactivating TI feed."
     }
   },
   "quota": {
@@ -371,6 +406,9 @@
       "lastSnapshotAt": "Last Snapshot",
       "missingContextCount": "Missing Context",
       "auditCrossCount": "Cross-Tenant Audit"
+    },
+    "resultDialog": {
+      "failedTitle": "Failed"
     }
   },
   "billing": {
@@ -522,7 +560,14 @@
     "loadFailed": "Failed to load auth settings.",
     "saveSuccess": "Auth settings have been saved.",
     "saveFailed": "An error occurred while saving auth settings.",
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
     "validation": {
+      "maxLoginFailures": "Max failed login attempts must be between 1 and 5.",
+      "lockMinutes": "Lock time must be between 3 and 30 minutes.",
+      "maxConcurrentSessions": "Max concurrent sessions per account must be between 1 and 5.",
       "autoLogoutTimeoutMinutes": "Auto logout timeout must be 0 or between 1 and 30 minutes."
     },
     "maxLoginFailures": {
@@ -540,6 +585,55 @@
     "autoLogoutTimeoutMinutes": {
       "label": "Auto logout timeout (minutes)",
       "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
+    }
+  },
+  "smtpSettings": {
+    "title": "SMTP Settings",
+    "description": "Configure SMTP connection details used for token email delivery.",
+    "loadFailed": "Failed to load SMTP settings.",
+    "saveSuccess": "SMTP settings have been saved.",
+    "saveFailed": "An error occurred while saving SMTP settings.",
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
+    "validation": {
+      "smtpExternalRequired": "In External SMTP mode, both SMTP host and sender email are required.",
+      "smtpHostRequired": "In External SMTP mode, SMTP host is required.",
+      "smtpFromRequired": "In External SMTP mode, sender email is required.",
+      "smtpHostAndFromPair": "When SMTP is enabled, SMTP host and sender address must be provided together.",
+      "smtpPort": "SMTP port must be between 1 and 65535."
+    },
+    "mode": {
+      "label": "SMTP Mode",
+      "local": "Use Local Settings",
+      "external": "Use External SMTP Settings",
+      "help": "Local mode uses server env SMTP values, while External mode prefers the values configured below."
+    },
+    "hostLabel": "SMTP Host",
+    "portLabel": "SMTP Port",
+    "secureLabel": "Use Secure (SSL/TLS)",
+    "userLabel": "SMTP User",
+    "passLabel": "SMTP Password",
+    "passPlaceholder": "Enter a new password to update it.",
+    "passSaved": "A stored SMTP password exists.",
+    "passNotSaved": "No stored SMTP password exists.",
+    "clearPassButton": "Clear stored SMTP password",
+    "fromLabel": "Sender Email",
+    "bootstrapUrlLabel": "Tenant Token Registration Link",
+    "bootstrapUrlPlaceholder": "e.g. https://admin.example.com/login",
+    "bootstrapUrlHelp": "When set, the token email includes the tenant token registration link.",
+    "test": {
+      "toLabel": "Test Recipient Email",
+      "toPlaceholder": "e.g. operator@demo.local",
+      "help": "Sends a test mail with the currently applied SMTP mode (Local/External). Save settings first, then test.",
+      "sendButton": "Send Test Mail",
+      "success": "Test mail sent: to={{to}}, mode={{mode}}, host={{host}}:{{port}}",
+      "failed": "Failed to send test mail.",
+      "validation": {
+        "toRequired": "Please enter a test recipient email.",
+        "toInvalid": "Please enter a valid email address."
+      }
     }
   },
   "sessionTimeout": {
@@ -590,6 +684,14 @@
     "history": {
       "checkedAt": "Checked At",
       "hasAlert": "Alert"
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed",
+      "loadFailed": "Failed to load system status data.",
+      "checkFailed": "An error occurred while running immediate check.",
+      "resolveSuccess": "Alert has been marked as resolved.",
+      "resolveFailed": "An error occurred while resolving the alert."
     }
   },
   "integrity": {
@@ -603,6 +705,19 @@
     "deleteTitle": "Remove File Tracking",
     "deleteConfirm": "Remove tracking for {{label}}?",
     "warningMsg": "Tampering detected: {{changed}} changed, {{missing}} missing",
+    "validation": {
+      "filePathRequired": "File path is required.",
+      "fileLabelRequired": "File label is required."
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed",
+      "checkFailed": "An error occurred while running integrity check.",
+      "registerSuccess": "Tracking file has been registered.",
+      "registerFailed": "An error occurred while registering tracking file.",
+      "deleteSuccess": "File tracking has been deleted.",
+      "deleteFailed": "An error occurred while deleting file tracking."
+    },
     "status": {
       "OK": "OK",
       "CHANGED": "Changed",

@@ -14,6 +14,7 @@ import { MasterUser, MasterUserStatus } from '../admin/master-users/entities/mas
 import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
 import { TenantBootstrapToken } from '../admin/tenants/entities/tenant-bootstrap-token.entity';
+import { TenantPasswordResetToken } from '../admin/tenants/entities/tenant-password-reset-token.entity';
 import { TenantConnectionService } from '../common/database/tenant-connection.service';
 import { TenantUser } from '../tenant/users/entities/tenant-user.entity';
 import { LoginDto } from './dto/login.dto';
@@ -34,6 +35,7 @@ import { getMasterUserPasswordValidationError } from '../admin/master-users/pass
 import { ProductInfoService } from '../admin/product-info/product-info.service';
 import { SessionStoreService } from '../common/session/session-store.service';
 import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
+import { ResetTenantPasswordDto } from './dto/reset-tenant-password.dto';
 import { TenantRole } from '../common/guards/roles.guard';
 
 interface AuthAuditContext {
@@ -48,6 +50,7 @@ interface SessionTokenPayload {
   isMaster: boolean;
   tenantId?: string;
   tenantSlug?: string;
+  tenantExpiresAt?: string | null;
   jti: string;
 }
 
@@ -69,6 +72,7 @@ interface LogoutTokenPayload {
   isMaster: boolean;
   tenantId?: string;
   tenantSlug?: string;
+  tenantExpiresAt?: string | null;
   jti?: string;
 }
 
@@ -83,6 +87,8 @@ export class AuthService {
     private readonly tenantSettingsRepo: Repository<TenantSettings>,
     @InjectRepository(TenantBootstrapToken)
     private readonly tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>,
+    @InjectRepository(TenantPasswordResetToken)
+    private readonly tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>,
     @InjectRepository(MasterAuthSettings)
     private readonly masterAuthSettingsRepo: Repository<MasterAuthSettings>,
     @InjectRepository(AuthUserSecurityState)
@@ -435,6 +441,35 @@ export class AuthService {
     };
   }
 
+  private isTenantExpired(expiresAt: Date | null): boolean {
+    if (!expiresAt) {
+      return false;
+    }
+
+    return expiresAt.getTime() <= Date.now();
+  }
+
+  private assertTenantNotExpired(expiresAt: Date | null): void {
+    if (this.isTenantExpired(expiresAt)) {
+      throw new UnauthorizedException('테넌트 사용기한이 만료되었습니다. 관리자에게 문의하세요.');
+    }
+  }
+
+  private assertTenantNotExpiredFromPayload(payload: SessionTokenPayload): void {
+    if (payload.isMaster) {
+      return;
+    }
+
+    if (!payload.tenantExpiresAt) {
+      return;
+    }
+
+    const expiresAt = new Date(payload.tenantExpiresAt);
+    if (!Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException('테넌트 사용기한이 만료되었습니다. 관리자에게 문의하세요.');
+    }
+  }
+
   async getPublicTenantExpiryStatus(
     tenantSlug: string,
   ): Promise<{ daysRemaining: number | null; expiresAt: string | null }> {
@@ -586,6 +621,90 @@ export class AuthService {
     };
   }
 
+  async resetTenantPassword(
+    dto: ResetTenantPasswordDto,
+    context: AuthAuditContext,
+  ): Promise<{ success: true; tenantSlug: string; email: string }> {
+    const tenant = await this.getActiveTenantBySlug(dto.tenantSlug);
+    if (!tenant) {
+      throw new UnauthorizedException('유효한 테넌트를 찾을 수 없습니다.');
+    }
+
+    this.assertTenantNotExpired(tenant.expiresAt);
+
+    const normalizedEmail = this.normalizeLoginId(dto.email);
+
+    const tokenRecord = await this.tenantPasswordResetTokenRepo.findOne({
+      where: {
+        tenantId: tenant.id,
+        email: normalizedEmail,
+        usedAt: IsNull(),
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!tokenRecord || tokenRecord.expiresAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException('유효한 비밀번호 재설정 토큰이 없습니다.');
+    }
+
+    const tokenMatch = await bcrypt.compare(dto.resetToken, tokenRecord.tokenHash);
+    if (!tokenMatch) {
+      await this.safeAudit({
+        actorType: AuditActorType.SYSTEM,
+        actorEmail: normalizedEmail,
+        tenantSlug: tenant.slug,
+        action: 'TENANT_PASSWORD_RESET_FAILED',
+        resourceType: 'TENANT_PASSWORD_RESET',
+        message: '테넌트 비밀번호 재설정 실패: 토큰 불일치',
+        ipAddress: context.ipAddress ?? null,
+        userAgent: context.userAgent ?? null,
+      });
+      throw new UnauthorizedException('비밀번호 재설정 토큰이 올바르지 않습니다.');
+    }
+
+    const conn = await this.tenantConnectionService.getConnection(
+      tenant.slug.replace(/-/g, '_'),
+    );
+    const tenantUserRepo = conn.getRepository(TenantUser);
+
+    const targetUser = await tenantUserRepo.findOne({
+      where: {
+        email: normalizedEmail,
+        isActive: true,
+      },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('재설정 대상 활성 사용자를 찾을 수 없습니다.');
+    }
+
+    targetUser.passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    await tenantUserRepo.save(targetUser);
+
+    tokenRecord.usedAt = new Date();
+    await this.tenantPasswordResetTokenRepo.save(tokenRecord);
+
+    await this.safeAudit({
+      actorType: AuditActorType.SYSTEM,
+      actorEmail: normalizedEmail,
+      tenantSlug: tenant.slug,
+      action: 'TENANT_PASSWORD_RESET_COMPLETED',
+      resourceType: 'TENANT_USER',
+      message: '테넌트 관리자 비밀번호 재설정 완료',
+      ipAddress: context.ipAddress ?? null,
+      userAgent: context.userAgent ?? null,
+      metadata: {
+        userId: targetUser.id,
+      },
+    });
+
+    return {
+      success: true,
+      tenantSlug: tenant.slug,
+      email: normalizedEmail,
+    };
+  }
+
   async loginAsMaster(
     dto: LoginDto,
     context: AuthAuditContext,
@@ -702,6 +821,8 @@ export class AuthService {
       throw new UnauthorizedException('테넌트를 찾을 수 없거나 비활성 상태입니다.');
     }
 
+    this.assertTenantNotExpired(tenant.expiresAt);
+
     const requiresBootstrap = !(await this.hasAnyActiveTenantUser(tenant));
     if (requiresBootstrap) {
       await this.safeAudit({
@@ -779,6 +900,7 @@ export class AuthService {
       email: user.email,
       tenantId: tenant.slug.replace(/-/g, '_'),
       tenantSlug: tenant.slug,
+      tenantExpiresAt: tenant.expiresAt?.toISOString() ?? null,
       role: user.role,
       isMaster: false,
     };
@@ -829,6 +951,8 @@ export class AuthService {
       throw new UnauthorizedException('세션 정보가 없는 토큰입니다.');
     }
 
+    this.assertTenantNotExpiredFromPayload(payload);
+
     const sessionValid = await this.sessionStore.exists(payload.jti);
     if (!sessionValid) {
       throw new UnauthorizedException('세션이 만료되었거나 유효하지 않습니다.');
@@ -847,7 +971,11 @@ export class AuthService {
         throw new NotFoundException('테넌트를 찾을 수 없습니다.');
       }
 
+      this.assertTenantNotExpired(tenant.expiresAt);
+
       policy = await this.getTenantAuthPolicyByTenantId(tenant.id);
+
+      payload.tenantExpiresAt = tenant.expiresAt?.toISOString() ?? null;
     }
 
     if (policy.autoLogoutTimeoutMinutes === 0) {
@@ -889,6 +1017,8 @@ export class AuthService {
     if (!payload.jti) {
       throw new UnauthorizedException('세션 정보가 없는 토큰입니다.');
     }
+
+    this.assertTenantNotExpiredFromPayload(payload);
 
     const sessionValid = await this.sessionStore.exists(payload.jti);
     if (!sessionValid) {

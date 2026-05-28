@@ -60,6 +60,21 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 * 테넌트 내 역할은 `운영자 | 분석가 | 감사자` 세 가지로 구분한다.
 * 권한 검증은 NestJS `RolesGuard`에서 테넌트 스코프(`tenant_id + role`)로 함께 수행한다. 역할만으로 접근을 허용하지 않는다.
 
+### system 테넌트 보호 규칙
+
+* `system` 테넌트는 플랫폼 기본 운영 테넌트이므로 삭제(soft/hard)하거나 `SUSPENDED`로 전환할 수 없다.
+* 백엔드 서비스 계층(`TenantsService`)에서 `system` 삭제/비활성화를 반드시 차단한다.
+* 프론트엔드 테넌트 관리 화면에서도 `system` 행의 삭제/정지 액션 버튼을 비활성화하여 오작동을 방지한다.
+
+### 최초 관리자 토큰/비밀번호 복구 토큰 규칙
+
+* `초기 관리자 등록 토큰(bootstrap token)`은 최초 1회 등록 전용이다.
+* 활성 사용자(`is_active=true`)가 1명이라도 존재하면 bootstrap token 발급을 허용하지 않는다.
+* 최초 관리자 등록 API(`POST /auth/tenant/bootstrap`)는 활성 사용자가 이미 존재하는 경우 반드시 거부해야 한다.
+* 계정 분실 복구는 bootstrap token을 재사용하지 않고, 별도의 `비밀번호 재설정 토큰(password reset token)` 흐름으로 처리한다.
+* 비밀번호 재설정 토큰은 활성 사용자가 존재하는 테넌트에서만 발급 가능해야 하며, 대상 이메일과 매칭되는 활성 사용자에게만 사용 가능해야 한다.
+* bootstrap token 및 password reset token 모두 단회성(사용 후 즉시 폐기, 만료시간 강제)으로 운영한다.
+
 ### 감사로그 (CUD 공통 의무)
 
 * `frontend-admin`과 `frontend-tenant`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.

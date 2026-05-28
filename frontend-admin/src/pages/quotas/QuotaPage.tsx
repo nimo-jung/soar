@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { InputNumber } from 'primereact/inputnumber';
-import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import CommonDataTable from '../../components/CommonDataTable';
 import api from '../../api';
@@ -29,11 +28,30 @@ type EditState = {
 
 const QuotaPage: React.FC = () => {
   const { t } = useTranslation();
-  const toast = useRef<Toast>(null);
   const [rows, setRows] = useState<QuotaRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editTarget, setEditTarget] = useState<EditState | null>(null);
+  const [resultDialog, setResultDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  const openResultDialog = (title: string, message: string) => {
+    setResultDialog({ visible: true, title, message });
+  };
+
+  const extractApiMessage = (error: unknown): string => {
+    const rawMessage = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+    if (typeof rawMessage === 'string') {
+      return rawMessage;
+    }
+    if (Array.isArray(rawMessage)) {
+      return rawMessage.filter((item): item is string => typeof item === 'string').join(', ');
+    }
+    return '';
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,11 +86,14 @@ const QuotaPage: React.FC = () => {
         storageQuotaGb: editTarget.storageQuotaGb,
         retentionDays: editTarget.retentionDays,
       });
-      toast.current?.show({ severity: 'success', summary: t('quota.result.successTitle'), detail: t('quota.result.saveSuccess'), life: 3000 });
+      openResultDialog(t('quota.result.successTitle'), t('quota.result.saveSuccess'));
       setEditTarget(null);
       void load();
-    } catch {
-      toast.current?.show({ severity: 'error', summary: t('quota.result.errorTitle'), detail: t('quota.result.saveFailed'), life: 4000 });
+    } catch (error: unknown) {
+      openResultDialog(
+        t('quota.result.errorTitle'),
+        extractApiMessage(error) || t('quota.result.saveFailed'),
+      );
     } finally {
       setSaving(false);
     }
@@ -99,7 +120,19 @@ const QuotaPage: React.FC = () => {
 
   return (
     <div className="admin-page">
-      <Toast ref={toast} />
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '420px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
       <div className="admin-page-header page-header">
         <h1>{t('quota.title')}</h1>
         <div className="admin-actions-row">

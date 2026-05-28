@@ -7,8 +7,11 @@ import { ThreatIntelModule } from './threat-intel/threat-intel.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { MasterUsersModule } from './master-users/master-users.module';
 import { MasterAuthSettings } from '../auth/entities/master-auth-settings.entity';
+import { MasterSetting } from './auth-settings/entities/master-setting.entity';
 import { AdminAuthSettingsController } from './auth-settings/auth-settings.controller';
 import { AdminAuthSettingsService } from './auth-settings/auth-settings.service';
+import { SmtpSettingsController } from './smtp-settings/smtp-settings.controller';
+import { SmtpSettingsService } from './smtp-settings/smtp-settings.service';
 import { AuditLog } from '../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../common/audit/audit-log.service';
 import { ProductInfoModule } from './product-info/product-info.module';
@@ -32,7 +35,7 @@ import { IntegrityModule } from './integrity/integrity.module';
     DataIsolationModule,
     SystemStatusModule,
     IntegrityModule,
-    TypeOrmModule.forFeature([MasterAuthSettings, AuditLog]),
+    TypeOrmModule.forFeature([MasterAuthSettings, MasterSetting, AuditLog]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),
@@ -40,8 +43,8 @@ import { IntegrityModule } from './integrity/integrity.module';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AdminAuthSettingsController],
-  providers: [AdminAuthSettingsService, AuditLogService],
+  controllers: [AdminAuthSettingsController, SmtpSettingsController],
+  providers: [AdminAuthSettingsService, SmtpSettingsService, AuditLogService],
   exports: [TenantsModule],
 })
 export class AdminModule {}

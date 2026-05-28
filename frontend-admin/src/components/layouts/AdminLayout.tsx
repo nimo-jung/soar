@@ -34,6 +34,7 @@ const navSections = [
     items: [
       { labelKey: 'nav.userManagement', path: '/master-users', icon: 'pi pi-users' },
       { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
+      { labelKey: 'nav.smtpSettings', path: '/smtp-settings', icon: 'pi pi-envelope' },
       { labelKey: 'nav.productInfo', path: '/product-info', icon: 'pi pi-info-circle' },
     ],
   },

@@ -6,6 +6,6 @@ export declare class CreateTenantDto {
     epsLimit?: number;
     storageQuotaGb?: number;
     retentionDays?: number;
-    expiresAt: string;
+    expiresAt?: string | null;
     ipCidr: string;
 }

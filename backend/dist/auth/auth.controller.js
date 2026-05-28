@@ -20,6 +20,7 @@ const login_dto_1 = require("./dto/login.dto");
 const tenant_login_dto_1 = require("./dto/tenant-login.dto");
 const bootstrap_master_dto_1 = require("./dto/bootstrap-master.dto");
 const bootstrap_tenant_dto_1 = require("./dto/bootstrap-tenant.dto");
+const reset_tenant_password_dto_1 = require("./dto/reset-tenant-password.dto");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -60,6 +61,9 @@ let AuthController = class AuthController {
     }
     tenantBootstrap(dto, req) {
         return this.authService.bootstrapTenant(dto, this.getRequestContext(req));
+    }
+    resetTenantPassword(dto, req) {
+        return this.authService.resetTenantPassword(dto, this.getRequestContext(req));
     }
     logout(authorization, req) {
         return this.authService.logout(authorization, this.getRequestContext(req));
@@ -168,6 +172,16 @@ __decorate([
     __metadata("design:paramtypes", [bootstrap_tenant_dto_1.BootstrapTenantDto, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "tenantBootstrap", null);
+__decorate([
+    (0, common_1.Post)('tenant/password/reset'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 관리자 비밀번호 재설정(1회성 토큰)' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_tenant_password_dto_1.ResetTenantPasswordDto, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resetTenantPassword", null);
 __decorate([
     (0, common_1.Post)('logout'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

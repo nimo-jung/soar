@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
-import { Toast } from 'primereact/toast';
 import { ProgressBar } from 'primereact/progressbar';
 import { TabView, TabPanel } from 'primereact/tabview';
 import CommonDataTable from '../../components/CommonDataTable';
@@ -76,7 +76,6 @@ function usageColor(pct: number): string {
 
 const SystemStatusPage: React.FC = () => {
   const { t } = useTranslation();
-  const toast = useRef<Toast>(null);
   const [current, setCurrent] = useState<HealthStatus | null>(null);
   const [history, setHistory] = useState<HealthSnapshot[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
@@ -86,6 +85,26 @@ const SystemStatusPage: React.FC = () => {
   const [checking, setChecking] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
   const [alertsPage, setAlertsPage] = useState(1);
+  const [resultDialog, setResultDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  const openResultDialog = (title: string, message: string) => {
+    setResultDialog({ visible: true, title, message });
+  };
+
+  const extractApiMessage = (error: unknown): string => {
+    const rawMessage = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+    if (typeof rawMessage === 'string') {
+      return rawMessage;
+    }
+    if (Array.isArray(rawMessage)) {
+      return rawMessage.filter((item): item is string => typeof item === 'string').join(', ');
+    }
+    return '';
+  };
 
   const loadCurrent = useCallback(async () => {
     const res = await api.get<HealthStatus>('/admin/system-status/current');
@@ -114,10 +133,12 @@ const SystemStatusPage: React.FC = () => {
     setLoading(true);
     try {
       await Promise.all([loadCurrent(), loadHistory(1), loadAlerts(1)]);
+    } catch (error: unknown) {
+      openResultDialog(t('systemStatus.resultDialog.failedTitle'), extractApiMessage(error) || t('systemStatus.resultDialog.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [loadCurrent, loadHistory, loadAlerts]);
+  }, [loadCurrent, loadHistory, loadAlerts, t]);
 
   useEffect(() => {
     void loadAll();
@@ -127,16 +148,23 @@ const SystemStatusPage: React.FC = () => {
     setChecking(true);
     try {
       await api.post('/admin/system-status/check');
-      toast.current?.show({ severity: 'success', summary: t('systemStatus.checkDone'), life: 2000 });
+      openResultDialog(t('systemStatus.resultDialog.successTitle'), t('systemStatus.checkDone'));
       await loadAll();
+    } catch (error: unknown) {
+      openResultDialog(t('systemStatus.resultDialog.failedTitle'), extractApiMessage(error) || t('systemStatus.resultDialog.checkFailed'));
     } finally {
       setChecking(false);
     }
   };
 
   const handleResolve = async (id: number) => {
-    await api.post(`/admin/system-status/alerts/${id}/resolve`);
-    void loadAlerts(alertsPage);
+    try {
+      await api.post(`/admin/system-status/alerts/${id}/resolve`);
+      openResultDialog(t('systemStatus.resultDialog.successTitle'), t('systemStatus.resultDialog.resolveSuccess'));
+      void loadAlerts(alertsPage);
+    } catch (error: unknown) {
+      openResultDialog(t('systemStatus.resultDialog.failedTitle'), extractApiMessage(error) || t('systemStatus.resultDialog.resolveFailed'));
+    }
   };
 
   const serviceTag = (status: ServiceStatus) => (
@@ -145,7 +173,19 @@ const SystemStatusPage: React.FC = () => {
 
   return (
     <div className="admin-page">
-      <Toast ref={toast} />
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '460px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
       <div className="admin-page-header">
         <h1>{t('systemStatus.title')}</h1>
         <div className="admin-actions-row">

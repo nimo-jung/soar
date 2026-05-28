@@ -40,6 +40,7 @@
     "systemManagement": "시스템 설정",
     "userManagement": "관리자 설정",
     "authSettings": "인증 설정",
+    "smtpSettings": "SMTP 설정",
     "productInfo": "제품 정보",
     "masterAdmin": "Master Admin"
   },
@@ -74,6 +75,10 @@
     "title": "제품 정보",
     "subtitle": "릴리즈 정보와 라이선스 정보를 조회하고 라이선스 파일을 업로드하여 갱신합니다.",
     "loadFailed": "제품 정보를 조회하지 못했습니다.",
+    "resultDialog": {
+      "successTitle": "처리 완료",
+      "failedTitle": "처리 실패"
+    },
     "product": {
       "title": "릴리즈 정보",
       "productName": "제품명",
@@ -154,6 +159,7 @@
       "quotaSectionHelp": "선택한 등급은 기본 한도 값을 제안하며, 아래 항목은 고객사 환경에 맞게 직접 조정할 수 있습니다.",
       "tierDefaults": "선택한 등급 기본 한도: 일일 로그 {{dailyLogQuotaGb}}, 사용자 수 {{maxUsers}}",
       "expiresAt": "사용기한",
+      "expiresAtOptionalUnlimited": "무제한 등급 또는 system 테넌트는 사용기한이 필요하지 않습니다.",
       "ipCidr": "로그 수집 대상 IP 대역",
       "ipCidrPlaceholder": "예: 10.0.0.10, 10.0.1.0/24",
       "ipCidrHelp": "엔터 또는 콤마 입력하여 복수 입력이 가능합니다.",
@@ -229,25 +235,40 @@
       }
     },
     "bootstrap": {
-      "issueAction": "초기 관리자 토큰 발급",
+      "issueAction": "초기 관리자 토큰",
       "historyAction": "토큰 발급 이력",
       "issueTitle": "초기 관리자 등록 토큰 발급",
       "historyTitle": "토큰 발급 이력",
       "emailPlaceholder": "초대 대상 이메일(선택)",
       "expiresMinutes": "만료 시간(분)",
+      "expiresMinutesHint": "{{min}}~{{max}}분(최대 48시간) 범위로 입력하세요.",
       "issueSubmit": "토큰 발급",
       "issueSuccessTitle": "토큰 발급 완료",
       "issueSuccessDetail": "초기 관리자 등록 토큰이 발급되었습니다.",
+      "issueSuccessDetailSent": "초기 관리자 등록 토큰을 {{email}} 주소로 발송했습니다.",
+      "issueSuccessDetailNotSent": "토큰은 발급되었지만 {{email}} 주소로 메일 전송에 실패했습니다. 사유: {{reason}}",
+      "issueConflictTitle": "기존 유효 토큰이 있습니다",
+      "issueConflictDetail": "이미 유효한 최초 관리자 등록 토큰이 있습니다. 기존 토큰 만료 후 다시 발급하세요.",
+      "issueFailedTitle": "토큰 발급 실패",
+      "issueFailedDetail": "초기 관리자 등록 토큰 발급 중 오류가 발생했습니다.",
+      "issueInvalidEmailTitle": "이메일 형식 확인",
+      "issueInvalidEmailDetail": "이메일을 입력하는 경우 유효한 이메일 형식이어야 합니다.",
+      "issueInvalidExpiresTitle": "만료 시간 확인",
+      "issueInvalidExpiresDetail": "만료 시간은 {{min}}~{{max}}분 범위로 입력해야 합니다.",
+      "issueBlockedTitle": "발급 불가",
+      "issueBlockedDetail": "이미 활성 사용자가 있어 초기 관리자 토큰을 발급할 수 없습니다. 비밀번호 분실 시 재설정 토큰을 사용하세요.",
       "tokenLabel": "발급 토큰 (1회 노출)",
       "copyToken": "토큰 복사",
       "copySuccessTitle": "복사 완료",
       "copySuccessDetail": "토큰이 클립보드에 복사되었습니다.",
       "copyFailedTitle": "복사 실패",
       "copyFailedDetail": "토큰 복사 중 오류가 발생했습니다.",
+      "filterRangePlaceholder": "발급 기간 선택",
       "filterFrom": "발급 시작일",
       "filterTo": "발급 종료일",
       "filterApply": "조회",
       "filterReset": "초기화",
+      "issuedAt": "발급시각",
       "expiresAt": "만료 시각",
       "usedAt": "사용 시각",
       "issuedBy": "발급자 ID",
@@ -318,6 +339,20 @@
         "DISPATCHED": "전파완료",
         "FAILED": "실패"
       }
+    },
+    "validation": {
+      "typeRequired": "유형은 필수입니다.",
+      "indicatorRequired": "지표는 필수입니다.",
+      "severityRequired": "위험도는 필수입니다."
+    },
+    "resultDialog": {
+      "successTitle": "처리 완료",
+      "failedTitle": "처리 실패",
+      "loadFailed": "TI 피드 목록을 불러오지 못했습니다.",
+      "createSuccess": "TI 피드가 등록되었습니다.",
+      "createFailed": "TI 피드 등록 중 오류가 발생했습니다.",
+      "deactivateSuccess": "TI 피드가 비활성화되었습니다.",
+      "deactivateFailed": "TI 피드 비활성화 중 오류가 발생했습니다."
     }
   },
   "quota": {
@@ -371,6 +406,9 @@
       "lastSnapshotAt": "마지막 스냅샷",
       "missingContextCount": "컨텍스트 누락",
       "auditCrossCount": "크로스 테넌트 감사"
+    },
+    "resultDialog": {
+      "failedTitle": "처리 실패"
     }
   },
   "billing": {
@@ -522,7 +560,14 @@
     "loadFailed": "인증 설정을 불러오지 못했습니다.",
     "saveSuccess": "인증 설정이 저장되었습니다.",
     "saveFailed": "인증 설정 저장 중 오류가 발생했습니다.",
+    "resultDialog": {
+      "successTitle": "처리 완료",
+      "failedTitle": "처리 실패"
+    },
     "validation": {
+      "maxLoginFailures": "로그인 실패 시도 횟수 제한은 1~5 범위로 입력해야 합니다.",
+      "lockMinutes": "잠금 시간은 3~30분 범위로 입력해야 합니다.",
+      "maxConcurrentSessions": "계정당 동시 로그인 세션은 1~5 범위로 입력해야 합니다.",
       "autoLogoutTimeoutMinutes": "자동 로그아웃 타임아웃은 0 또는 1~30분으로 입력해야 합니다."
     },
     "maxLoginFailures": {
@@ -540,6 +585,55 @@
     "autoLogoutTimeoutMinutes": {
       "label": "자동 로그아웃 타임아웃(분)",
       "help": "기본 5분, 최소 1분, 최대 30분, 0이면 만료 없음"
+    }
+  },
+  "smtpSettings": {
+    "title": "SMTP 설정",
+    "description": "토큰 발급 메일 발송에 사용할 SMTP 연결 정보를 설정합니다.",
+    "loadFailed": "SMTP 설정을 불러오지 못했습니다.",
+    "saveSuccess": "SMTP 설정이 저장되었습니다.",
+    "saveFailed": "SMTP 설정 저장 중 오류가 발생했습니다.",
+    "resultDialog": {
+      "successTitle": "처리 완료",
+      "failedTitle": "처리 실패"
+    },
+    "validation": {
+      "smtpExternalRequired": "외부 SMTP 모드에서는 SMTP Host와 발신자 이메일을 모두 입력해야 합니다.",
+      "smtpHostRequired": "외부 SMTP 모드에서는 SMTP Host를 입력해야 합니다.",
+      "smtpFromRequired": "외부 SMTP 모드에서는 발신자 이메일을 입력해야 합니다.",
+      "smtpHostAndFromPair": "SMTP 설정 사용 시 SMTP Host와 발신자 주소를 함께 입력해야 합니다.",
+      "smtpPort": "SMTP 포트는 1~65535 범위로 입력해야 합니다."
+    },
+    "mode": {
+      "label": "SMTP 사용 방식",
+      "local": "Local 모드",
+      "external": "외부 SMTP 모드",
+      "help": "Local 모드는 서버 자체 SMTP를 사용하고, 외부 SMTP 모드는 아래 입력값을 우선 사용합니다."
+    },
+    "hostLabel": "SMTP Host",
+    "portLabel": "SMTP Port",
+    "secureLabel": "Secure(SSL/TLS) 사용",
+    "userLabel": "SMTP 사용자",
+    "passLabel": "SMTP 비밀번호",
+    "passPlaceholder": "새 비밀번호를 입력하면 갱신됩니다.",
+    "passSaved": "저장된 SMTP 비밀번호가 있습니다.",
+    "passNotSaved": "저장된 SMTP 비밀번호가 없습니다.",
+    "clearPassButton": "저장된 SMTP 비밀번호 삭제",
+    "fromLabel": "발신자 이메일",
+    "bootstrapUrlLabel": "테넌트 토큰 등록 링크",
+    "bootstrapUrlPlaceholder": "예: https://admin.example.com/login",
+    "bootstrapUrlHelp": "설정 시 토큰 메일에 테넌트 토큰 등록 링크가 함께 포함됩니다.",
+    "test": {
+      "toLabel": "테스트 수신 이메일",
+      "toPlaceholder": "예: operator@demo.local",
+      "help": "현재 적용된 SMTP(Local/외부) 설정으로 테스트 메일을 발송합니다. 먼저 설정 저장 후 테스트하세요.",
+      "sendButton": "테스트 메일 발송",
+      "success": "테스트 메일 발송 성공: to={{to}}, mode={{mode}}, host={{host}}:{{port}}",
+      "failed": "테스트 메일 발송에 실패했습니다.",
+      "validation": {
+        "toRequired": "테스트 수신 이메일을 입력하세요.",
+        "toInvalid": "유효한 이메일 형식을 입력하세요."
+      }
     }
   },
   "sessionTimeout": {
@@ -590,6 +684,14 @@
     "history": {
       "checkedAt": "점검 시각",
       "hasAlert": "알림 발생"
+    },
+    "resultDialog": {
+      "successTitle": "처리 완료",
+      "failedTitle": "처리 실패",
+      "loadFailed": "시스템 상태 정보를 불러오지 못했습니다.",
+      "checkFailed": "즉시 점검 실행 중 오류가 발생했습니다.",
+      "resolveSuccess": "알림이 해결 처리되었습니다.",
+      "resolveFailed": "알림 해결 처리 중 오류가 발생했습니다."
     }
   },
   "integrity": {
@@ -603,6 +705,19 @@
     "deleteTitle": "파일 추적 삭제",
     "deleteConfirm": "{{label}} 파일 추적을 삭제하시겠습니까?",
     "warningMsg": "변조 감지: {{changed}}개 변경, {{missing}}개 누락",
+    "validation": {
+      "filePathRequired": "파일 경로는 필수입니다.",
+      "fileLabelRequired": "파일 레이블은 필수입니다."
+    },
+    "resultDialog": {
+      "successTitle": "처리 완료",
+      "failedTitle": "처리 실패",
+      "checkFailed": "무결성 점검 실행 중 오류가 발생했습니다.",
+      "registerSuccess": "점검 파일이 등록되었습니다.",
+      "registerFailed": "점검 파일 등록 중 오류가 발생했습니다.",
+      "deleteSuccess": "파일 추적이 삭제되었습니다.",
+      "deleteFailed": "파일 추적 삭제 중 오류가 발생했습니다."
+    },
     "status": {
       "OK": "정상",
       "CHANGED": "변조",

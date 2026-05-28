@@ -141,6 +141,16 @@ services:
       redpanda:
         condition: service_healthy
 
+  mailpit:
+    profiles: [dev, prod]
+    image: axllent/mailpit:v1.26
+    container_name: tms-mailpit-dev
+    ports:
+      - "${PORT_MAILPIT_SMTP:-1025}:1025"
+      - "${PORT_MAILPIT_UI:-8025}:8025"
+    networks:
+      - tms-network
+
   # ───────────────────────────────────────────────────────────────────────────
   # Application
   #   Dev:  docker compose --profile dev --env-file .env.dev up -d --build
@@ -179,6 +189,14 @@ services:
       # JWT
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      # SMTP (Local 모드 : Mailpit / 외부 SMTP 모드 : DB 설정값 사용)
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM}
+      TENANT_BOOTSTRAP_URL: ${TENANT_BOOTSTRAP_URL:-}
     ports:
       - "${PORT_BACKEND:-3000}:3000"
     volumes:
@@ -196,6 +214,8 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   backend-prod:
     profiles: [prod]
@@ -229,6 +249,14 @@ services:
       # JWT
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      # SMTP (Local 모드 : Mailpit / 외부 SMTP 모드 : DB 설정값 사용)
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM}
+      TENANT_BOOTSTRAP_URL: ${TENANT_BOOTSTRAP_URL:-}
     ports:
       - "${PORT_BACKEND:-3000}:3000"
     volumes:
@@ -244,6 +272,8 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   go-engine-dev:
     profiles: [dev]

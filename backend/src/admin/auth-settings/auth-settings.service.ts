@@ -16,19 +16,26 @@ export class AdminAuthSettingsService {
     @InjectRepository(MasterAuthSettings)
     private readonly masterAuthSettingsRepo: Repository<MasterAuthSettings>,
   ) {}
+  private toResponse(settings: MasterAuthSettings): AdminAuthSettingsResponse {
+    return {
+      ...normalizeAuthPolicy(settings),
+      isMultiTenantEnabled: settings.isMultiTenantEnabled,
+    };
+  }
 
   async getSettings(): Promise<AdminAuthSettingsResponse> {
     let settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
     if (!settings) {
       settings = await this.masterAuthSettingsRepo.save(
-        this.masterAuthSettingsRepo.create({ id: 1, ...DEFAULT_AUTH_POLICY, isMultiTenantEnabled: false }),
+        this.masterAuthSettingsRepo.create({
+          id: 1,
+          ...DEFAULT_AUTH_POLICY,
+          isMultiTenantEnabled: false,
+        }),
       );
     }
 
-    return {
-      ...normalizeAuthPolicy(settings),
-      isMultiTenantEnabled: settings.isMultiTenantEnabled,
-    };
+    return this.toResponse(settings);
   }
 
   async updateSettings(dto: UpdateAuthPolicyDto): Promise<AdminAuthSettingsResponse> {
@@ -43,6 +50,7 @@ export class AdminAuthSettingsService {
     }
 
     let settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
+
     if (!settings) {
       settings = this.masterAuthSettingsRepo.create({
         id: 1,
@@ -57,9 +65,6 @@ export class AdminAuthSettingsService {
     }
 
     const saved = await this.masterAuthSettingsRepo.save(settings);
-    return {
-      ...normalizeAuthPolicy(saved),
-      isMultiTenantEnabled: saved.isMultiTenantEnabled,
-    };
+    return this.toResponse(saved);
   }
 }

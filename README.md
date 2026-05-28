@@ -60,6 +60,7 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 | Tenant UI | http://localhost:5173 |
 | Go Engine (수집) | http://localhost:8081/ingest |
 | RedPanda Console | http://localhost:8080 |
+| Mailpit (SMTP 테스트 UI) | http://localhost:8025 |
 
 ### 3. 운영 모드
 
@@ -118,6 +119,22 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 ./scripts/status.sh   # 인프라 컨테이너 + 앱 프로세스 상태 일괄 확인
 ```
 
+### 6-1. Docker 캐시 정리 + 완전 재빌드
+
+```bash
+# dev 기준: 캐시 정리 + 컨테이너 재생성 + 익명 볼륨(node_modules) 갱신
+./scripts/rebuild.sh dev --yes
+
+# prod 기준
+./scripts/rebuild.sh prod --yes
+
+# 재빌드 후 DB reset(db drop/create + migration)까지 한 번에 수행
+./scripts/rebuild.sh dev --yes --with-db-reset
+
+# (주의) named volume까지 삭제하여 데이터 초기화 포함
+./scripts/rebuild.sh dev --yes --with-volumes
+```
+
 ### 7. 스모크 테스트
 
 ```bash
@@ -156,6 +173,25 @@ docker compose down
 
 # 데이터 볼륨까지 삭제
 docker compose down -v
+```
+
+### SMTP 설정
+
+토큰 발급 이메일 전송을 위해 SMTP 설정이 필요합니다.
+
+- 개발(dev): `mailpit` 컨테이너를 기본 사용 (`SMTP_HOST=mailpit`, `SMTP_PORT=1025`)
+- 운영(prod): 기본값은 내부 `mailpit` fallback 사용. 외부 SMTP 사용 가능 시 `.env.prod` 값으로 교체
+
+필수/권장 환경변수:
+
+```bash
+SMTP_HOST=...
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=...
+SMTP_PASS=...
+SMTP_FROM=no-reply@example.com
+TENANT_BOOTSTRAP_URL=https://admin.example.com/login
 ```
 
 ---

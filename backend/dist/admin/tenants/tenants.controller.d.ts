@@ -5,6 +5,7 @@ import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
 import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
+import { IssueTenantPasswordResetTokenDto } from './dto/issue-tenant-password-reset-token.dto';
 import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
 import type { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { AuditLogService } from '../../common/audit/audit-log.service';
@@ -31,6 +32,8 @@ export declare class TenantsController {
         email: string | null;
         token: string;
         expiresAt: string;
+        deliveredToEmail: boolean;
+        mailDeliveryError: string | null;
     }>;
     getBootstrapTokenHistory(id: number, query: GetTenantBootstrapTokensQueryDto): Promise<{
         items: Array<{
@@ -44,5 +47,14 @@ export declare class TenantsController {
         page: number;
         limit: number;
         total: number;
+    }>;
+    issuePasswordResetToken(id: number, dto: IssueTenantPasswordResetTokenDto, user: CurrentUserPayload, req: Request): Promise<{
+        tenantId: number;
+        tenantSlug: string;
+        email: string;
+        token: string;
+        expiresAt: string;
+        deliveredToEmail: boolean;
+        mailDeliveryError: string | null;
     }>;
 }

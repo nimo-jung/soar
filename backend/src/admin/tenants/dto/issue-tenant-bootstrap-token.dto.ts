@@ -7,10 +7,10 @@ export class IssueTenantBootstrapTokenDto {
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional({ description: '토큰 만료 분(기본 60, 최소 10, 최대 1440)', example: 60 })
+  @ApiPropertyOptional({ description: '토큰 만료 분(기본 60, 최소 10, 최대 2880=48시간)', example: 60 })
   @IsOptional()
   @IsInt()
   @Min(10)
-  @Max(1440)
+  @Max(2880)
   expiresMinutes?: number;
 }

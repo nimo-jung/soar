@@ -39,9 +39,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.runAdminSeed = runAdminSeed;
 const bcrypt = __importStar(require("bcrypt"));
 const master_user_entity_1 = require("../../admin/master-users/entities/master-user.entity");
+const master_setting_entity_1 = require("../../admin/auth-settings/entities/master-setting.entity");
+const smtp_settings_constants_1 = require("../../admin/smtp-settings/smtp-settings.constants");
 const admin_data_source_1 = __importDefault(require("../admin-data-source"));
 async function runAdminSeed(dataSource) {
     const masterUserRepo = dataSource.getRepository(master_user_entity_1.MasterUser);
+    const masterSettingRepo = dataSource.getRepository(master_setting_entity_1.MasterSetting);
+    const smtpModeSetting = await masterSettingRepo.findOne({
+        where: {
+            section: smtp_settings_constants_1.SMTP_SETTINGS_SECTION,
+            identy: smtp_settings_constants_1.SMTP_SETTINGS_KEYS.mode,
+        },
+    });
+    if (!smtpModeSetting) {
+        await masterSettingRepo.save(masterSettingRepo.create({
+            section: smtp_settings_constants_1.SMTP_SETTINGS_SECTION,
+            identy: smtp_settings_constants_1.SMTP_SETTINGS_KEYS.mode,
+            value: smtp_settings_constants_1.SMTP_MODE.local,
+            vtype: smtp_settings_constants_1.SMTP_VTYPE.text,
+        }));
+        console.log('[Seed] SMTP 모드 기본값(local)이 설정되었습니다.');
+    }
     const existing = await masterUserRepo.findOne({
         where: { email: process.env.MASTER_ADMIN_EMAIL ?? 'admin@tms.io' },
     });

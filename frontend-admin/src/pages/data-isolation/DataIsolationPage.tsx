@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
-import { Toast } from 'primereact/toast';
 import CommonDataTable from '../../components/CommonDataTable';
 import api from '../../api';
 import { formatDateTimeSeconds } from '../../utils/date';
@@ -33,17 +33,36 @@ type IsolationSummary = {
 
 const DataIsolationPage: React.FC = () => {
   const { t } = useTranslation();
-  const toast = useRef<Toast>(null);
   const [data, setData] = useState<IsolationSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resultDialog, setResultDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  const openResultDialog = (title: string, message: string) => {
+    setResultDialog({ visible: true, title, message });
+  };
+
+  const extractApiMessage = (error: unknown): string => {
+    const rawMessage = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+    if (typeof rawMessage === 'string') {
+      return rawMessage;
+    }
+    if (Array.isArray(rawMessage)) {
+      return rawMessage.filter((item): item is string => typeof item === 'string').join(', ');
+    }
+    return '';
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get<IsolationSummary>('/admin/data-isolation/stats');
       setData(res.data);
-    } catch {
-      toast.current?.show({ severity: 'error', summary: t('dataIsolation.loadFailed'), life: 4000 });
+    } catch (error: unknown) {
+      openResultDialog(t('dataIsolation.resultDialog.failedTitle'), extractApiMessage(error) || t('dataIsolation.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -66,7 +85,19 @@ const DataIsolationPage: React.FC = () => {
 
   return (
     <div className="admin-page">
-      <Toast ref={toast} />
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '460px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
       <div className="admin-page-header">
         <h1>{t('dataIsolation.title')}</h1>
         <Button

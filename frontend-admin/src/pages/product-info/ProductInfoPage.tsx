@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { Button } from 'primereact/button';
-import { Message } from 'primereact/message';
 import { Card } from 'primereact/card';
 import { Dialog } from 'primereact/dialog';
 import api from '../../api';
@@ -33,10 +32,14 @@ const ProductInfoPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [resultDialog, setResultDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
   const [data, setData] = useState<ProductInfoResponse>({
     product: {
       productName: '-',
@@ -49,15 +52,20 @@ const ProductInfoPage: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    setError('');
 
     try {
       const response = await api.get<ProductInfoResponse>('/admin/product-info');
       setData(response.data);
-    } catch (loadError: any) {
-      const responseMessage = loadError?.response?.data?.message;
-      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
-      setError(message || t('productInfo.loadFailed'));
+    } catch (loadError: unknown) {
+      const rawMessage = (loadError as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+      const message = Array.isArray(rawMessage)
+        ? rawMessage.filter((item): item is string => typeof item === 'string').join(', ')
+        : (typeof rawMessage === 'string' ? rawMessage : '');
+      setResultDialog({
+        visible: true,
+        title: t('productInfo.resultDialog.failedTitle'),
+        message: message || t('productInfo.loadFailed'),
+      });
     } finally {
       setLoading(false);
     }
@@ -69,12 +77,13 @@ const ProductInfoPage: React.FC = () => {
 
   const handleOpenUploadDialog = () => {
     setSelectedFile(null);
+    setShowValidation(false);
     setShowUploadDialog(true);
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setError(t('productInfo.upload.fileRequired'));
+      setShowValidation(true);
       return;
     }
 
@@ -82,20 +91,28 @@ const ProductInfoPage: React.FC = () => {
     formData.append('file', selectedFile);
 
     setUploading(true);
-    setError('');
-    setSuccess('');
 
     try {
       await api.post('/admin/product-info/license/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setSuccess(t('productInfo.upload.success'));
+      setResultDialog({
+        visible: true,
+        title: t('productInfo.resultDialog.successTitle'),
+        message: t('productInfo.upload.success'),
+      });
       setShowUploadDialog(false);
       await loadData();
-    } catch (uploadError: any) {
-      const responseMessage = uploadError?.response?.data?.message;
-      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
-      setError(message || t('productInfo.upload.failed'));
+    } catch (uploadError: unknown) {
+      const rawMessage = (uploadError as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+      const message = Array.isArray(rawMessage)
+        ? rawMessage.filter((item): item is string => typeof item === 'string').join(', ')
+        : (typeof rawMessage === 'string' ? rawMessage : '');
+      setResultDialog({
+        visible: true,
+        title: t('productInfo.resultDialog.failedTitle'),
+        message: message || t('productInfo.upload.failed'),
+      });
     } finally {
       setUploading(false);
     }
@@ -129,8 +146,19 @@ const ProductInfoPage: React.FC = () => {
         </div>
       </div>
 
-      {error && <Message severity="error" text={error} className="w-full mb-3" />}
-      {success && <Message severity="success" text={success} className="w-full mb-3" />}
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '460px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
 
       <div className="grid">
         <div className="col-12 lg:col-6">
@@ -156,7 +184,7 @@ const ProductInfoPage: React.FC = () => {
                 <div><strong>{t('productInfo.license.updatedAt')}:</strong> {formatDateTimeSeconds(data.license.updatedAt)}</div>
               </div>
             ) : (
-              <Message severity="warn" text={t('productInfo.license.empty')} className="w-full" />
+              <p className="text-color-secondary m-0">{t('productInfo.license.empty')}</p>
             )}
           </Card>
         </div>
@@ -178,6 +206,7 @@ const ProductInfoPage: React.FC = () => {
               setSelectedFile(nextFile);
             }}
           />
+          {showValidation && !selectedFile && <small className="p-error">{t('productInfo.upload.fileRequired')}</small>}
           <small className="text-color-secondary">{t('productInfo.upload.help')}</small>
           <div className="flex justify-content-end gap-2">
             <Button

@@ -16,8 +16,11 @@ const threat_intel_module_1 = require("./threat-intel/threat-intel.module");
 const audit_logs_module_1 = require("./audit-logs/audit-logs.module");
 const master_users_module_1 = require("./master-users/master-users.module");
 const master_auth_settings_entity_1 = require("../auth/entities/master-auth-settings.entity");
+const master_setting_entity_1 = require("./auth-settings/entities/master-setting.entity");
 const auth_settings_controller_1 = require("./auth-settings/auth-settings.controller");
 const auth_settings_service_1 = require("./auth-settings/auth-settings.service");
+const smtp_settings_controller_1 = require("./smtp-settings/smtp-settings.controller");
+const smtp_settings_service_1 = require("./smtp-settings/smtp-settings.service");
 const audit_log_entity_1 = require("../common/audit/entities/audit-log.entity");
 const audit_log_service_1 = require("../common/audit/audit-log.service");
 const product_info_module_1 = require("./product-info/product-info.module");
@@ -44,7 +47,7 @@ exports.AdminModule = AdminModule = __decorate([
             data_isolation_module_1.DataIsolationModule,
             system_status_module_1.SystemStatusModule,
             integrity_module_1.IntegrityModule,
-            typeorm_1.TypeOrmModule.forFeature([master_auth_settings_entity_1.MasterAuthSettings, audit_log_entity_1.AuditLog]),
+            typeorm_1.TypeOrmModule.forFeature([master_auth_settings_entity_1.MasterAuthSettings, master_setting_entity_1.MasterSetting, audit_log_entity_1.AuditLog]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),
@@ -52,8 +55,8 @@ exports.AdminModule = AdminModule = __decorate([
                 inject: [config_1.ConfigService],
             }),
         ],
-        controllers: [auth_settings_controller_1.AdminAuthSettingsController],
-        providers: [auth_settings_service_1.AdminAuthSettingsService, audit_log_service_1.AuditLogService],
+        controllers: [auth_settings_controller_1.AdminAuthSettingsController, smtp_settings_controller_1.SmtpSettingsController],
+        providers: [auth_settings_service_1.AdminAuthSettingsService, smtp_settings_service_1.SmtpSettingsService, audit_log_service_1.AuditLogService],
         exports: [tenants_module_1.TenantsModule],
     })
 ], AdminModule);

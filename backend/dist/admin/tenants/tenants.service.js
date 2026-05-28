@@ -44,6 +44,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var TenantsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TenantsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -55,19 +56,40 @@ const tenant_entity_1 = require("./entities/tenant.entity");
 const tenant_settings_entity_1 = require("./entities/tenant-settings.entity");
 const tenant_tier_entity_1 = require("./entities/tenant-tier.entity");
 const tenant_bootstrap_token_entity_1 = require("./entities/tenant-bootstrap-token.entity");
+const get_tenant_bootstrap_tokens_query_dto_1 = require("./dto/get-tenant-bootstrap-tokens-query.dto");
 const system_tenant_constants_1 = require("./constants/system-tenant.constants");
-let TenantsService = class TenantsService {
+const tenant_connection_service_1 = require("../../common/database/tenant-connection.service");
+const tenant_user_entity_1 = require("../../tenant/users/entities/tenant-user.entity");
+const tenant_password_reset_token_entity_1 = require("./entities/tenant-password-reset-token.entity");
+const bootstrap_token_mail_service_1 = require("./bootstrap-token-mail.service");
+let TenantsService = TenantsService_1 = class TenantsService {
     tenantRepo;
     settingsRepo;
     tierRepo;
     tenantBootstrapTokenRepo;
+    tenantPasswordResetTokenRepo;
     dataSource;
-    constructor(tenantRepo, settingsRepo, tierRepo, tenantBootstrapTokenRepo, dataSource) {
+    tenantConnectionService;
+    bootstrapTokenMailService;
+    logger = new common_1.Logger(TenantsService_1.name);
+    constructor(tenantRepo, settingsRepo, tierRepo, tenantBootstrapTokenRepo, tenantPasswordResetTokenRepo, dataSource, tenantConnectionService, bootstrapTokenMailService) {
         this.tenantRepo = tenantRepo;
         this.settingsRepo = settingsRepo;
         this.tierRepo = tierRepo;
         this.tenantBootstrapTokenRepo = tenantBootstrapTokenRepo;
+        this.tenantPasswordResetTokenRepo = tenantPasswordResetTokenRepo;
         this.dataSource = dataSource;
+        this.tenantConnectionService = tenantConnectionService;
+        this.bootstrapTokenMailService = bootstrapTokenMailService;
+    }
+    async getTenantUserRepoBySlug(tenantSlug) {
+        const conn = await this.tenantConnectionService.getConnection(tenantSlug.replace(/-/g, '_'));
+        return conn.getRepository(tenant_user_entity_1.TenantUser);
+    }
+    async hasAnyActiveTenantUser(tenantSlug) {
+        const tenantUserRepo = await this.getTenantUserRepoBySlug(tenantSlug);
+        const count = await tenantUserRepo.count({ where: { isActive: true } });
+        return count > 0;
     }
     async findTierForTenantById(id) {
         return this.tierRepo.findOne({ where: { id } });
@@ -352,18 +374,25 @@ let TenantsService = class TenantsService {
     }
     async issueBootstrapToken(tenantId, dto, issuedByMasterUserId) {
         const tenant = await this.findOne(tenantId);
+        if (await this.hasAnyActiveTenantUser(tenant.slug)) {
+            throw new common_1.ConflictException('활성 사용자가 이미 존재하므로 최초 관리자 등록 토큰을 발급할 수 없습니다. 비밀번호 분실 시 재설정 토큰을 사용하세요.');
+        }
+        const activeToken = await this.tenantBootstrapTokenRepo
+            .createQueryBuilder('token')
+            .where('token.tenant_id = :tenantId', { tenantId })
+            .andWhere('token.used_at IS NULL')
+            .andWhere('token.expires_at >= :now', { now: new Date().toISOString() })
+            .orderBy('token.expires_at', 'DESC')
+            .getOne();
+        if (activeToken) {
+            throw new common_1.ConflictException('이미 유효한 최초 관리자 등록 토큰이 있습니다. 기존 토큰 만료 후 다시 발급하세요.');
+        }
         const rawToken = (0, crypto_1.randomBytes)(24).toString('hex');
         const tokenHash = await bcrypt.hash(rawToken, 12);
         const expiresMinutes = dto.expiresMinutes ?? 60;
         const expiresAt = new Date(Date.now() + (expiresMinutes * 60 * 1000));
         const normalizedEmail = dto.email?.trim().toLowerCase() ?? null;
-        await this.tenantBootstrapTokenRepo.update({
-            tenantId,
-            usedAt: (0, typeorm_2.IsNull)(),
-        }, {
-            usedAt: new Date(),
-        });
-        await this.tenantBootstrapTokenRepo.save(this.tenantBootstrapTokenRepo.create({
+        const savedToken = await this.tenantBootstrapTokenRepo.save(this.tenantBootstrapTokenRepo.create({
             tenantId,
             email: normalizedEmail,
             tokenHash,
@@ -371,12 +400,95 @@ let TenantsService = class TenantsService {
             usedAt: null,
             issuedByMasterUserId,
         }));
+        let deliveredToEmail = false;
+        let mailDeliveryError = null;
+        if (normalizedEmail) {
+            try {
+                await this.bootstrapTokenMailService.sendBootstrapToken({
+                    to: normalizedEmail,
+                    tenantName: tenant.name,
+                    tenantSlug: tenant.slug,
+                    token: rawToken,
+                    expiresAtIso: expiresAt.toISOString(),
+                });
+                deliveredToEmail = true;
+            }
+            catch (error) {
+                deliveredToEmail = false;
+                mailDeliveryError = error instanceof Error ? error.message : String(error);
+                this.logger.warn(`bootstrap 토큰 발급 후 이메일 전송 실패: tenantId=${tenant.id}, tenantSlug=${tenant.slug}, email=${normalizedEmail}, reason=${mailDeliveryError}`);
+            }
+        }
         return {
             tenantId: tenant.id,
             tenantSlug: tenant.slug,
             email: normalizedEmail,
             token: rawToken,
             expiresAt: expiresAt.toISOString(),
+            deliveredToEmail,
+            mailDeliveryError,
+        };
+    }
+    async issuePasswordResetToken(tenantId, dto, issuedByMasterUserId) {
+        const tenant = await this.findOne(tenantId);
+        const normalizedEmail = dto.email.trim().toLowerCase();
+        if (!(await this.hasAnyActiveTenantUser(tenant.slug))) {
+            throw new common_1.ConflictException('활성 사용자가 없어 비밀번호 재설정 토큰을 발급할 수 없습니다. 최초 관리자 등록 토큰을 사용하세요.');
+        }
+        const tenantUserRepo = await this.getTenantUserRepoBySlug(tenant.slug);
+        const targetUser = await tenantUserRepo.findOne({
+            where: {
+                email: normalizedEmail,
+                isActive: true,
+            },
+        });
+        if (!targetUser) {
+            throw new common_1.NotFoundException('해당 이메일의 활성 사용자를 찾을 수 없습니다.');
+        }
+        const rawToken = (0, crypto_1.randomBytes)(24).toString('hex');
+        const tokenHash = await bcrypt.hash(rawToken, 12);
+        const expiresMinutes = dto.expiresMinutes ?? 30;
+        const expiresAt = new Date(Date.now() + (expiresMinutes * 60 * 1000));
+        await this.tenantPasswordResetTokenRepo.update({
+            tenantId,
+            email: normalizedEmail,
+            usedAt: (0, typeorm_2.IsNull)(),
+        }, {
+            usedAt: new Date(),
+        });
+        const savedToken = await this.tenantPasswordResetTokenRepo.save(this.tenantPasswordResetTokenRepo.create({
+            tenantId,
+            email: normalizedEmail,
+            tokenHash,
+            expiresAt,
+            usedAt: null,
+            issuedByMasterUserId,
+        }));
+        let deliveredToEmail = false;
+        let mailDeliveryError = null;
+        try {
+            await this.bootstrapTokenMailService.sendPasswordResetToken({
+                to: normalizedEmail,
+                tenantName: tenant.name,
+                tenantSlug: tenant.slug,
+                token: rawToken,
+                expiresAtIso: expiresAt.toISOString(),
+            });
+            deliveredToEmail = true;
+        }
+        catch (error) {
+            deliveredToEmail = false;
+            mailDeliveryError = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`password reset 토큰 발급 후 이메일 전송 실패: tenantId=${tenant.id}, tenantSlug=${tenant.slug}, email=${normalizedEmail}, reason=${mailDeliveryError}`);
+        }
+        return {
+            tenantId: tenant.id,
+            tenantSlug: tenant.slug,
+            email: normalizedEmail,
+            token: rawToken,
+            expiresAt: expiresAt.toISOString(),
+            deliveredToEmail,
+            mailDeliveryError,
         };
     }
     async getBootstrapTokenHistory(tenantId, query) {
@@ -392,6 +504,17 @@ let TenantsService = class TenantsService {
         }
         if (query.to) {
             qb.andWhere('token.created_at <= :to', { to: query.to });
+        }
+        if (query.status === get_tenant_bootstrap_tokens_query_dto_1.BOOTSTRAP_TOKEN_HISTORY_STATUS.USED) {
+            qb.andWhere('token.used_at IS NOT NULL');
+        }
+        else if (query.status === get_tenant_bootstrap_tokens_query_dto_1.BOOTSTRAP_TOKEN_HISTORY_STATUS.ACTIVE) {
+            qb.andWhere('token.used_at IS NULL')
+                .andWhere('token.expires_at >= :now', { now: new Date().toISOString() });
+        }
+        else if (query.status === get_tenant_bootstrap_tokens_query_dto_1.BOOTSTRAP_TOKEN_HISTORY_STATUS.EXPIRED) {
+            qb.andWhere('token.used_at IS NULL')
+                .andWhere('token.expires_at < :now', { now: new Date().toISOString() });
         }
         const [rows, total] = await qb
             .orderBy('token.created_at', 'DESC')
@@ -414,16 +537,20 @@ let TenantsService = class TenantsService {
     }
 };
 exports.TenantsService = TenantsService;
-exports.TenantsService = TenantsService = __decorate([
+exports.TenantsService = TenantsService = TenantsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(tenant_entity_1.Tenant)),
     __param(1, (0, typeorm_1.InjectRepository)(tenant_settings_entity_1.TenantSettings)),
     __param(2, (0, typeorm_1.InjectRepository)(tenant_tier_entity_1.TenantTier)),
     __param(3, (0, typeorm_1.InjectRepository)(tenant_bootstrap_token_entity_1.TenantBootstrapToken)),
+    __param(4, (0, typeorm_1.InjectRepository)(tenant_password_reset_token_entity_1.TenantPasswordResetToken)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.DataSource])
+        typeorm_2.Repository,
+        typeorm_2.DataSource,
+        tenant_connection_service_1.TenantConnectionService,
+        bootstrap_token_mail_service_1.BootstrapTokenMailService])
 ], TenantsService);
 //# sourceMappingURL=tenants.service.js.map

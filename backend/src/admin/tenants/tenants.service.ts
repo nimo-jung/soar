@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, IsNull } from 'typeorm';
 import { randomBytes } from 'crypto';
@@ -13,7 +13,13 @@ import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
 import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
 import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
+import { BOOTSTRAP_TOKEN_HISTORY_STATUS } from './dto/get-tenant-bootstrap-tokens-query.dto';
+import { IssueTenantPasswordResetTokenDto } from './dto/issue-tenant-password-reset-token.dto';
 import { SYSTEM_TENANT_SLUG } from './constants/system-tenant.constants';
+import { TenantConnectionService } from '../../common/database/tenant-connection.service';
+import { TenantUser } from '../../tenant/users/entities/tenant-user.entity';
+import { TenantPasswordResetToken } from './entities/tenant-password-reset-token.entity';
+import { BootstrapTokenMailService } from './bootstrap-token-mail.service';
 
 export interface TierDeletionStatus {
   canDelete: boolean;
@@ -24,6 +30,8 @@ export interface TierDeletionStatus {
 
 @Injectable()
 export class TenantsService {
+  private readonly logger = new Logger(TenantsService.name);
+
   constructor(
     @InjectRepository(Tenant)
     private readonly tenantRepo: Repository<Tenant>,
@@ -33,8 +41,23 @@ export class TenantsService {
     private readonly tierRepo: Repository<TenantTier>,
     @InjectRepository(TenantBootstrapToken)
     private readonly tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>,
+    @InjectRepository(TenantPasswordResetToken)
+    private readonly tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>,
     private readonly dataSource: DataSource,
+    private readonly tenantConnectionService: TenantConnectionService,
+    private readonly bootstrapTokenMailService: BootstrapTokenMailService,
   ) {}
+
+  private async getTenantUserRepoBySlug(tenantSlug: string): Promise<Repository<TenantUser>> {
+    const conn = await this.tenantConnectionService.getConnection(tenantSlug.replace(/-/g, '_'));
+    return conn.getRepository(TenantUser);
+  }
+
+  private async hasAnyActiveTenantUser(tenantSlug: string): Promise<boolean> {
+    const tenantUserRepo = await this.getTenantUserRepoBySlug(tenantSlug);
+    const count = await tenantUserRepo.count({ where: { isActive: true } });
+    return count > 0;
+  }
 
   private async findTierForTenantById(id: number): Promise<TenantTier | null> {
     return this.tierRepo.findOne({ where: { id } });
@@ -393,26 +416,40 @@ export class TenantsService {
     tenantId: number,
     dto: IssueTenantBootstrapTokenDto,
     issuedByMasterUserId: number,
-  ): Promise<{ tenantId: number; tenantSlug: string; email: string | null; token: string; expiresAt: string }> {
+  ): Promise<{
+      tenantId: number;
+      tenantSlug: string;
+      email: string | null;
+      token: string;
+      expiresAt: string;
+      deliveredToEmail: boolean;
+      mailDeliveryError: string | null;
+    }> {
     const tenant = await this.findOne(tenantId);
+
+    if (await this.hasAnyActiveTenantUser(tenant.slug)) {
+      throw new ConflictException('활성 사용자가 이미 존재하므로 최초 관리자 등록 토큰을 발급할 수 없습니다. 비밀번호 분실 시 재설정 토큰을 사용하세요.');
+    }
+
+    const activeToken = await this.tenantBootstrapTokenRepo
+      .createQueryBuilder('token')
+      .where('token.tenant_id = :tenantId', { tenantId })
+      .andWhere('token.used_at IS NULL')
+      .andWhere('token.expires_at >= :now', { now: new Date().toISOString() })
+      .orderBy('token.expires_at', 'DESC')
+      .getOne();
+
+    if (activeToken) {
+      throw new ConflictException('이미 유효한 최초 관리자 등록 토큰이 있습니다. 기존 토큰 만료 후 다시 발급하세요.');
+    }
+
     const rawToken = randomBytes(24).toString('hex');
     const tokenHash = await bcrypt.hash(rawToken, 12);
     const expiresMinutes = dto.expiresMinutes ?? 60;
     const expiresAt = new Date(Date.now() + (expiresMinutes * 60 * 1000));
     const normalizedEmail = dto.email?.trim().toLowerCase() ?? null;
 
-    // 동일 테넌트의 미사용 토큰은 발급 시점에 만료 처리한다.
-    await this.tenantBootstrapTokenRepo.update(
-      {
-        tenantId,
-        usedAt: IsNull(),
-      },
-      {
-        usedAt: new Date(),
-      },
-    );
-
-    await this.tenantBootstrapTokenRepo.save(
+    const savedToken = await this.tenantBootstrapTokenRepo.save(
       this.tenantBootstrapTokenRepo.create({
         tenantId,
         email: normalizedEmail,
@@ -423,12 +460,112 @@ export class TenantsService {
       }),
     );
 
+    let deliveredToEmail = false;
+    let mailDeliveryError: string | null = null;
+    if (normalizedEmail) {
+      try {
+        await this.bootstrapTokenMailService.sendBootstrapToken({
+          to: normalizedEmail,
+          tenantName: tenant.name,
+          tenantSlug: tenant.slug,
+          token: rawToken,
+          expiresAtIso: expiresAt.toISOString(),
+        });
+        deliveredToEmail = true;
+      } catch (error) {
+        deliveredToEmail = false;
+        mailDeliveryError = error instanceof Error ? error.message : String(error);
+        this.logger.warn(`bootstrap 토큰 발급 후 이메일 전송 실패: tenantId=${tenant.id}, tenantSlug=${tenant.slug}, email=${normalizedEmail}, reason=${mailDeliveryError}`);
+      }
+    }
+
     return {
       tenantId: tenant.id,
       tenantSlug: tenant.slug,
       email: normalizedEmail,
       token: rawToken,
       expiresAt: expiresAt.toISOString(),
+      deliveredToEmail,
+      mailDeliveryError,
+    };
+  }
+
+  async issuePasswordResetToken(
+    tenantId: number,
+    dto: IssueTenantPasswordResetTokenDto,
+    issuedByMasterUserId: number,
+  ): Promise<{ tenantId: number; tenantSlug: string; email: string; token: string; expiresAt: string; deliveredToEmail: boolean; mailDeliveryError: string | null }> {
+    const tenant = await this.findOne(tenantId);
+    const normalizedEmail = dto.email.trim().toLowerCase();
+
+    if (!(await this.hasAnyActiveTenantUser(tenant.slug))) {
+      throw new ConflictException('활성 사용자가 없어 비밀번호 재설정 토큰을 발급할 수 없습니다. 최초 관리자 등록 토큰을 사용하세요.');
+    }
+
+    const tenantUserRepo = await this.getTenantUserRepoBySlug(tenant.slug);
+    const targetUser = await tenantUserRepo.findOne({
+      where: {
+        email: normalizedEmail,
+        isActive: true,
+      },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException('해당 이메일의 활성 사용자를 찾을 수 없습니다.');
+    }
+
+    const rawToken = randomBytes(24).toString('hex');
+    const tokenHash = await bcrypt.hash(rawToken, 12);
+    const expiresMinutes = dto.expiresMinutes ?? 30;
+    const expiresAt = new Date(Date.now() + (expiresMinutes * 60 * 1000));
+
+    await this.tenantPasswordResetTokenRepo.update(
+      {
+        tenantId,
+        email: normalizedEmail,
+        usedAt: IsNull(),
+      },
+      {
+        usedAt: new Date(),
+      },
+    );
+
+    const savedToken = await this.tenantPasswordResetTokenRepo.save(
+      this.tenantPasswordResetTokenRepo.create({
+        tenantId,
+        email: normalizedEmail,
+        tokenHash,
+        expiresAt,
+        usedAt: null,
+        issuedByMasterUserId,
+      }),
+    );
+
+    let deliveredToEmail = false;
+    let mailDeliveryError: string | null = null;
+    try {
+      await this.bootstrapTokenMailService.sendPasswordResetToken({
+        to: normalizedEmail,
+        tenantName: tenant.name,
+        tenantSlug: tenant.slug,
+        token: rawToken,
+        expiresAtIso: expiresAt.toISOString(),
+      });
+      deliveredToEmail = true;
+    } catch (error) {
+      deliveredToEmail = false;
+      mailDeliveryError = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`password reset 토큰 발급 후 이메일 전송 실패: tenantId=${tenant.id}, tenantSlug=${tenant.slug}, email=${normalizedEmail}, reason=${mailDeliveryError}`);
+    }
+
+    return {
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      email: normalizedEmail,
+      token: rawToken,
+      expiresAt: expiresAt.toISOString(),
+      deliveredToEmail,
+      mailDeliveryError,
     };
   }
 
@@ -464,6 +601,16 @@ export class TenantsService {
 
     if (query.to) {
       qb.andWhere('token.created_at <= :to', { to: query.to });
+    }
+
+    if (query.status === BOOTSTRAP_TOKEN_HISTORY_STATUS.USED) {
+      qb.andWhere('token.used_at IS NOT NULL');
+    } else if (query.status === BOOTSTRAP_TOKEN_HISTORY_STATUS.ACTIVE) {
+      qb.andWhere('token.used_at IS NULL')
+        .andWhere('token.expires_at >= :now', { now: new Date().toISOString() });
+    } else if (query.status === BOOTSTRAP_TOKEN_HISTORY_STATUS.EXPIRED) {
+      qb.andWhere('token.used_at IS NULL')
+        .andWhere('token.expires_at < :now', { now: new Date().toISOString() });
     }
 
     const [rows, total] = await qb

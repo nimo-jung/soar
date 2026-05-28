@@ -17,6 +17,7 @@ import MonitoringPage from './pages/monitoring/MonitoringPage';
 import DataIsolationPage from './pages/data-isolation/DataIsolationPage';
 import SystemStatusPage from './pages/system-status/SystemStatusPage';
 import IntegrityPage from './pages/integrity/IntegrityPage';
+import SmtpSettingsPage from './pages/smtp-settings/SmtpSettingsPage';
 
 const App: React.FC = () => {
   return (
@@ -32,6 +33,7 @@ const App: React.FC = () => {
             <Route path="/quotas" element={<Navigate to="/tenants" replace />} />
             <Route path="/master-users" element={<MasterUsersPage />} />
             <Route path="/auth-settings" element={<AuthSettingsPage />} />
+            <Route path="/smtp-settings" element={<SmtpSettingsPage />} />
             <Route path="/product-info" element={<ProductInfoPage />} />
             <Route path="/audit-logs" element={<AuditLogsPage />} />
             <Route path="/threat-intel" element={<ThreatIntelPage />} />

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # TMS DB 마이그레이션 실행 스크립트
-# 사용법: ./scripts/migrate.sh [run|revert|generate <name>|reset [db|tables] [--yes]] [dev|prod]
+# 사용법: ./scripts/migrate.sh [run|revert|generate <name>|reset [db|tables|all-tenants] [--yes]] [dev|prod]
 # =============================================================================
 set -euo pipefail
 
@@ -117,6 +117,85 @@ reset_admin_tables() {
   npx typeorm-ts-node-commonjs -d src/database/admin-data-source.ts schema:drop
 }
 
+reset_all_tenant_databases() {
+  info "tenant_db_* 데이터베이스 DROP 수행 중..."
+  node <<'NODE'
+const mysql = require('mysql2/promise');
+
+const host = process.env.DB_HOST || 'localhost';
+const port = Number(process.env.DB_PORT || '3306');
+const appUser = process.env.DB_USER || process.env.MARIADB_USER || 'tms';
+const appPassword = process.env.DB_PASSWORD || process.env.MARIADB_PASSWORD || 'tmspassword';
+const rootPassword = process.env.MARIADB_ROOT_PASSWORD || '';
+
+function isSafeIdentifier(value) {
+  return /^[A-Za-z0-9_]+$/.test(value);
+}
+
+async function withAdminConnection() {
+  if (rootPassword) {
+    try {
+      return await mysql.createConnection({
+        host,
+        port,
+        user: 'root',
+        password: rootPassword,
+      });
+    } catch (err) {
+      console.warn(`[WARN] root 연결 실패, 애플리케이션 계정으로 재시도: ${err.message}`);
+    }
+  }
+
+  return mysql.createConnection({
+    host,
+    port,
+    user: appUser,
+    password: appPassword,
+  });
+}
+
+async function main() {
+  const conn = await withAdminConnection();
+
+  try {
+    const [rows] = await conn.query("SHOW DATABASES LIKE 'tenant_db_%'");
+    const names = rows
+      .map((row) => {
+        if (row.Database || row.database) {
+          return row.Database || row.database;
+        }
+        const firstValue = Object.values(row)[0];
+        return typeof firstValue === 'string' ? firstValue : null;
+      })
+      .filter((name) => typeof name === 'string');
+
+    if (names.length === 0) {
+      console.log('[Reset] 삭제할 tenant_db_* 데이터베이스가 없습니다.');
+      return;
+    }
+
+    const dropped = [];
+    for (const dbName of names) {
+      if (!isSafeIdentifier(dbName)) {
+        throw new Error(`Unsafe DB name: ${dbName}`);
+      }
+      await conn.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+      dropped.push(dbName);
+    }
+
+    console.log(`[Reset] Tenant databases dropped: ${dropped.join(', ')}`);
+  } finally {
+    await conn.end();
+  }
+}
+
+main().catch((err) => {
+  console.error('[Reset] Failed to drop tenant databases:', err.message);
+  process.exit(1);
+});
+NODE
+}
+
 reset_redis_runtime_keys() {
   info "Redis 런타임 키 정리 수행 중... (auth/session/cache)"
   node <<'NODE'
@@ -195,6 +274,77 @@ run_admin_migrate_and_seed() {
   npm run migration:run:admin
 }
 
+ensure_system_tenant_database() {
+  info "system 테넌트 DB(tenant_db_system) 생성/권한 확인 중..."
+  node <<'NODE'
+const mysql = require('mysql2/promise');
+
+const host = process.env.DB_HOST || 'localhost';
+const port = Number(process.env.DB_PORT || '3306');
+const appUser = process.env.DB_USER || process.env.MARIADB_USER || 'tms';
+const appPassword = process.env.DB_PASSWORD || process.env.MARIADB_PASSWORD || 'tmspassword';
+const rootPassword = process.env.MARIADB_ROOT_PASSWORD || '';
+const tenantDb = 'tenant_db_system';
+
+function isSafeIdentifier(value) {
+  return /^[A-Za-z0-9_]+$/.test(value);
+}
+
+if (!isSafeIdentifier(appUser) || !isSafeIdentifier(tenantDb)) {
+  throw new Error('Unsafe identifier detected for DB provisioning');
+}
+
+async function withAdminConnection() {
+  if (rootPassword) {
+    try {
+      return await mysql.createConnection({
+        host,
+        port,
+        user: 'root',
+        password: rootPassword,
+      });
+    } catch (err) {
+      console.warn(`[WARN] root 연결 실패, 애플리케이션 계정으로 재시도: ${err.message}`);
+    }
+  }
+
+  return mysql.createConnection({
+    host,
+    port,
+    user: appUser,
+    password: appPassword,
+  });
+}
+
+async function main() {
+  const adminConn = await withAdminConnection();
+  const [whoRows] = await adminConn.query('SELECT CURRENT_USER() AS currentUser');
+  const currentUser = whoRows[0]?.currentUser || '';
+  const isRoot = typeof currentUser === 'string' && currentUser.startsWith('root@');
+
+  await adminConn.query(`CREATE DATABASE IF NOT EXISTS \`${tenantDb}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+
+  if (isRoot) {
+    await adminConn.query(`GRANT ALL PRIVILEGES ON \`${tenantDb}\`.* TO '${appUser}'@'%'`);
+    await adminConn.query('FLUSH PRIVILEGES');
+  }
+
+  await adminConn.end();
+  console.log(`[Provision] ensured ${tenantDb} (grant=${isRoot ? 'applied' : 'skipped'})`);
+}
+
+main().catch((err) => {
+  console.error('[Provision] Failed to ensure tenant_db_system:', err.message);
+  process.exit(1);
+});
+NODE
+}
+
+run_system_tenant_migrations() {
+  info "system 테넌트 스키마 마이그레이션 실행 (tenant_db_system)..."
+  TENANT_DB_NAME=tenant_db_system npm run migration:run:tenant
+}
+
 if [[ ! -f "$ENV_FILE" ]]; then
   error "환경변수 파일이 없습니다: $ENV_FILE"
   exit 1
@@ -227,6 +377,8 @@ case "$CMD" in
   run)
     info "tms_admin 마이그레이션 실행..."
     npm run migration:run:admin
+    ensure_system_tenant_database
+    run_system_tenant_migrations
     success "마이그레이션 완료"
     print_migrate_hint run
     ;;
@@ -247,18 +399,21 @@ case "$CMD" in
     RESET_KIND="${1:-db}"
     FORCE_FLAG="${2:-}"
 
-    if [[ "$RESET_KIND" != "db" && "$RESET_KIND" != "tables" ]]; then
-      error "reset 옵션은 db 또는 tables만 지원합니다."
-      echo "사용법: $0 reset [db|tables] [--yes] [dev|prod]"
+    if [[ "$RESET_KIND" != "db" && "$RESET_KIND" != "tables" && "$RESET_KIND" != "all-tenants" ]]; then
+      error "reset 옵션은 db, tables, all-tenants만 지원합니다."
+      echo "사용법: $0 reset [db|tables|all-tenants] [--yes] [dev|prod]"
       exit 1
     fi
 
     if [[ "$RESET_KIND" == "db" ]]; then
       confirm_destructive "DB를 삭제 후 재생성합니다: tms_admin" "$FORCE_FLAG" || exit 1
       reset_admin_database
-    else
+    elif [[ "$RESET_KIND" == "tables" ]]; then
       confirm_destructive "tms_admin의 모든 테이블을 삭제합니다." "$FORCE_FLAG" || exit 1
       reset_admin_tables
+    else
+      confirm_destructive "모든 tenant_db_* 데이터베이스를 삭제합니다. (system 포함)" "$FORCE_FLAG" || exit 1
+      reset_all_tenant_databases
     fi
 
     if ! reset_redis_runtime_keys; then
@@ -266,11 +421,13 @@ case "$CMD" in
     fi
 
     run_admin_migrate_and_seed
+    ensure_system_tenant_database
+    run_system_tenant_migrations
     success "리셋 완료 ($RESET_KIND)"
     print_migrate_hint reset
     ;;
   *)
-    echo "사용법: $0 [run|revert|generate <name>|reset [db|tables] [--yes]] [dev|prod]"
+    echo "사용법: $0 [run|revert|generate <name>|reset [db|tables|all-tenants] [--yes]] [dev|prod]"
     exit 1
     ;;
 esac

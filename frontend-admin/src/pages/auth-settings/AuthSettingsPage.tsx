@@ -1,18 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
+import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
-import { Message } from 'primereact/message';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
-import { AuthPolicy } from '../../types/auth-policy';
+import type { AuthPolicy } from '../../types/auth-policy';
+
+interface ResultDialogState {
+  visible: boolean;
+  title: string;
+  message: string;
+}
 
 const AuthSettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [resultDialog, setResultDialog] = useState<ResultDialogState>({
+    visible: false,
+    title: '',
+    message: '',
+  });
   const [form, setForm] = useState<AuthPolicy>({
     maxLoginFailures: 3,
     lockMinutes: 5,
@@ -20,21 +29,55 @@ const AuthSettingsPage: React.FC = () => {
     autoLogoutTimeoutMinutes: 5,
   });
 
+  const invalidMaxLoginFailures = useMemo(() => (
+    form.maxLoginFailures < 1 || form.maxLoginFailures > 5
+  ), [form.maxLoginFailures]);
+
+  const invalidLockMinutes = useMemo(() => (
+    form.lockMinutes < 3 || form.lockMinutes > 30
+  ), [form.lockMinutes]);
+
+  const invalidMaxConcurrentSessions = useMemo(() => (
+    form.maxConcurrentSessions < 1 || form.maxConcurrentSessions > 5
+  ), [form.maxConcurrentSessions]);
+
   const invalidTimeout = useMemo(() => {
     const timeout = form.autoLogoutTimeoutMinutes;
     return timeout !== 0 && (timeout < 1 || timeout > 30);
   }, [form.autoLogoutTimeoutMinutes]);
 
+  const hasInvalidForm = invalidMaxLoginFailures
+    || invalidLockMinutes
+    || invalidMaxConcurrentSessions
+    || invalidTimeout;
+
+  const openResultDialog = (title: string, message: string) => {
+    setResultDialog({
+      visible: true,
+      title,
+      message,
+    });
+  };
+
+  const extractApiMessage = (error: unknown): string => {
+    const rawMessage = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+    if (typeof rawMessage === 'string') {
+      return rawMessage;
+    }
+    if (Array.isArray(rawMessage)) {
+      return rawMessage.filter((item): item is string => typeof item === 'string').join(', ');
+    }
+    return '';
+  };
+
   const loadSettings = async () => {
     setLoading(true);
-    setError('');
     try {
       const response = await api.get<AuthPolicy>('/admin/auth-settings');
       setForm(response.data);
-    } catch (loadError: any) {
-      const responseMessage = loadError?.response?.data?.message;
-      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
-      setError(message || t('authSettings.loadFailed'));
+    } catch (loadError: unknown) {
+      const message = extractApiMessage(loadError) || t('authSettings.loadFailed');
+      openResultDialog(t('authSettings.resultDialog.failedTitle'), message);
     } finally {
       setLoading(false);
     }
@@ -45,11 +88,7 @@ const AuthSettingsPage: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
-    setError('');
-    setSuccess('');
-
-    if (invalidTimeout) {
-      setError(t('authSettings.validation.autoLogoutTimeoutMinutes'));
+    if (hasInvalidForm) {
       return;
     }
 
@@ -57,11 +96,10 @@ const AuthSettingsPage: React.FC = () => {
     try {
       const response = await api.patch<AuthPolicy>('/admin/auth-settings', form);
       setForm(response.data);
-      setSuccess(t('authSettings.saveSuccess'));
-    } catch (saveError: any) {
-      const responseMessage = saveError?.response?.data?.message;
-      const message = Array.isArray(responseMessage) ? responseMessage.join(', ') : responseMessage;
-      setError(message || t('authSettings.saveFailed'));
+      openResultDialog(t('authSettings.resultDialog.successTitle'), t('authSettings.saveSuccess'));
+    } catch (saveError: unknown) {
+      const message = extractApiMessage(saveError) || t('authSettings.saveFailed');
+      openResultDialog(t('authSettings.resultDialog.failedTitle'), message);
     } finally {
       setSaving(false);
     }
@@ -75,8 +113,22 @@ const AuthSettingsPage: React.FC = () => {
           <p className="admin-page-subtitle">{t('authSettings.description')}</p>
         </div>
       </div>
-      {error && <Message severity="error" text={error} className="w-full mb-3" />}
-      {success && <Message severity="success" text={success} className="w-full mb-3" />}
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '420px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button
+              label={t('common.confirm')}
+              onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+            />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
 
       <Card className="admin-card monitoring-panel-card" style={{ maxWidth: '760px' }}>
         <div className="grid">
@@ -85,13 +137,20 @@ const AuthSettingsPage: React.FC = () => {
             <InputNumber
               id="max-login-failures"
               value={form.maxLoginFailures}
-              min={1}
-              max={5}
               useGrouping={false}
               className="w-full"
-              onValueChange={(event) => setForm((prev) => ({ ...prev, maxLoginFailures: event.value ?? 1 }))}
+              onValueChange={(event) => {
+                const nextValue = event.value;
+                if (typeof nextValue === 'number' && Number.isFinite(nextValue)) {
+                  setForm((prev) => ({ ...prev, maxLoginFailures: nextValue }));
+                }
+              }}
               disabled={loading}
+              invalid={invalidMaxLoginFailures}
             />
+            {invalidMaxLoginFailures && (
+              <small className="p-error block mt-1">{t('authSettings.validation.maxLoginFailures')}</small>
+            )}
             <small className="text-color-secondary">{t('authSettings.maxLoginFailures.help')}</small>
           </div>
 
@@ -100,13 +159,20 @@ const AuthSettingsPage: React.FC = () => {
             <InputNumber
               id="lock-minutes"
               value={form.lockMinutes}
-              min={3}
-              max={30}
               useGrouping={false}
               className="w-full"
-              onValueChange={(event) => setForm((prev) => ({ ...prev, lockMinutes: event.value ?? 3 }))}
+              onValueChange={(event) => {
+                const nextValue = event.value;
+                if (typeof nextValue === 'number' && Number.isFinite(nextValue)) {
+                  setForm((prev) => ({ ...prev, lockMinutes: nextValue }));
+                }
+              }}
               disabled={loading}
+              invalid={invalidLockMinutes}
             />
+            {invalidLockMinutes && (
+              <small className="p-error block mt-1">{t('authSettings.validation.lockMinutes')}</small>
+            )}
             <small className="text-color-secondary">{t('authSettings.lockMinutes.help')}</small>
           </div>
 
@@ -115,13 +181,20 @@ const AuthSettingsPage: React.FC = () => {
             <InputNumber
               id="max-concurrent-sessions"
               value={form.maxConcurrentSessions}
-              min={1}
-              max={5}
               useGrouping={false}
               className="w-full"
-              onValueChange={(event) => setForm((prev) => ({ ...prev, maxConcurrentSessions: event.value ?? 1 }))}
+              onValueChange={(event) => {
+                const nextValue = event.value;
+                if (typeof nextValue === 'number' && Number.isFinite(nextValue)) {
+                  setForm((prev) => ({ ...prev, maxConcurrentSessions: nextValue }));
+                }
+              }}
               disabled={loading}
+              invalid={invalidMaxConcurrentSessions}
             />
+            {invalidMaxConcurrentSessions && (
+              <small className="p-error block mt-1">{t('authSettings.validation.maxConcurrentSessions')}</small>
+            )}
             <small className="text-color-secondary">{t('authSettings.maxConcurrentSessions.help')}</small>
           </div>
 
@@ -130,13 +203,20 @@ const AuthSettingsPage: React.FC = () => {
             <InputNumber
               id="auto-logout-timeout"
               value={form.autoLogoutTimeoutMinutes}
-              min={0}
-              max={30}
               useGrouping={false}
               className="w-full"
-              onValueChange={(event) => setForm((prev) => ({ ...prev, autoLogoutTimeoutMinutes: event.value ?? 0 }))}
+              onValueChange={(event) => {
+                const nextValue = event.value;
+                if (typeof nextValue === 'number' && Number.isFinite(nextValue)) {
+                  setForm((prev) => ({ ...prev, autoLogoutTimeoutMinutes: nextValue }));
+                }
+              }}
               disabled={loading}
+              invalid={invalidTimeout}
             />
+            {invalidTimeout && (
+              <small className="p-error block mt-1">{t('authSettings.validation.autoLogoutTimeoutMinutes')}</small>
+            )}
             <small className="text-color-secondary">{t('authSettings.autoLogoutTimeoutMinutes.help')}</small>
           </div>
         </div>
@@ -149,7 +229,7 @@ const AuthSettingsPage: React.FC = () => {
               void handleSave();
             }}
             loading={saving}
-            disabled={loading}
+            disabled={loading || hasInvalidForm}
           />
         </div>
       </Card>

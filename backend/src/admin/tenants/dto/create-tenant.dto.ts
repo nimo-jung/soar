@@ -45,9 +45,10 @@ export class CreateTenantDto {
   @IsOptional()
   retentionDays?: number;
 
-  @ApiProperty({ description: '사용 기한(ISO-8601)', example: '2026-12-31T23:59:59.000Z' })
+  @ApiPropertyOptional({ description: '사용 기한(ISO-8601). 무제한 등급 또는 system 테넌트는 null 허용', example: '2026-12-31T23:59:59.000Z' })
   @IsDateString()
-  expiresAt: string;
+  @IsOptional()
+  expiresAt?: string | null;
 
   @ApiProperty({ description: '로그 수집 대상 IP 대역(단일 IP 또는 CIDR, 콤마 구분 목록)', example: '10.0.0.10,10.0.1.0/24' })
   @IsString()

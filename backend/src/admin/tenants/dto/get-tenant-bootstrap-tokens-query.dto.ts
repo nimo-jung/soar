@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+
+export const BOOTSTRAP_TOKEN_HISTORY_STATUS = {
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+  USED: 'USED',
+} as const;
+
+export type BootstrapTokenHistoryStatus = (typeof BOOTSTRAP_TOKEN_HISTORY_STATUS)[keyof typeof BOOTSTRAP_TOKEN_HISTORY_STATUS];
 
 export class GetTenantBootstrapTokensQueryDto {
   @ApiPropertyOptional({ description: '페이지 번호(기본 1)', minimum: 1 })
@@ -27,4 +35,9 @@ export class GetTenantBootstrapTokensQueryDto {
   @IsOptional()
   @IsDateString()
   to?: string;
+
+  @ApiPropertyOptional({ description: '토큰 상태 필터', enum: Object.values(BOOTSTRAP_TOKEN_HISTORY_STATUS) })
+  @IsOptional()
+  @IsIn(Object.values(BOOTSTRAP_TOKEN_HISTORY_STATUS))
+  status?: BootstrapTokenHistoryStatus;
 }

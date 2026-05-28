@@ -4,6 +4,7 @@ import { MasterUser } from '../admin/master-users/entities/master-user.entity';
 import { Tenant } from '../admin/tenants/entities/tenant.entity';
 import { TenantSettings } from '../admin/tenants/entities/tenant-settings.entity';
 import { TenantBootstrapToken } from '../admin/tenants/entities/tenant-bootstrap-token.entity';
+import { TenantPasswordResetToken } from '../admin/tenants/entities/tenant-password-reset-token.entity';
 import { TenantConnectionService } from '../common/database/tenant-connection.service';
 import { LoginDto } from './dto/login.dto';
 import { TenantLoginDto } from './dto/tenant-login.dto';
@@ -15,6 +16,7 @@ import { BootstrapMasterDto } from './dto/bootstrap-master.dto';
 import { ProductInfoService } from '../admin/product-info/product-info.service';
 import { SessionStoreService } from '../common/session/session-store.service';
 import { BootstrapTenantDto } from './dto/bootstrap-tenant.dto';
+import { ResetTenantPasswordDto } from './dto/reset-tenant-password.dto';
 interface AuthAuditContext {
     ipAddress?: string | null;
     userAgent?: string | null;
@@ -24,6 +26,7 @@ export declare class AuthService {
     private readonly tenantRepo;
     private readonly tenantSettingsRepo;
     private readonly tenantBootstrapTokenRepo;
+    private readonly tenantPasswordResetTokenRepo;
     private readonly masterAuthSettingsRepo;
     private readonly securityStateRepo;
     private readonly tenantConnectionService;
@@ -31,7 +34,7 @@ export declare class AuthService {
     private readonly auditLogService;
     private readonly productInfoService;
     private readonly sessionStore;
-    constructor(masterUserRepo: Repository<MasterUser>, tenantRepo: Repository<Tenant>, tenantSettingsRepo: Repository<TenantSettings>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, masterAuthSettingsRepo: Repository<MasterAuthSettings>, securityStateRepo: Repository<AuthUserSecurityState>, tenantConnectionService: TenantConnectionService, jwtService: JwtService, auditLogService: AuditLogService, productInfoService: ProductInfoService, sessionStore: SessionStoreService);
+    constructor(masterUserRepo: Repository<MasterUser>, tenantRepo: Repository<Tenant>, tenantSettingsRepo: Repository<TenantSettings>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>, masterAuthSettingsRepo: Repository<MasterAuthSettings>, securityStateRepo: Repository<AuthUserSecurityState>, tenantConnectionService: TenantConnectionService, jwtService: JwtService, auditLogService: AuditLogService, productInfoService: ProductInfoService, sessionStore: SessionStoreService);
     private normalizeLoginId;
     private resolvePolicy;
     private getMasterAuthPolicy;
@@ -70,6 +73,9 @@ export declare class AuthService {
         expiresAt: string | null;
     }>;
     private computeExpiryWarning;
+    private isTenantExpired;
+    private assertTenantNotExpired;
+    private assertTenantNotExpiredFromPayload;
     getPublicTenantExpiryStatus(tenantSlug: string): Promise<{
         daysRemaining: number | null;
         expiresAt: string | null;
@@ -80,6 +86,11 @@ export declare class AuthService {
         requiresBootstrap: boolean;
     }>;
     bootstrapTenant(dto: BootstrapTenantDto, context: AuthAuditContext): Promise<{
+        success: true;
+        tenantSlug: string;
+        email: string;
+    }>;
+    resetTenantPassword(dto: ResetTenantPasswordDto, context: AuthAuditContext): Promise<{
         success: true;
         tenantSlug: string;
         email: string;

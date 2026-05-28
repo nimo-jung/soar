@@ -9,6 +9,10 @@ import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
 import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
 import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
+import { IssueTenantPasswordResetTokenDto } from './dto/issue-tenant-password-reset-token.dto';
+import { TenantConnectionService } from '../../common/database/tenant-connection.service';
+import { TenantPasswordResetToken } from './entities/tenant-password-reset-token.entity';
+import { BootstrapTokenMailService } from './bootstrap-token-mail.service';
 export interface TierDeletionStatus {
     canDelete: boolean;
     tier: TenantTier;
@@ -20,8 +24,14 @@ export declare class TenantsService {
     private readonly settingsRepo;
     private readonly tierRepo;
     private readonly tenantBootstrapTokenRepo;
+    private readonly tenantPasswordResetTokenRepo;
     private readonly dataSource;
-    constructor(tenantRepo: Repository<Tenant>, settingsRepo: Repository<TenantSettings>, tierRepo: Repository<TenantTier>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, dataSource: DataSource);
+    private readonly tenantConnectionService;
+    private readonly bootstrapTokenMailService;
+    private readonly logger;
+    constructor(tenantRepo: Repository<Tenant>, settingsRepo: Repository<TenantSettings>, tierRepo: Repository<TenantTier>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>, dataSource: DataSource, tenantConnectionService: TenantConnectionService, bootstrapTokenMailService: BootstrapTokenMailService);
+    private getTenantUserRepoBySlug;
+    private hasAnyActiveTenantUser;
     private findTierForTenantById;
     private findDefaultTierForTenant;
     private isValidIpv4;
@@ -46,6 +56,17 @@ export declare class TenantsService {
         email: string | null;
         token: string;
         expiresAt: string;
+        deliveredToEmail: boolean;
+        mailDeliveryError: string | null;
+    }>;
+    issuePasswordResetToken(tenantId: number, dto: IssueTenantPasswordResetTokenDto, issuedByMasterUserId: number): Promise<{
+        tenantId: number;
+        tenantSlug: string;
+        email: string;
+        token: string;
+        expiresAt: string;
+        deliveredToEmail: boolean;
+        mailDeliveryError: string | null;
     }>;
     getBootstrapTokenHistory(tenantId: number, query: GetTenantBootstrapTokensQueryDto): Promise<{
         items: Array<{

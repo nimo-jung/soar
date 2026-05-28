@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
-import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
@@ -36,13 +35,36 @@ const STATUS_SEVERITY_MAP: Record<IntegrityStatus, 'success' | 'danger' | 'warni
 
 const IntegrityPage: React.FC = () => {
   const { t } = useTranslation();
-  const toast = useRef<Toast>(null);
   const [baselines, setBaselines] = useState<IntegrityBaseline[]>([]);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [syncingId, setSyncingId] = useState<number | null>(null);
   const [showRegister, setShowRegister] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
   const [form, setForm] = useState({ filePath: '', fileLabel: '' });
+  const [resultDialog, setResultDialog] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  const openResultDialog = (title: string, message: string) => {
+    setResultDialog({ visible: true, title, message });
+  };
+
+  const extractApiMessage = (error: unknown): string => {
+    const rawMessage = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+    if (typeof rawMessage === 'string') {
+      return rawMessage;
+    }
+    if (Array.isArray(rawMessage)) {
+      return rawMessage.filter((item): item is string => typeof item === 'string').join(', ');
+    }
+    return '';
+  };
+
+  const filePathMissing = showValidation && form.filePath.trim().length === 0;
+  const fileLabelMissing = showValidation && form.fileLabel.trim().length === 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +85,9 @@ const IntegrityPage: React.FC = () => {
     try {
       const res = await api.post<IntegrityBaseline[]>('/admin/integrity/check');
       setBaselines(res.data);
-      toast.current?.show({ severity: 'info', summary: t('integrity.checkDone'), life: 3000 });
+      openResultDialog(t('integrity.resultDialog.successTitle'), t('integrity.checkDone'));
+    } catch (error: unknown) {
+      openResultDialog(t('integrity.resultDialog.failedTitle'), extractApiMessage(error) || t('integrity.resultDialog.checkFailed'));
     } finally {
       setChecking(false);
     }
@@ -73,10 +97,10 @@ const IntegrityPage: React.FC = () => {
     setSyncingId(row.id);
     try {
       await api.post(`/admin/integrity/${row.id}/sync`);
-      toast.current?.show({ severity: 'success', summary: t('integrity.syncDone'), detail: row.fileLabel, life: 3000 });
+      openResultDialog(t('integrity.resultDialog.successTitle'), `${t('integrity.syncDone')}: ${row.fileLabel}`);
       void load();
-    } catch {
-      toast.current?.show({ severity: 'error', summary: t('integrity.syncFailed'), life: 3000 });
+    } catch (error: unknown) {
+      openResultDialog(t('integrity.resultDialog.failedTitle'), extractApiMessage(error) || t('integrity.syncFailed'));
     } finally {
       setSyncingId(null);
     }
@@ -89,18 +113,36 @@ const IntegrityPage: React.FC = () => {
       icon: 'pi pi-exclamation-triangle',
       acceptClassName: 'p-button-danger',
       accept: async () => {
-        await api.delete(`/admin/integrity/${row.id}`);
-        void load();
+        try {
+          await api.delete(`/admin/integrity/${row.id}`);
+          openResultDialog(t('integrity.resultDialog.successTitle'), t('integrity.resultDialog.deleteSuccess'));
+          void load();
+        } catch (error: unknown) {
+          openResultDialog(t('integrity.resultDialog.failedTitle'), extractApiMessage(error) || t('integrity.resultDialog.deleteFailed'));
+        }
       },
     });
   };
 
   const handleRegister = async () => {
-    if (!form.filePath.trim() || !form.fileLabel.trim()) return;
-    await api.post('/admin/integrity/register', form);
-    setShowRegister(false);
-    setForm({ filePath: '', fileLabel: '' });
-    void load();
+    setShowValidation(true);
+    if (filePathMissing || fileLabelMissing) {
+      return;
+    }
+
+    try {
+      await api.post('/admin/integrity/register', {
+        filePath: form.filePath.trim(),
+        fileLabel: form.fileLabel.trim(),
+      });
+      setShowRegister(false);
+      setForm({ filePath: '', fileLabel: '' });
+      setShowValidation(false);
+      openResultDialog(t('integrity.resultDialog.successTitle'), t('integrity.resultDialog.registerSuccess'));
+      void load();
+    } catch (error: unknown) {
+      openResultDialog(t('integrity.resultDialog.failedTitle'), extractApiMessage(error) || t('integrity.resultDialog.registerFailed'));
+    }
   };
 
   const statusBody = (row: IntegrityBaseline) => (
@@ -141,7 +183,19 @@ const IntegrityPage: React.FC = () => {
 
   return (
     <div className="admin-page">
-      <Toast ref={toast} />
+      <Dialog
+        visible={resultDialog.visible}
+        header={resultDialog.title}
+        style={{ width: '460px', maxWidth: '96vw' }}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        footer={(
+          <div className="flex justify-content-end">
+            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
+          </div>
+        )}
+      >
+        <p className="m-0">{resultDialog.message}</p>
+      </Dialog>
       <ConfirmDialog />
       <div className="admin-page-header">
         <h1>{t('integrity.title')}</h1>
@@ -191,7 +245,10 @@ const IntegrityPage: React.FC = () => {
         header={t('integrity.registerDialog.title')}
         visible={showRegister}
         style={{ width: '480px' }}
-        onHide={() => setShowRegister(false)}
+        onHide={() => {
+          setShowRegister(false);
+          setShowValidation(false);
+        }}
         footer={
           <div className="flex justify-content-end gap-2">
             <Button label={t('common.cancel')} outlined onClick={() => setShowRegister(false)} />
@@ -206,8 +263,10 @@ const IntegrityPage: React.FC = () => {
               value={form.filePath}
               onChange={(e) => setForm({ ...form, filePath: e.target.value })}
               className="w-full"
+              invalid={filePathMissing}
               placeholder="/app/dist/main.js"
             />
+            {filePathMissing && <small className="p-error block mt-1">{t('integrity.validation.filePathRequired')}</small>}
           </div>
           <div>
             <label className="admin-form-label">{t('integrity.registerDialog.fileLabel')}</label>
@@ -215,8 +274,10 @@ const IntegrityPage: React.FC = () => {
               value={form.fileLabel}
               onChange={(e) => setForm({ ...form, fileLabel: e.target.value })}
               className="w-full"
+              invalid={fileLabelMissing}
               placeholder="Backend 빌드 결과물"
             />
+            {fileLabelMissing && <small className="p-error block mt-1">{t('integrity.validation.fileLabelRequired')}</small>}
           </div>
         </div>
       </Dialog>

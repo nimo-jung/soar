@@ -21,6 +21,7 @@ import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateTenantTierDto } from './dto/create-tenant-tier.dto';
 import { UpdateTenantTierDto } from './dto/update-tenant-tier.dto';
 import { IssueTenantBootstrapTokenDto } from './dto/issue-tenant-bootstrap-token.dto';
+import { IssueTenantPasswordResetTokenDto } from './dto/issue-tenant-password-reset-token.dto';
 import { GetTenantBootstrapTokensQueryDto } from './dto/get-tenant-bootstrap-tokens-query.dto';
 import { MasterGuard } from '../../common/guards/master.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -298,12 +299,16 @@ export class TenantsController {
         `tenantId=${issued.tenantId}`,
         `tenantSlug=${this.safe(issued.tenantSlug)}`,
         `email=${this.safe(issued.email)}`,
+        `deliveredToEmail=${issued.deliveredToEmail ? 'Y' : 'N'}`,
+        `mailDeliveryError=${this.safe(issued.mailDeliveryError)}`,
         `expiresAt=${this.safe(issued.expiresAt)}`,
       ].join(' | '),
       metadata: {
         tenantId: issued.tenantId,
         tenantSlug: issued.tenantSlug,
         email: issued.email,
+        deliveredToEmail: issued.deliveredToEmail,
+        mailDeliveryError: issued.mailDeliveryError,
         expiresAt: issued.expiresAt,
       },
     });
@@ -318,5 +323,42 @@ export class TenantsController {
     @Query() query: GetTenantBootstrapTokensQueryDto,
   ) {
     return this.tenantsService.getBootstrapTokenHistory(id, query);
+  }
+
+  @Post(':id/password-reset-token')
+  @ApiOperation({ summary: '테넌트 관리자 비밀번호 재설정 토큰 발급' })
+  async issuePasswordResetToken(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: IssueTenantPasswordResetTokenDto,
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
+    const issued = await this.tenantsService.issuePasswordResetToken(id, dto, user.sub);
+
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'TENANT_PASSWORD_RESET_TOKEN_ISSUE',
+      resourceType: 'TENANT_PASSWORD_RESET_TOKEN',
+      resourceId: String(id),
+      message: [
+        '테넌트 관리자 비밀번호 재설정 토큰 발급',
+        `tenantId=${issued.tenantId}`,
+        `tenantSlug=${this.safe(issued.tenantSlug)}`,
+        `email=${this.safe(issued.email)}`,
+        `deliveredToEmail=${issued.deliveredToEmail ? 'Y' : 'N'}`,
+        `mailDeliveryError=${this.safe(issued.mailDeliveryError)}`,
+        `expiresAt=${this.safe(issued.expiresAt)}`,
+      ].join(' | '),
+      metadata: {
+        tenantId: issued.tenantId,
+        tenantSlug: issued.tenantSlug,
+        email: issued.email,
+        deliveredToEmail: issued.deliveredToEmail,
+        mailDeliveryError: issued.mailDeliveryError,
+        expiresAt: issued.expiresAt,
+      },
+    });
+
+    return issued;
   }
 }
