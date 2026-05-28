@@ -1,53 +1,123 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { BreadCrumb } from 'primereact/breadcrumb';
+import { IconField } from 'primereact/iconfield';
+import { InputText } from 'primereact/inputtext';
+import { InputIcon } from 'primereact/inputicon';
+import { Tooltip } from 'primereact/tooltip';
 import { useAuthStore } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import LanguageSwitcher from '../LanguageSwitcher';
 import SessionTimeoutManager from '../SessionTimeoutManager';
 import api from '../../api';
 
-/* ── Verona grouped nav model ─────────────────────────────────── */
+interface NavItem {
+  labelKey: string;
+  icon: string;
+  path?: string;
+  children?: NavItem[];
+}
+
+interface NavGroup {
+  categoryKey: string;
+  items: NavItem[];
+}
+
+/* ── Verona grouped nav model (2-depth) ───────────────────────── */
 const navModel = [
   {
     categoryKey: 'nav.categories.security',
     items: [
-      { labelKey: 'nav.dashboard', path: '/dashboard', icon: 'pi pi-home' },
-      { labelKey: 'nav.alerts', path: '/alerts', icon: 'pi pi-bell' },
-      { labelKey: 'nav.playbooks', path: '/playbooks', icon: 'pi pi-sitemap' },
+      {
+        labelKey: 'nav.securityCenter',
+        icon: 'pi pi-home',
+        children: [
+          { labelKey: 'nav.dashboard', path: '/dashboard', icon: 'pi pi-home' },
+          { labelKey: 'nav.alerts', path: '/alerts', icon: 'pi pi-bell' },
+          { labelKey: 'nav.playbooks', path: '/playbooks', icon: 'pi pi-sitemap' },
+        ],
+      },
     ],
   },
   {
     categoryKey: 'nav.categories.collection',
     items: [
-      { labelKey: 'nav.collectors', path: '/collectors', icon: 'pi pi-server' },
+      {
+        labelKey: 'nav.ingestion',
+        icon: 'pi pi-cloud-upload',
+        children: [
+          { labelKey: 'nav.collectors', path: '/collectors', icon: 'pi pi-server' },
+        ],
+      },
     ],
   },
   {
     categoryKey: 'nav.categories.management',
     items: [
-      { labelKey: 'nav.users', path: '/users', icon: 'pi pi-users' },
-      { labelKey: 'nav.auditLogs', path: '/audit-logs', icon: 'pi pi-book' },
-      { labelKey: 'nav.settings', path: '/settings', icon: 'pi pi-cog' },
-      { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
+      {
+        labelKey: 'nav.tenantAdmin',
+        icon: 'pi pi-briefcase',
+        children: [
+          { labelKey: 'nav.users', path: '/users', icon: 'pi pi-users' },
+          { labelKey: 'nav.auditLogs', path: '/audit-logs', icon: 'pi pi-book' },
+          { labelKey: 'nav.settings', path: '/settings', icon: 'pi pi-cog' },
+          { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
+        ],
+      },
     ],
   },
-];
+] as NavGroup[];
+
+const EXPANDED_OPEN_ROOTS_STORAGE_KEY = 'tenant.sidebar.expandedOpenRoots';
+const SIDEBAR_MODE_STORAGE_KEY = 'tenant.sidebar.mode';
+const THEME_STORAGE_KEY = 'tenant.theme.mode';
+const DARK_MODE_CLASS = 'tenant-dark-mode';
+
+function isPathActive(currentPath: string, path?: string): boolean {
+  if (!path) return false;
+  return currentPath.startsWith(path);
+}
 
 /* Find breadcrumb label for current route */
-function getBreadcrumb(pathname: string, t: (key: string) => string): string {
+function getBreadcrumbItems(pathname: string, t: (key: string) => string): Array<{ label: string; icon: string }> {
   for (const group of navModel) {
     for (const item of group.items) {
-      if (pathname.startsWith(item.path)) return t(item.labelKey);
+      if (isPathActive(pathname, item.path)) {
+        return [{ label: t(item.labelKey), icon: item.icon }];
+      }
+      if (item.children) {
+        for (const child of item.children) {
+          if (isPathActive(pathname, child.path)) {
+            return [
+              { label: t(item.labelKey), icon: item.icon },
+              { label: t(child.labelKey), icon: child.icon },
+            ];
+          }
+        }
+      }
     }
   }
-  return '';
+  return [];
+}
+
+function getMenuKey(groupKey: string, itemKey: string): string {
+  return `${groupKey}::${itemKey}`;
 }
 
 /* Derive initials from tenantId */
 function initials(tenantId?: string): string {
   if (!tenantId) return 'U';
   return tenantId.slice(0, 2).toUpperCase();
+}
+
+function getDisplayCompanyName(companyName?: string): string {
+  const trimmed = companyName?.trim();
+  if (!trimmed) {
+    return 'Sniper TMS';
+  }
+
+  return trimmed.toUpperCase() === 'TMS' ? 'Sniper TMS' : trimmed;
 }
 
 const TenantLayout: React.FC = () => {
@@ -58,8 +128,30 @@ const TenantLayout: React.FC = () => {
   const branding = useBrandingStore((s) => s.branding);
   const user = useAuthStore((s) => s.user);
 
-  const [staticInactive, setStaticInactive] = useState(false);
+  const [staticInactive] = useState(false);
   const [mobileActive, setMobileActive] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'dark';
+  });
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem(SIDEBAR_MODE_STORAGE_KEY) === 'expanded';
+  });
+  const [isSidebarTransitioning, setIsSidebarTransitioning] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [activeRootMenuKey, setActiveRootMenuKey] = useState<string>('');
+  const [expandedOpenRootMenuKeys, setExpandedOpenRootMenuKeys] = useState<string[]>([]);
+  const [isExpandedRootsHydrated, setIsExpandedRootsHydrated] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const sidebarTransitionTimerRef = useRef<number | null>(null);
   const { t } = useTranslation();
 
   /* Inject branding CSS variables */
@@ -77,29 +169,109 @@ const TenantLayout: React.FC = () => {
     }
   }, [branding.primaryColor]);
 
-  const toggleMenu = () => {
-    if (window.innerWidth < 992) {
-      setMobileActive((v) => !v);
-    } else {
-      setStaticInactive((v) => !v);
-    }
-  };
-
-  const breadcrumb = useMemo(
-    () => getBreadcrumb(location.pathname, t),
+  const breadcrumbItems = useMemo(
+    () => getBreadcrumbItems(location.pathname, t).map((item) => ({
+      label: item.label,
+      template: () => (
+        <span className="tenant-breadcrumb-item">
+          <i className={`p-menuitem-icon ${item.icon}`} />
+          <span className="p-menuitem-text">{item.label}</span>
+        </span>
+      ),
+    })),
     [location.pathname, t],
   );
 
-  const wrapperClass = [
-    'layout-wrapper',
-    'layout-static',
-    staticInactive ? 'layout-static-inactive' : '',
-    mobileActive ? 'layout-mobile-active' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  useEffect(() => {
+    if (!profileMenuOpen) return;
 
-  const handleLogout = async () => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!profileMenuRef.current) return;
+      if (!profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, [profileMenuOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (sidebarTransitionTimerRef.current !== null) {
+        window.clearTimeout(sidebarTransitionTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle(DARK_MODE_CLASS, isDarkMode);
+    window.localStorage.setItem(THEME_STORAGE_KEY, isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(EXPANDED_OPEN_ROOTS_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return;
+      }
+
+      const validRootKeys = new Set(
+        navModel.flatMap((group) => group.items.map((item) => getMenuKey(group.categoryKey, item.labelKey))),
+      );
+      const filtered = parsed.filter((value): value is string => typeof value === 'string' && validRootKeys.has(value));
+      setExpandedOpenRootMenuKeys(filtered);
+    } catch {
+      // 저장된 값이 손상된 경우 무시한다.
+    } finally {
+      setIsExpandedRootsHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isExpandedRootsHydrated) {
+      return;
+    }
+
+    window.localStorage.setItem(EXPANDED_OPEN_ROOTS_STORAGE_KEY, JSON.stringify(expandedOpenRootMenuKeys));
+  }, [expandedOpenRootMenuKeys, isExpandedRootsHydrated]);
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_MODE_STORAGE_KEY, isSidebarExpanded ? 'expanded' : 'slim');
+  }, [isSidebarExpanded]);
+
+  useEffect(() => {
+    if (isSidebarExpanded || !activeRootMenuKey) return;
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target) return;
+
+      const clickedMenuItem = target.closest('.layout-root-menuitem');
+      const clickedSidebarToggle = target.closest('.layout-sidebar-toggle');
+
+      if (clickedMenuItem || clickedSidebarToggle) {
+        return;
+      }
+
+      setActiveRootMenuKey('');
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, [isSidebarExpanded, activeRootMenuKey]);
+
+  const handleLogout = useCallback(async () => {
     try {
       await api.post('/auth/logout');
     } catch {
@@ -109,108 +281,248 @@ const TenantLayout: React.FC = () => {
       logout();
       navigate('/login');
     }
+  }, [logout, navigate, resetBranding]);
+
+  const wrapperClass = [
+    'layout-container',
+    isSidebarExpanded ? 'layout-expanded' : 'layout-slim',
+    'layout-light',
+    'p-ripple-disabled',
+    'layout-wrapper',
+    'layout-static',
+    staticInactive ? 'layout-static-inactive' : '',
+    mobileActive ? 'layout-mobile-active' : '',
+    isSidebarTransitioning ? 'layout-sidebar-transitioning' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const toggleRootMenu = (rootKey: string) => {
+    setActiveRootMenuKey((prev) => (prev === rootKey ? '' : rootKey));
+  };
+
+  const handleSidebarModeToggle = () => {
+    setIsSidebarExpanded((prev) => {
+      const next = !prev;
+
+      if (!next) {
+        setActiveRootMenuKey('');
+      }
+
+      setIsSidebarTransitioning(true);
+      if (sidebarTransitionTimerRef.current !== null) {
+        window.clearTimeout(sidebarTransitionTimerRef.current);
+      }
+      sidebarTransitionTimerRef.current = window.setTimeout(() => {
+        setIsSidebarTransitioning(false);
+      }, 260);
+
+      return next;
+    });
+  };
+
+  const toggleExpandedRootMenu = (rootKey: string) => {
+    setExpandedOpenRootMenuKeys((prev) => (
+      prev.includes(rootKey) ? prev.filter((key) => key !== rootKey) : [...prev, rootKey]
+    ));
   };
 
   return (
     <div className={wrapperClass}>
-      {/* ════════════════ SIDEBAR ════════════════ */}
-      <div className="layout-sidebar">
-        {/* Brand header */}
-        <div className="layout-sidebar-header">
-          {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt="logo" className="brand-logo" />
-          ) : (
-            <i className="pi pi-shield brand-icon" />
-          )}
-          <span className="brand-name">{branding.companyName ?? 'TMS'}</span>
+      <div className="layout-topbar">
+        <button
+          type="button"
+          className="app-logo"
+          onClick={() => navigate('/dashboard')}
+          aria-label={t('nav.dashboard')}
+        >
+          <span className={`brand-logo-shell ${isDarkMode ? 'is-dark' : ''}`}>
+            <img src="/winstechnet.png" alt={t('auth.logoAlt')} className="brand-logo" />
+          </span>
+          <span className="app-name">{getDisplayCompanyName(branding.companyName)}</span>
+        </button>
+
+        <div className="topbar-search">
+          <IconField iconPosition="left" className="topbar-search-field">
+            <InputIcon className="pi pi-search" />
+            <InputText
+              className="topbar-search-input"
+              placeholder={t('layout.topbar.searchPlaceholder')}
+              aria-label={t('layout.topbar.searchAria')}
+            />
+          </IconField>
         </div>
 
-        {/* Grouped menu */}
+        <div className="layout-topbar-right">
+          <button
+            type="button"
+            className="topbar-icon-btn p-link"
+            onClick={() => setIsDarkMode((prev) => !prev)}
+            aria-label={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
+            title={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
+          >
+            <i className={`pi ${isDarkMode ? 'pi-sun' : 'pi-moon'}`} />
+          </button>
+
+          <LanguageSwitcher />
+
+          <div className="topbar-profile" ref={profileMenuRef}>
+            <button
+              className="topbar-profile-button p-link"
+              type="button"
+              onClick={() => setProfileMenuOpen((prev) => !prev)}
+              aria-label={t('common.profile')}
+            >
+              <span className="topbar-avatar-image">{initials(user?.tenantId)}</span>
+              <span className="profile-details">
+                <span className="profile-name">{user?.tenantId ?? t('common.user')}</span>
+                <span className="profile-job">{user?.role ?? '-'}</span>
+              </span>
+              <i className="pi pi-angle-down" />
+            </button>
+            <ul className={`topbar-profile-menu list-none p-3 m-0 border-round shadow-2 absolute surface-overlay origin-top w-full sm:w-12rem mt-2 right-0 top-auto ${profileMenuOpen ? '' : 'hidden'}`}>
+              <li>
+                <button type="button" className="p-ripple flex p-2 border-round align-items-center hover:surface-hover transition-colors transition-duration-150 cursor-pointer topbar-profile-menu-item">
+                  <i className="pi pi-user mr-3" />
+                  <span>{t('common.profile')}</span>
+                </button>
+                <button type="button" className="p-ripple flex p-2 border-round align-items-center hover:surface-hover transition-colors transition-duration-150 cursor-pointer topbar-profile-menu-item">
+                  <i className="pi pi-inbox mr-3" />
+                  <span>{t('common.inbox')}</span>
+                </button>
+                <button type="button" className="p-ripple flex p-2 border-round align-items-center hover:surface-hover transition-colors transition-duration-150 cursor-pointer topbar-profile-menu-item">
+                  <i className="pi pi-cog mr-3" />
+                  <span>{t('common.settings')}</span>
+                </button>
+                <button
+                  type="button"
+                  className="p-ripple flex p-2 border-round align-items-center hover:surface-hover transition-colors transition-duration-150 cursor-pointer topbar-profile-menu-item"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    void handleLogout();
+                  }}
+                >
+                  <i className="pi pi-power-off mr-3" />
+                  <span>{t('common.logout')}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div className="layout-sidebar" ref={sidebarRef}>
         <div className="layout-menu-container">
           <ul className="layout-menu">
             {navModel.map((group) => (
-              <li key={group.categoryKey}>
-                <span className="layout-menu-category">{t(group.categoryKey)}</span>
-                <ul className="layout-menu" style={{ padding: 0 }}>
-                  {group.items.map((item) => (
-                    <li key={item.path}>
-                      <NavLink
-                        to={item.path}
-                        className={({ isActive }) => (isActive ? 'active-route' : '')}
-                        onClick={() => setMobileActive(false)}
+              <li className="layout-root-menuitem" key={group.categoryKey}>
+                {group.items.map((item) => {
+                  const rootKey = getMenuKey(group.categoryKey, item.labelKey);
+                  const hasChildren = Boolean(item.children?.length);
+                  const isActiveRoot = activeRootMenuKey === rootKey;
+                  const isExpandedRootOpen = expandedOpenRootMenuKeys.includes(rootKey);
+                  const isSubmenuOpen = !isSidebarTransitioning && (isSidebarExpanded ? isExpandedRootOpen : isActiveRoot);
+                  const hasActiveChild = Boolean(item.children?.some((child) => isPathActive(location.pathname, child.path)));
+
+                  return (
+                    <React.Fragment key={rootKey}>
+                      <div className="layout-menuitem-root-text">
+                        <span>{t(group.categoryKey)}</span>
+                      </div>
+                      <a
+                        className={`p-ripple tooltip-target ${hasActiveChild ? 'active-route' : ''} ${isActiveRoot ? 'active-menuitem' : ''}`}
+                        data-pr-tooltip={t(item.labelKey)}
+                        data-pr-disabled={isSidebarExpanded}
+                        tabIndex={0}
+                        title={t(item.labelKey)}
+                        role="button"
+                        aria-expanded={isSubmenuOpen ? 'true' : 'false'}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (isSidebarExpanded) {
+                            toggleExpandedRootMenu(rootKey);
+                            return;
+                          }
+                          toggleRootMenu(rootKey);
+                        }}
                       >
-                        <i className={`menu-icon ${item.icon}`} />
-                        <span className="menu-label">{t(item.labelKey)}</span>
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
+                        <i className={`layout-menuitem-icon ${item.icon}`} />
+                        <span className="layout-menuitem-text">{t(item.labelKey)}</span>
+                        {hasChildren && <i className="pi pi-fw pi-angle-down layout-submenu-toggler" />}
+                      </a>
+                      <ul className={`layout-root-submenulist ${isSubmenuOpen ? 'layout-submenu-open' : 'layout-submenu-closed'}`}>
+                        {item.children?.map((child) => (
+                          <li key={child.path ?? child.labelKey}>
+                            <NavLink
+                              to={child.path ?? '/'}
+                              className={({ isActive }) => (isActive ? 'p-ripple active-route' : 'p-ripple')}
+                              onClick={() => {
+                                setMobileActive(false);
+                                if (window.innerWidth >= 992) {
+                                  setActiveRootMenuKey('');
+                                }
+                              }}
+                            >
+                              <i className={`layout-menuitem-icon ${child.icon}`} />
+                              <span className="layout-menuitem-text">{t(child.labelKey)}</span>
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    </React.Fragment>
+                  );
+                })}
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Profile / logout footer */}
-        <div className="layout-sidebar-profile">
-          {user && (
-            <div className="profile-info">
-              <div className="profile-avatar">{initials(user.tenantId)}</div>
-              <div className="profile-text">
-                <div className="profile-name">{user.tenantId}</div>
-                <div className="profile-role">{user.role}</div>
-              </div>
-            </div>
-          )}
-          <button className="logout-btn" onClick={() => { void handleLogout(); }}>
-            <i className="pi pi-sign-out" />
-            <span>{t('common.logout')}</span>
+        <div className="layout-sidebar-toggle-wrap">
+          <button
+            type="button"
+            className="layout-sidebar-toggle p-link"
+            onClick={handleSidebarModeToggle}
+            aria-label={t('common.menuToggle')}
+            title={t('common.menuToggle')}
+          >
+            <i className={`pi ${isSidebarExpanded ? 'pi-angle-double-left' : 'pi-angle-double-right'}`} />
           </button>
         </div>
       </div>
 
-      {/* ════════════════ MAIN ════════════════ */}
-      <div className="layout-main-container">
-        {/* Topbar */}
-        <div className="layout-topbar">
-          <div className="layout-topbar-left">
-            <button className="layout-menu-button" onClick={toggleMenu} aria-label="메뉴 토글">
-              <i className="pi pi-bars" />
-            </button>
-            <div className="layout-topbar-breadcrumb">
-              <i className="pi pi-home breadcrumb-home" />
-              {breadcrumb && (
-                <>
-                  <i className="pi pi-chevron-right breadcrumb-separator" />
-                  <span className="breadcrumb-current">{breadcrumb}</span>
-                </>
-              )}
+      <div className="layout-content-wrapper layout-main-container">
+        <div className="layout-content">
+          <div className="layout-content-inner">
+            <nav className="layout-breadcrumb">
+              <BreadCrumb
+                model={breadcrumbItems}
+                className="tenant-breadcrumb"
+              />
+            </nav>
+            <div className="layout-main">
+              <Outlet />
+            </div>
+            <div className="layout-footer mt-auto">
+              <div className="footer-start">
+              </div>
+              <div className="footer-right">
+                <span>{t('layout.footer.copyright')}</span>
+              </div>
             </div>
           </div>
-
-          <div className="layout-topbar-right">
-            <LanguageSwitcher />
-            <button className="topbar-icon-btn" aria-label="알림">
-              <i className="pi pi-bell" />
-              <span className="badge" />
-            </button>
-            <button className="topbar-icon-btn" aria-label="검색">
-              <i className="pi pi-search" />
-            </button>
-            <div className="topbar-profile">
-              <div className="topbar-avatar">{initials(user?.tenantId)}</div>
-              <span className="topbar-username">{user?.tenantId ?? '사용자'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="layout-main">
-          <Outlet />
         </div>
       </div>
 
       {/* Mobile overlay */}
       <div className="layout-mask" onClick={() => setMobileActive(false)} />
+
+      <Tooltip
+        target=".layout-sidebar .tooltip-target"
+        position="right"
+        showDelay={120}
+        hideDelay={80}
+        className="sidebar-menu-tooltip"
+      />
 
       <SessionTimeoutManager />
     </div>

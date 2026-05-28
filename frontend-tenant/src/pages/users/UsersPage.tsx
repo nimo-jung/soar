@@ -169,6 +169,7 @@ const UsersPage: React.FC = () => {
           body={(row: TenantUser) => (
             <div className="flex gap-2">
               <Button
+                className="tenant-primary-action"
                 size="small"
                 icon="pi pi-pencil"
                 label={t('users.table.editBtn')}
@@ -242,6 +243,7 @@ const UsersPage: React.FC = () => {
             />
           </div>
           <Button
+            className="tenant-primary-action"
             label={isCreate ? t('users.dialog.createConfirm') : t('users.dialog.editConfirm')}
             onClick={() => {
               void saveUser();

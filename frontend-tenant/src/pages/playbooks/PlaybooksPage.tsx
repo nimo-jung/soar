@@ -98,7 +98,7 @@ const PlaybooksPage: React.FC = () => {
               rows={6}
             />
           </div>
-          <Button label={t('common.create')} onClick={handleCreate} />
+          <Button className="tenant-primary-action" label={t('common.create')} onClick={handleCreate} />
         </div>
       </Dialog>
     </div>

@@ -151,6 +151,7 @@ const AuthSettingsPage: React.FC = () => {
 
         <div className="flex justify-content-end mt-4">
           <Button
+            className="tenant-primary-action"
             label={t('common.save')}
             icon="pi pi-save"
             onClick={() => {

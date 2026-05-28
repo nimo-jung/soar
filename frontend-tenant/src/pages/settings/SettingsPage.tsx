@@ -192,6 +192,7 @@ const SettingsPage: React.FC = () => {
             body={(row: ParsingRule) => (
               <div className="flex gap-2">
                 <Button
+                  className="tenant-primary-action"
                   size="small"
                   icon="pi pi-pencil"
                   label={t('settings.parsingRules.table.editBtn')}
@@ -265,6 +266,7 @@ const SettingsPage: React.FC = () => {
             <small className="text-color-secondary">{t('settings.parsingRules.dialog.ruleDefinitionHelp')}</small>
           </div>
           <Button
+            className="tenant-primary-action"
             label={isCreate ? t('common.create') : t('common.save')}
             onClick={() => {
               void saveRule();

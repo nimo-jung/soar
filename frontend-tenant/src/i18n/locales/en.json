@@ -18,7 +18,18 @@
     "activate": "Activate",
     "loading": "Loading...",
     "name": "Name",
-    "description": "Description"
+    "description": "Description",
+    "user": "User",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "inbox": "Inbox",
+    "settings": "Settings",
+    "menuToggle": "Toggle menu",
+    "switchToDarkMode": "Switch to dark mode",
+    "switchToLightMode": "Switch to light mode",
+    "languageSwitch": "Change language",
+    "switchToEnglish": "Switch to English",
+    "switchToKorean": "Switch to Korean"
   },
   "nav": {
     "categories": {
@@ -27,19 +38,60 @@
       "management": "Management"
     },
     "dashboard": "Dashboard",
+    "securityCenter": "Security Center",
     "alerts": "Alerts",
     "playbooks": "Playbooks",
+    "ingestion": "Ingestion Pipeline",
     "collectors": "Collector",
+    "tenantAdmin": "Tenant Admin",
     "users": "Users",
     "auditLogs": "Audit Logs",
     "settings": "Settings",
     "authSettings": "Auth Settings"
   },
+  "dashboard": {
+    "title": "Security Operations Dashboard",
+    "subtitle": "Monitor real-time threat detection and auto-response workflows at a glance.",
+    "live": "LIVE",
+    "actions": {
+      "refresh": "Refresh",
+      "newPlaybook": "New Playbook"
+    },
+    "metrics": {
+      "threatScore": "Threat Score",
+      "eventsPerSecond": "Event Throughput",
+      "collectorHealth": "Collector Health",
+      "playbookSuccess": "Playbook Success"
+    },
+    "readiness": {
+      "title": "Operational Readiness",
+      "threatModel": "AI threat model confidence",
+      "pipelineStability": "Ingestion pipeline stability",
+      "autoResponse": "Auto-response readiness"
+    },
+    "timeline": {
+      "title": "Recent Response Timeline",
+      "items": [
+        {
+          "title": "High-risk scan traffic blocked",
+          "detail": "Automatic containment was applied to 3 external IP addresses."
+        },
+        {
+          "title": "Collector latency detected",
+          "detail": "Latency from collectors in the Seoul region crossed the threshold."
+        },
+        {
+          "title": "Response playbook completed",
+          "detail": "The credential-theft mitigation playbook finished successfully."
+        }
+      ]
+    }
+  },
   "auth": {
     "logoAlt": "Company logo",
-    "welcome": "Welcome to the TMS Console",
+    "welcome": "Welcome to the Sniper TMS Console",
     "subtitle": "Sign in to access your tenant security operations portal.",
-    "liveGuard": "TMS live monitoring enabled",
+    "liveGuard": "Sniper TMS live monitoring enabled",
     "securitySignal": "AI threat intelligence engine active",
     "tenantSlug": "Customer Code",
     "tenantSlugPlaceholder": "acme-corp",
@@ -307,5 +359,24 @@
     "goBack": "Previous Page",
     "goDashboard": "Go To Dashboard",
     "retry": "Retry"
+  },
+  "layout": {
+    "topbar": {
+      "tip": "Use (cmd + click) to open a tab",
+      "searchPlaceholder": "Search",
+      "searchAria": "Search"
+    },
+    "footer": {
+      "copyright": "© WINSTECHNET. All rights reserved."
+    },
+    "notifications": {
+      "title": "Live Notifications",
+      "securitySpikeTitle": "Threat score spike detected",
+      "securitySpikeBody": "Anomalous traffic patterns increased sharply in the last 15 minutes.",
+      "ingestionDelayTitle": "Log ingestion latency warning",
+      "ingestionDelayBody": "Average ingestion delay has been detected on 2 collectors.",
+      "playbookTitle": "Auto-response playbook executed",
+      "playbookBody": "A containment playbook has been executed for a high-severity event."
+    }
   }
 }

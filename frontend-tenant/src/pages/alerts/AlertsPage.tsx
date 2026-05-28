@@ -249,6 +249,7 @@ const AlertsPage: React.FC = () => {
         </div>
         <div className="flex justify-content-end mt-3">
           <Button
+            className="tenant-primary-action"
             label={t('common.save')}
             icon="pi pi-save"
             onClick={() => {
@@ -329,6 +330,7 @@ const AlertsPage: React.FC = () => {
             />
           </div>
           <Button
+            className="tenant-primary-action"
             label={t('common.create')}
             onClick={() => {
               void createAlert();

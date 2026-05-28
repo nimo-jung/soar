@@ -1,28 +1,21 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from 'primereact/button';
 
 const LanguageSwitcher: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const isKo = i18n.language.startsWith('ko');
 
   return (
-    <button
+    <Button
+      text
       onClick={() => i18n.changeLanguage(isKo ? 'en' : 'ko')}
-      className="topbar-icon-btn"
-      aria-label="언어 변경"
-      title={isKo ? 'Switch to English' : '한국어로 변경'}
-      style={{
-        fontSize: '0.72rem',
-        fontWeight: 700,
-        letterSpacing: '0.04em',
-        width: 'auto',
-        padding: '0 0.6rem',
-        border: '1px solid var(--surface-border)',
-        borderRadius: '6px',
-      }}
+      className="topbar-icon-btn topbar-lang-btn"
+      aria-label={t('common.languageSwitch')}
+      title={isKo ? t('common.switchToEnglish') : t('common.switchToKorean')}
     >
       {isKo ? 'EN' : 'KO'}
-    </button>
+    </Button>
   );
 };
 

@@ -19,7 +19,7 @@ const DEFAULT_BRANDING: BrandingConfig = {
   primaryColor: '#34d3c3',
   logoUrl: undefined,
   faviconUrl: undefined,
-  companyName: 'TMS',
+  companyName: 'Sniper TMS',
 };
 
 /**
@@ -53,7 +53,7 @@ function normalizeBrandingConfig(config: BrandingConfig | null): BrandingConfig 
   const normalized = { ...config };
   const companyName = normalized.companyName?.trim();
   if (companyName && companyName.toUpperCase() === 'SOAR') {
-    normalized.companyName = 'TMS';
+    normalized.companyName = 'Sniper TMS';
   }
 
   return normalized;
