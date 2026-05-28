@@ -14,6 +14,7 @@ import { AuditLog } from '../../common/audit/entities/audit-log.entity';
 import { AuditLogService } from '../../common/audit/audit-log.service';
 import { BootstrapTokenMailService } from './bootstrap-token-mail.service';
 import { MasterSetting } from '../auth-settings/entities/master-setting.entity';
+import { MasterAuthSettings } from '../../auth/entities/master-auth-settings.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MasterSetting } from '../auth-settings/entities/master-setting.entity';
       TenantBootstrapToken,
       TenantPasswordResetToken,
       MasterSetting,
+      MasterAuthSettings,
       AuditLog,
     ]),
     JwtModule.registerAsync({

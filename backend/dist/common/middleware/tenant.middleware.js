@@ -26,7 +26,8 @@ let TenantMiddleware = class TenantMiddleware {
         const token = authHeader.slice(7);
         try {
             const payload = this.jwtService.verify(token);
-            tenant_context_1.tenantStorage.run({ tenantId: payload.tenantId, userId: payload.sub, role: payload.role }, () => next());
+            tenant_context_1.tenantStorage.enterWith({ tenantId: payload.tenantId, userId: payload.sub, role: payload.role });
+            next();
         }
         catch {
             throw new common_1.UnauthorizedException('유효하지 않은 토큰입니다.');

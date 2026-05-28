@@ -68,9 +68,8 @@ let TenantGuard = class TenantGuard {
             }
         }
         req.user = payload;
-        return new Promise((resolve) => {
-            tenant_context_1.tenantStorage.run({ tenantId: payload.tenantId, userId: payload.sub, role: payload.role }, () => resolve(true));
-        });
+        tenant_context_1.tenantStorage.enterWith({ tenantId: payload.tenantId, userId: payload.sub, role: payload.role });
+        return true;
     }
 };
 exports.TenantGuard = TenantGuard;

@@ -42,11 +42,11 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Collector.prototype, "isActive", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', comment: '생성 일시' }),
     __metadata("design:type", Date)
 ], Collector.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ comment: '수정 일시' }),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', comment: '수정 일시' }),
     __metadata("design:type", Date)
 ], Collector.prototype, "updatedAt", void 0);
 exports.Collector = Collector = __decorate([

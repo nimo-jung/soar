@@ -21,6 +21,7 @@ import { QuotasModule } from './quotas/quotas.module';
 import { DataIsolationModule } from './data-isolation/data-isolation.module';
 import { SystemStatusModule } from './system-status/system-status.module';
 import { IntegrityModule } from './integrity/integrity.module';
+import { Tenant } from './tenants/entities/tenant.entity';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { IntegrityModule } from './integrity/integrity.module';
     DataIsolationModule,
     SystemStatusModule,
     IntegrityModule,
-    TypeOrmModule.forFeature([MasterAuthSettings, MasterSetting, AuditLog]),
+    TypeOrmModule.forFeature([MasterAuthSettings, MasterSetting, AuditLog, Tenant]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),

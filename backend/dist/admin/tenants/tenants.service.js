@@ -62,25 +62,42 @@ const tenant_connection_service_1 = require("../../common/database/tenant-connec
 const tenant_user_entity_1 = require("../../tenant/users/entities/tenant-user.entity");
 const tenant_password_reset_token_entity_1 = require("./entities/tenant-password-reset-token.entity");
 const bootstrap_token_mail_service_1 = require("./bootstrap-token-mail.service");
+const master_auth_settings_entity_1 = require("../../auth/entities/master-auth-settings.entity");
 let TenantsService = TenantsService_1 = class TenantsService {
     tenantRepo;
     settingsRepo;
     tierRepo;
     tenantBootstrapTokenRepo;
     tenantPasswordResetTokenRepo;
+    masterAuthSettingsRepo;
     dataSource;
     tenantConnectionService;
     bootstrapTokenMailService;
     logger = new common_1.Logger(TenantsService_1.name);
-    constructor(tenantRepo, settingsRepo, tierRepo, tenantBootstrapTokenRepo, tenantPasswordResetTokenRepo, dataSource, tenantConnectionService, bootstrapTokenMailService) {
+    requiredTenantTables = [
+        'tenant_users',
+        'alerts',
+        'alert_notification_policies',
+        'alert_notification_histories',
+        'parsing_rules',
+        'collectors',
+        'playbooks',
+        'playbook_runs',
+    ];
+    constructor(tenantRepo, settingsRepo, tierRepo, tenantBootstrapTokenRepo, tenantPasswordResetTokenRepo, masterAuthSettingsRepo, dataSource, tenantConnectionService, bootstrapTokenMailService) {
         this.tenantRepo = tenantRepo;
         this.settingsRepo = settingsRepo;
         this.tierRepo = tierRepo;
         this.tenantBootstrapTokenRepo = tenantBootstrapTokenRepo;
         this.tenantPasswordResetTokenRepo = tenantPasswordResetTokenRepo;
+        this.masterAuthSettingsRepo = masterAuthSettingsRepo;
         this.dataSource = dataSource;
         this.tenantConnectionService = tenantConnectionService;
         this.bootstrapTokenMailService = bootstrapTokenMailService;
+    }
+    async isMultiTenantEnabled() {
+        const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
+        return settings?.isMultiTenantEnabled ?? false;
     }
     async getTenantUserRepoBySlug(tenantSlug) {
         const conn = await this.tenantConnectionService.getConnection(tenantSlug.replace(/-/g, '_'));
@@ -146,7 +163,95 @@ let TenantsService = TenantsService_1 = class TenantsService {
         }
         return items.join(',');
     }
+    ensureIpCidrPolicy(items, tenantSlug) {
+        const normalizedSlug = tenantSlug.trim().toLowerCase();
+        if (normalizedSlug === system_tenant_constants_1.SYSTEM_TENANT_SLUG) {
+            return;
+        }
+        if (items.includes('0.0.0.0')) {
+            throw new common_1.BadRequestException('system 테넌트를 제외한 고객사는 로그 수집 대상 IP 대역에 0.0.0.0을 입력할 수 없습니다.');
+        }
+    }
+    normalizeAndValidateIpCidrList(value, tenantSlug) {
+        const normalized = this.normalizeIpCidrList(value);
+        const items = normalized.split(',');
+        this.ensureIpCidrPolicy(items, tenantSlug);
+        return normalized;
+    }
+    isTenantDbAccessDenied(error) {
+        if (!(error instanceof typeorm_2.QueryFailedError)) {
+            return false;
+        }
+        const driverError = error.driverError;
+        return driverError?.code === 'ER_DBACCESS_DENIED_ERROR';
+    }
+    buildTenantDatabaseName(slug) {
+        return `tenant_db_${slug.replace(/-/g, '_')}`;
+    }
+    async tenantDatabaseExists(dbName) {
+        const rows = await this.dataSource.query('SELECT SCHEMA_NAME AS schemaName FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?', [dbName]);
+        return Array.isArray(rows) && rows.length > 0;
+    }
+    async createTenantDatabase(queryRunner, dbName) {
+        await queryRunner.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    }
+    async dropTenantDatabase(queryRunner, dbName) {
+        await queryRunner.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+    }
+    async getMissingTenantTables(dbName) {
+        const placeholders = this.requiredTenantTables.map(() => '?').join(', ');
+        const rows = await this.dataSource.query(`SELECT TABLE_NAME AS tableName
+         FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = ?
+          AND TABLE_NAME IN (${placeholders})`, [dbName, ...this.requiredTenantTables]);
+        const existing = new Set(rows.map((row) => row.tableName));
+        return this.requiredTenantTables.filter((tableName) => !existing.has(tableName));
+    }
+    async getTenantDatabaseStatus(tenantId) {
+        const tenant = await this.findOne(tenantId);
+        const databaseName = this.buildTenantDatabaseName(tenant.slug);
+        try {
+            const exists = await this.tenantDatabaseExists(databaseName);
+            const missingTables = exists ? await this.getMissingTenantTables(databaseName) : [...this.requiredTenantTables];
+            return {
+                tenantId: tenant.id,
+                tenantSlug: tenant.slug,
+                exists,
+                missingTables,
+                isReady: exists && missingTables.length === 0,
+            };
+        }
+        catch (error) {
+            this.logger.error(`테넌트 DB 상태 확인 실패 tenantId=${tenant.id}, tenantSlug=${tenant.slug}`, error instanceof Error ? error.stack : String(error));
+            throw new common_1.InternalServerErrorException('해당 고객사의 DB 상태 확인 중 오류가 발생했습니다.');
+        }
+    }
+    async recoverTenantDatabase(tenantId) {
+        const tenant = await this.findOne(tenantId);
+        const tenantKey = tenant.slug.replace(/-/g, '_');
+        const databaseName = this.buildTenantDatabaseName(tenant.slug);
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        try {
+            await this.createTenantDatabase(queryRunner, databaseName);
+        }
+        catch (err) {
+            if (this.isTenantDbAccessDenied(err)) {
+                throw new common_1.BadRequestException('MariaDB 권한 부족으로 테넌트 DB를 복구할 수 없습니다. DB 사용자에 tenant_db_% 권한(GRANT ALL, GRANT CREATE)을 부여한 뒤 다시 시도하세요.');
+            }
+            throw err;
+        }
+        finally {
+            await queryRunner.release();
+        }
+        await this.tenantConnectionService.closeConnection(tenantKey);
+        await this.tenantConnectionService.runMigrationsForTenant(tenantKey);
+        return this.getTenantDatabaseStatus(tenantId);
+    }
     async create(dto) {
+        if (!(await this.isMultiTenantEnabled())) {
+            throw new common_1.BadRequestException('멀티테넌트 모드가 비활성화되어 있어 신규 테넌트를 생성할 수 없습니다.');
+        }
         if (dto.slug === system_tenant_constants_1.SYSTEM_TENANT_SLUG) {
             throw new common_1.ConflictException('system 슬러그는 예약되어 있습니다.');
         }
@@ -157,6 +262,8 @@ let TenantsService = TenantsService_1 = class TenantsService {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+        let dbCreatedInRequest = false;
+        const dbName = this.buildTenantDatabaseName(dto.slug);
         try {
             const tier = dto.tierId
                 ? await this.findTierForTenantById(dto.tierId)
@@ -164,12 +271,15 @@ let TenantsService = TenantsService_1 = class TenantsService {
             if (!tier) {
                 throw new common_1.NotFoundException(dto.tierId ? `등급 ID ${dto.tierId}를 찾을 수 없습니다.` : '사용 가능한 등급이 없습니다.');
             }
+            const dbExistsBefore = await this.tenantDatabaseExists(dbName);
+            await this.createTenantDatabase(queryRunner, dbName);
+            dbCreatedInRequest = !dbExistsBefore;
             const tenant = this.tenantRepo.create({
                 slug: dto.slug,
                 name: dto.name,
                 contactEmail: dto.contactEmail,
                 tierId: tier.id,
-                ipCidr: this.normalizeIpCidrList(dto.ipCidr),
+                ipCidr: this.normalizeAndValidateIpCidrList(dto.ipCidr, dto.slug),
                 expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
             });
             const saved = await queryRunner.manager.save(tenant);
@@ -180,13 +290,22 @@ let TenantsService = TenantsService_1 = class TenantsService {
                 retentionDays: dto.retentionDays ?? 90,
             });
             await queryRunner.manager.save(settings);
-            const dbName = `tenant_db_${dto.slug.replace(/-/g, '_')}`;
-            await queryRunner.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
             await queryRunner.commitTransaction();
             return saved;
         }
         catch (err) {
             await queryRunner.rollbackTransaction();
+            if (dbCreatedInRequest) {
+                try {
+                    await this.dropTenantDatabase(queryRunner, dbName);
+                }
+                catch (dropError) {
+                    this.logger.warn(`롤백 중 생성된 테넌트 DB 정리에 실패했습니다: ${dbName} (${String(dropError)})`);
+                }
+            }
+            if (this.isTenantDbAccessDenied(err)) {
+                throw new common_1.BadRequestException("MariaDB 권한 부족으로 테넌트 DB를 생성할 수 없습니다. DB 사용자에 tenant_db_% 권한(GRANT ALL, GRANT CREATE)을 부여한 뒤 다시 시도하세요.");
+            }
             throw err;
         }
         finally {
@@ -207,6 +326,11 @@ let TenantsService = TenantsService_1 = class TenantsService {
         const tenant = await this.findOne(id);
         if (tenant.slug === system_tenant_constants_1.SYSTEM_TENANT_SLUG && dto.status && dto.status !== tenant_entity_1.TenantStatus.ACTIVE) {
             throw new common_1.BadRequestException('system 테넌트는 비활성화하거나 삭제 상태로 변경할 수 없습니다.');
+        }
+        if (dto.status === tenant_entity_1.TenantStatus.ACTIVE
+            && tenant.slug !== system_tenant_constants_1.SYSTEM_TENANT_SLUG
+            && !(await this.isMultiTenantEnabled())) {
+            throw new common_1.BadRequestException('멀티테넌트 모드가 비활성화되어 있어 system 이외 테넌트를 활성화할 수 없습니다.');
         }
         const hasSettingsUpdate = dto.tierId !== undefined
             || dto.epsLimit !== undefined
@@ -250,7 +374,7 @@ let TenantsService = TenantsService_1 = class TenantsService {
             normalized.expiresAt = new Date(dto.expiresAt);
         }
         if (dto.ipCidr !== undefined) {
-            normalized.ipCidr = this.normalizeIpCidrList(dto.ipCidr);
+            normalized.ipCidr = this.normalizeAndValidateIpCidrList(dto.ipCidr, tenant.slug);
         }
         Object.assign(tenant, normalized);
         return this.tenantRepo.save(tenant);
@@ -269,6 +393,14 @@ let TenantsService = TenantsService_1 = class TenantsService {
             throw new common_1.NotFoundException(`테넌트 ID ${tenantId}의 설정을 찾을 수 없습니다.`);
         }
         return settings;
+    }
+    async getBootstrapStatus(tenantId) {
+        const tenant = await this.findOne(tenantId);
+        if (tenant.status !== tenant_entity_1.TenantStatus.ACTIVE) {
+            return { requiresBootstrap: false };
+        }
+        const hasUsers = await this.hasAnyActiveTenantUser(tenant.slug);
+        return { requiresBootstrap: !hasUsers };
     }
     async updateSettings(tenantId, updates) {
         const settings = await this.getSettings(tenantId);
@@ -544,7 +676,9 @@ exports.TenantsService = TenantsService = TenantsService_1 = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(tenant_tier_entity_1.TenantTier)),
     __param(3, (0, typeorm_1.InjectRepository)(tenant_bootstrap_token_entity_1.TenantBootstrapToken)),
     __param(4, (0, typeorm_1.InjectRepository)(tenant_password_reset_token_entity_1.TenantPasswordResetToken)),
+    __param(5, (0, typeorm_1.InjectRepository)(master_auth_settings_entity_1.MasterAuthSettings)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

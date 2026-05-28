@@ -3,14 +3,24 @@ import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
+import { InputSwitch } from 'primereact/inputswitch';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
-import type { AuthPolicy } from '../../types/auth-policy';
+import type { AdminAuthSettings } from '../../types/auth-policy';
+import ResultDialog, { type ResultDialogTone } from '../../components/ResultDialog';
 
 interface ResultDialogState {
   visible: boolean;
   title: string;
   message: string;
+  icon: string;
+  tone: ResultDialogTone;
+  actionItems: string[];
+}
+
+interface TenantForModeCheck {
+  slug: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'DELETED';
 }
 
 const AuthSettingsPage: React.FC = () => {
@@ -21,12 +31,19 @@ const AuthSettingsPage: React.FC = () => {
     visible: false,
     title: '',
     message: '',
+    icon: 'pi pi-info-circle',
+    tone: 'info',
+    actionItems: [],
   });
-  const [form, setForm] = useState<AuthPolicy>({
+  const [multiTenantConfirmVisible, setMultiTenantConfirmVisible] = useState(false);
+  const [pendingMultiTenantValue, setPendingMultiTenantValue] = useState<boolean | null>(null);
+  const [nonSystemEnabledTenantCount, setNonSystemEnabledTenantCount] = useState(0);
+  const [form, setForm] = useState<AdminAuthSettings>({
     maxLoginFailures: 3,
     lockMinutes: 5,
     maxConcurrentSessions: 1,
     autoLogoutTimeoutMinutes: 5,
+    isMultiTenantEnabled: false,
   });
 
   const invalidMaxLoginFailures = useMemo(() => (
@@ -51,11 +68,18 @@ const AuthSettingsPage: React.FC = () => {
     || invalidMaxConcurrentSessions
     || invalidTimeout;
 
-  const openResultDialog = (title: string, message: string) => {
+  const openResultDialog = (
+    title: string,
+    message: string,
+    options?: Partial<Pick<ResultDialogState, 'icon' | 'tone' | 'actionItems'>>,
+  ) => {
     setResultDialog({
       visible: true,
       title,
       message,
+      icon: options?.icon ?? 'pi pi-info-circle',
+      tone: options?.tone ?? 'info',
+      actionItems: options?.actionItems ?? [],
     });
   };
 
@@ -73,8 +97,17 @@ const AuthSettingsPage: React.FC = () => {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const response = await api.get<AuthPolicy>('/admin/auth-settings');
-      setForm(response.data);
+      const [settingsRes, tenantsRes] = await Promise.all([
+        api.get<AdminAuthSettings>('/admin/auth-settings'),
+        api.get<TenantForModeCheck[]>('/admin/tenants'),
+      ]);
+
+      setForm(settingsRes.data);
+      const count = tenantsRes.data.filter((tenant) => (
+        tenant.slug.trim().toLowerCase() !== 'system'
+        && (tenant.status === 'ACTIVE' || tenant.status === 'SUSPENDED')
+      )).length;
+      setNonSystemEnabledTenantCount(count);
     } catch (loadError: unknown) {
       const message = extractApiMessage(loadError) || t('authSettings.loadFailed');
       openResultDialog(t('authSettings.resultDialog.failedTitle'), message);
@@ -94,7 +127,7 @@ const AuthSettingsPage: React.FC = () => {
 
     setSaving(true);
     try {
-      const response = await api.patch<AuthPolicy>('/admin/auth-settings', form);
+      const response = await api.patch<AdminAuthSettings>('/admin/auth-settings', form);
       setForm(response.data);
       openResultDialog(t('authSettings.resultDialog.successTitle'), t('authSettings.saveSuccess'));
     } catch (saveError: unknown) {
@@ -103,6 +136,46 @@ const AuthSettingsPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const requestMultiTenantToggle = (nextValue: boolean) => {
+    if (nextValue === form.isMultiTenantEnabled) {
+      return;
+    }
+
+    if (!nextValue && nonSystemEnabledTenantCount > 0) {
+      openResultDialog(
+        t('authSettings.multiTenantMode.disableBlockedTitle'),
+        t('authSettings.multiTenantMode.disableBlockedMessage', { count: nonSystemEnabledTenantCount }),
+        {
+          icon: 'pi pi-exclamation-triangle',
+          tone: 'error',
+          actionItems: [
+            t('authSettings.multiTenantMode.requiredActionDeleteTenants', { count: nonSystemEnabledTenantCount }),
+            t('authSettings.multiTenantMode.requiredActionRetryDisable'),
+          ],
+        },
+      );
+      return;
+    }
+
+    setPendingMultiTenantValue(nextValue);
+    setMultiTenantConfirmVisible(true);
+  };
+
+  const closeMultiTenantConfirm = () => {
+    setPendingMultiTenantValue(null);
+    setMultiTenantConfirmVisible(false);
+  };
+
+  const confirmMultiTenantToggle = () => {
+    if (pendingMultiTenantValue === null) {
+      closeMultiTenantConfirm();
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, isMultiTenantEnabled: pendingMultiTenantValue }));
+    closeMultiTenantConfirm();
   };
 
   return (
@@ -114,24 +187,75 @@ const AuthSettingsPage: React.FC = () => {
         </div>
       </div>
       <Dialog
-        visible={resultDialog.visible}
-        header={resultDialog.title}
-        style={{ width: '420px', maxWidth: '96vw' }}
-        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        visible={multiTenantConfirmVisible}
+        header={t('authSettings.multiTenantMode.confirmTitle')}
+        style={{ width: '460px', maxWidth: '96vw' }}
+        onHide={closeMultiTenantConfirm}
         footer={(
-          <div className="flex justify-content-end">
+          <div className="flex justify-content-end gap-2">
+            <Button
+              label={t('common.cancel')}
+              severity="secondary"
+              text
+              onClick={closeMultiTenantConfirm}
+            />
             <Button
               label={t('common.confirm')}
-              onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+              onClick={confirmMultiTenantToggle}
             />
           </div>
         )}
       >
-        <p className="m-0">{resultDialog.message}</p>
+        <p className="m-0 line-height-3">
+          {pendingMultiTenantValue
+            ? t('authSettings.multiTenantMode.confirmMessageEnable')
+            : t('authSettings.multiTenantMode.confirmMessageDisable', { count: nonSystemEnabledTenantCount })}
+        </p>
       </Dialog>
+
+      <ResultDialog
+        visible={resultDialog.visible}
+        title={resultDialog.title}
+        message={resultDialog.message}
+        tone={resultDialog.tone}
+        icon={resultDialog.icon}
+        actionRequiredTitle={t('authSettings.multiTenantMode.actionRequiredTitle')}
+        actionItems={resultDialog.actionItems}
+        confirmLabel={t('common.confirm')}
+        onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
+        width="420px"
+      />
 
       <Card className="admin-card monitoring-panel-card" style={{ maxWidth: '760px' }}>
         <div className="grid">
+          <div className="col-12">
+            <label htmlFor="multi-tenant-enabled" className="admin-form-label">{t('authSettings.multiTenantMode.label')}</label>
+            <div className="flex align-items-center gap-3 mt-2">
+              <InputSwitch
+                id="multi-tenant-enabled"
+                checked={form.isMultiTenantEnabled}
+                onChange={(event) => requestMultiTenantToggle(Boolean(event.value))}
+                disabled={loading}
+              />
+              <span className="font-medium">
+                {form.isMultiTenantEnabled
+                  ? t('authSettings.multiTenantMode.enabled')
+                  : t('authSettings.multiTenantMode.disabled')}
+              </span>
+            </div>
+            <small className="text-color-secondary block mt-2">{t('authSettings.multiTenantMode.help')}</small>
+            <small className="text-color-secondary block mt-1">
+              {form.isMultiTenantEnabled
+                ? t('authSettings.multiTenantMode.impactEnabled')
+                : t('authSettings.multiTenantMode.impactDisabled')}
+            </small>
+            {!form.isMultiTenantEnabled && nonSystemEnabledTenantCount > 0 && (
+              <small className="p-error block mt-1">
+                {t('authSettings.multiTenantMode.nonSystemTenantWarning', { count: nonSystemEnabledTenantCount })}
+              </small>
+            )}
+          </div>
+
           <div className="col-12">
             <label htmlFor="max-login-failures" className="admin-form-label">{t('authSettings.maxLoginFailures.label')}</label>
             <InputNumber

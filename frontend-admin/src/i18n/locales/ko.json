@@ -120,6 +120,12 @@
       "all": "전체",
       "deleted": "삭제"
     },
+    "multiTenantDisabled": {
+      "title": "테넌트 추가 불가",
+      "detail": "멀티테넌트 모드가 비활성화되어 신규 테넌트를 추가할 수 없습니다.",
+      "restoreTitle": "테넌트 활성화 불가",
+      "restoreDetail": "멀티테넌트 모드가 비활성화되어 system 이외 테넌트를 활성화/복구할 수 없습니다."
+    },
     "toolbar": {
       "clearSearch": "검색어 지우기",
       "refresh": "새로고침",
@@ -145,6 +151,22 @@
     "confirmRestore": {
       "header": "테넌트 복구 확인",
       "message": "{{name}} 테넌트를 활성 상태로 복구하시겠습니까?"
+    },
+    "database": {
+      "none": "없음",
+      "statusAction": "DB 상태 확인",
+      "recoverAction": "DB 복구/재생성",
+      "statusReadyTitle": "DB 준비 상태 정상",
+      "statusReadyDetail": "해당 고객사({{name}})의 DB 준비 상태가 정상입니다.",
+      "statusNotReadyTitle": "DB 준비 상태 점검 필요",
+      "statusNotReadyDetail": "해당 고객사({{name}})의 DB 점검 결과 누락 테이블: {{missingTables}}",
+      "statusFailedTitle": "DB 상태 확인 실패",
+      "statusFailedDetail": "해당 고객사({{name}})의 DB 상태 확인 중 오류가 발생했습니다.",
+      "recoverConfirmTitle": "테넌트 DB 복구/재생성 확인",
+      "recoverConfirmMessage": "{{name}} 테넌트의 DB를 복구/재생성하고 마이그레이션을 실행하시겠습니까?",
+      "recoverSuccessTitle": "테넌트 DB 복구 완료",
+      "recoverFailedTitle": "테넌트 DB 복구 실패",
+      "recoverFailedDetail": "해당 고객사({{name}})의 DB 복구 중 오류가 발생했습니다."
     },
     "dialog": {
       "title": "테넌트 추가",
@@ -179,7 +201,8 @@
       "expiresAtRequired": "사용기한은 필수입니다.",
       "expiresAtInvalid": "유효한 사용기한을 입력하세요.",
       "ipCidrRequired": "로그 수집 대상 IP 대역은 최소 1개 이상 입력해야 합니다.",
-      "ipCidrInvalid": "단일 IP 또는 CIDR 형식으로 입력하고, 2개 이상일 경우 콤마(,)로 구분하세요."
+      "ipCidrInvalid": "단일 IP 또는 CIDR 형식으로 입력하고, 2개 이상일 경우 콤마(,)로 구분하세요.",
+      "ipCidrAllNotAllowed": "system 테넌트를 제외한 고객사는 로그 수집 대상 IP 대역에 0.0.0.0을 입력할 수 없습니다."
     },
     "table": {
       "id": "ID",
@@ -585,6 +608,23 @@
     "autoLogoutTimeoutMinutes": {
       "label": "자동 로그아웃 타임아웃(분)",
       "help": "기본 5분, 최소 1분, 최대 30분, 0이면 만료 없음"
+    },
+    "multiTenantMode": {
+      "label": "멀티테넌트 모드",
+      "enabled": "활성화",
+      "disabled": "비활성화",
+      "help": "전역 인증 라우팅 기준을 설정합니다. 저장해야 실제 반영됩니다.",
+      "impactEnabled": "활성화 시 고객사 코드 기반으로 테넌트별 로그인/잠금조회/부트스트랩 흐름이 동작합니다.",
+      "impactDisabled": "비활성화 시 system 테넌트만 로그인 가능하며 관련 인증 흐름도 system 기준으로 고정됩니다.",
+      "nonSystemTenantWarning": "현재 system 이외 활성/정지 테넌트가 {{count}}개 있습니다.",
+      "confirmTitle": "멀티테넌트 모드 변경 확인",
+      "confirmMessageEnable": "멀티테넌트 모드를 활성화하시겠습니까? 이후 테넌트 로그인 시 고객사 코드가 필요합니다.",
+      "confirmMessageDisable": "멀티테넌트 모드를 비활성화하시겠습니까? 이후 system 테넌트만 로그인할 수 있습니다.",
+      "disableBlockedTitle": "비활성화 불가",
+      "disableBlockedMessage": "system 이외 활성/정지 테넌트가 {{count}}개 있어 비활성화할 수 없습니다.",
+      "actionRequiredTitle": "즉시 조치 필요",
+      "requiredActionDeleteTenants": "system 이외 활성/정지 테넌트 {{count}}개를 먼저 삭제 상태로 전환하세요.",
+      "requiredActionRetryDisable": "테넌트 상태 전환 후 멀티테넌트 모드 비활성화를 다시 시도하세요."
     }
   },
   "smtpSettings": {

@@ -157,7 +157,7 @@ const ProductInfoPage: React.FC = () => {
           </div>
         )}
       >
-        <p className="m-0">{resultDialog.message}</p>
+        <p className="m-0 line-height-3" style={{ color: 'var(--text-color, #111827)' }}>{resultDialog.message}</p>
       </Dialog>
 
       <div className="grid">

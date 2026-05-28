@@ -221,6 +221,31 @@ let TenantsController = class TenantsController {
     getSettings(id) {
         return this.tenantsService.getSettings(id);
     }
+    getBootstrapStatus(id) {
+        return this.tenantsService.getBootstrapStatus(id);
+    }
+    getDatabaseStatus(id) {
+        return this.tenantsService.getTenantDatabaseStatus(id);
+    }
+    async recoverDatabase(id, user, req) {
+        const recovered = await this.tenantsService.recoverTenantDatabase(id);
+        await this.auditLogService.record({
+            ...this.buildAuditContext(user, req),
+            action: 'TENANT_DB_RECOVER',
+            resourceType: 'TENANT_DATABASE',
+            resourceId: String(id),
+            message: [
+                '테넌트 DB 복구/재생성',
+                `tenantId=${recovered.tenantId}`,
+                `tenantSlug=${this.safe(recovered.tenantSlug)}`,
+                `exists=${recovered.exists ? 'Y' : 'N'}`,
+                `isReady=${recovered.isReady ? 'Y' : 'N'}`,
+                `missingTables=${recovered.missingTables.join(',') || '-'}`,
+            ].join(' | '),
+            metadata: { ...recovered },
+        });
+        return recovered;
+    }
     async issueBootstrapToken(id, dto, user, req) {
         const issued = await this.tenantsService.issueBootstrapToken(id, dto, user.sub);
         await this.auditLogService.record({
@@ -382,6 +407,32 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], TenantsController.prototype, "getSettings", null);
+__decorate([
+    (0, common_1.Get)(':id/bootstrap-status'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록 필요 여부 조회 (Admin 전용)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "getBootstrapStatus", null);
+__decorate([
+    (0, common_1.Get)(':id/database-status'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 DB 준비 상태 조회 (DB 존재/필수 테이블 누락 여부)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TenantsController.prototype, "getDatabaseStatus", null);
+__decorate([
+    (0, common_1.Post)(':id/database-recover'),
+    (0, swagger_1.ApiOperation)({ summary: '테넌트 DB 복구/재생성 (DB 생성 + 테넌트 마이그레이션 실행)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TenantsController.prototype, "recoverDatabase", null);
 __decorate([
     (0, common_1.Post)(':id/bootstrap-token'),
     (0, swagger_1.ApiOperation)({ summary: '테넌트 최초 관리자 등록용 토큰 발급' }),

@@ -1,6 +1,13 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, IsNull } from 'typeorm';
+import { Repository, DataSource, IsNull, QueryFailedError } from 'typeorm';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { Tenant, TenantStatus } from './entities/tenant.entity';
@@ -20,6 +27,7 @@ import { TenantConnectionService } from '../../common/database/tenant-connection
 import { TenantUser } from '../../tenant/users/entities/tenant-user.entity';
 import { TenantPasswordResetToken } from './entities/tenant-password-reset-token.entity';
 import { BootstrapTokenMailService } from './bootstrap-token-mail.service';
+import { MasterAuthSettings } from '../../auth/entities/master-auth-settings.entity';
 
 export interface TierDeletionStatus {
   canDelete: boolean;
@@ -28,9 +36,27 @@ export interface TierDeletionStatus {
   reason: string | null;
 }
 
+export interface TenantDatabaseStatus {
+  tenantId: number;
+  tenantSlug: string;
+  exists: boolean;
+  missingTables: string[];
+  isReady: boolean;
+}
+
 @Injectable()
 export class TenantsService {
   private readonly logger = new Logger(TenantsService.name);
+  private readonly requiredTenantTables = [
+    'tenant_users',
+    'alerts',
+    'alert_notification_policies',
+    'alert_notification_histories',
+    'parsing_rules',
+    'collectors',
+    'playbooks',
+    'playbook_runs',
+  ];
 
   constructor(
     @InjectRepository(Tenant)
@@ -43,10 +69,17 @@ export class TenantsService {
     private readonly tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>,
     @InjectRepository(TenantPasswordResetToken)
     private readonly tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>,
+    @InjectRepository(MasterAuthSettings)
+    private readonly masterAuthSettingsRepo: Repository<MasterAuthSettings>,
     private readonly dataSource: DataSource,
     private readonly tenantConnectionService: TenantConnectionService,
     private readonly bootstrapTokenMailService: BootstrapTokenMailService,
   ) {}
+
+  private async isMultiTenantEnabled(): Promise<boolean> {
+    const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
+    return settings?.isMultiTenantEnabled ?? false;
+  }
 
   private async getTenantUserRepoBySlug(tenantSlug: string): Promise<Repository<TenantUser>> {
     const conn = await this.tenantConnectionService.getConnection(tenantSlug.replace(/-/g, '_'));
@@ -127,7 +160,124 @@ export class TenantsService {
     return items.join(',');
   }
 
+  private ensureIpCidrPolicy(items: string[], tenantSlug: string): void {
+    const normalizedSlug = tenantSlug.trim().toLowerCase();
+    if (normalizedSlug === SYSTEM_TENANT_SLUG) {
+      return;
+    }
+
+    if (items.includes('0.0.0.0')) {
+      throw new BadRequestException('system 테넌트를 제외한 고객사는 로그 수집 대상 IP 대역에 0.0.0.0을 입력할 수 없습니다.');
+    }
+  }
+
+  private normalizeAndValidateIpCidrList(value: string, tenantSlug: string): string {
+    const normalized = this.normalizeIpCidrList(value);
+    const items = normalized.split(',');
+    this.ensureIpCidrPolicy(items, tenantSlug);
+    return normalized;
+  }
+
+  private isTenantDbAccessDenied(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = (error as QueryFailedError & { driverError?: { code?: string } }).driverError;
+    return driverError?.code === 'ER_DBACCESS_DENIED_ERROR';
+  }
+
+  private buildTenantDatabaseName(slug: string): string {
+    return `tenant_db_${slug.replace(/-/g, '_')}`;
+  }
+
+  private async tenantDatabaseExists(dbName: string): Promise<boolean> {
+    const rows = await this.dataSource.query(
+      'SELECT SCHEMA_NAME AS schemaName FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?',
+      [dbName],
+    );
+    return Array.isArray(rows) && rows.length > 0;
+  }
+
+  private async createTenantDatabase(queryRunner: ReturnType<DataSource['createQueryRunner']>, dbName: string): Promise<void> {
+    await queryRunner.query(
+      `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+    );
+  }
+
+  private async dropTenantDatabase(queryRunner: ReturnType<DataSource['createQueryRunner']>, dbName: string): Promise<void> {
+    await queryRunner.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+  }
+
+  private async getMissingTenantTables(dbName: string): Promise<string[]> {
+    const placeholders = this.requiredTenantTables.map(() => '?').join(', ');
+    const rows = await this.dataSource.query(
+      `SELECT TABLE_NAME AS tableName
+         FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = ?
+          AND TABLE_NAME IN (${placeholders})`,
+      [dbName, ...this.requiredTenantTables],
+    );
+
+    const existing = new Set<string>((rows as Array<{ tableName: string }>).map((row) => row.tableName));
+    return this.requiredTenantTables.filter((tableName) => !existing.has(tableName));
+  }
+
+  async getTenantDatabaseStatus(tenantId: number): Promise<TenantDatabaseStatus> {
+    const tenant = await this.findOne(tenantId);
+    const databaseName = this.buildTenantDatabaseName(tenant.slug);
+
+    try {
+      const exists = await this.tenantDatabaseExists(databaseName);
+      const missingTables = exists ? await this.getMissingTenantTables(databaseName) : [...this.requiredTenantTables];
+
+      return {
+        tenantId: tenant.id,
+        tenantSlug: tenant.slug,
+        exists,
+        missingTables,
+        isReady: exists && missingTables.length === 0,
+      };
+    } catch (error) {
+      this.logger.error(
+        `테넌트 DB 상태 확인 실패 tenantId=${tenant.id}, tenantSlug=${tenant.slug}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('해당 고객사의 DB 상태 확인 중 오류가 발생했습니다.');
+    }
+  }
+
+  async recoverTenantDatabase(tenantId: number): Promise<TenantDatabaseStatus> {
+    const tenant = await this.findOne(tenantId);
+    const tenantKey = tenant.slug.replace(/-/g, '_');
+    const databaseName = this.buildTenantDatabaseName(tenant.slug);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    try {
+      await this.createTenantDatabase(queryRunner, databaseName);
+    } catch (err) {
+      if (this.isTenantDbAccessDenied(err)) {
+        throw new BadRequestException(
+          'MariaDB 권한 부족으로 테넌트 DB를 복구할 수 없습니다. DB 사용자에 tenant_db_% 권한(GRANT ALL, GRANT CREATE)을 부여한 뒤 다시 시도하세요.',
+        );
+      }
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+
+    await this.tenantConnectionService.closeConnection(tenantKey);
+    await this.tenantConnectionService.runMigrationsForTenant(tenantKey);
+
+    return this.getTenantDatabaseStatus(tenantId);
+  }
+
   async create(dto: CreateTenantDto): Promise<Tenant> {
+    if (!(await this.isMultiTenantEnabled())) {
+      throw new BadRequestException('멀티테넌트 모드가 비활성화되어 있어 신규 테넌트를 생성할 수 없습니다.');
+    }
+
     if (dto.slug === SYSTEM_TENANT_SLUG) {
       throw new ConflictException('system 슬러그는 예약되어 있습니다.');
     }
@@ -141,6 +291,9 @@ export class TenantsService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let dbCreatedInRequest = false;
+    const dbName = this.buildTenantDatabaseName(dto.slug);
+
     try {
       const tier = dto.tierId
         ? await this.findTierForTenantById(dto.tierId)
@@ -149,12 +302,16 @@ export class TenantsService {
         throw new NotFoundException(dto.tierId ? `등급 ID ${dto.tierId}를 찾을 수 없습니다.` : '사용 가능한 등급이 없습니다.');
       }
 
+      const dbExistsBefore = await this.tenantDatabaseExists(dbName);
+      await this.createTenantDatabase(queryRunner, dbName);
+      dbCreatedInRequest = !dbExistsBefore;
+
       const tenant = this.tenantRepo.create({
         slug: dto.slug,
         name: dto.name,
         contactEmail: dto.contactEmail,
         tierId: tier.id,
-        ipCidr: this.normalizeIpCidrList(dto.ipCidr),
+        ipCidr: this.normalizeAndValidateIpCidrList(dto.ipCidr, dto.slug),
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
       });
       const saved = await queryRunner.manager.save(tenant);
@@ -168,14 +325,22 @@ export class TenantsService {
       });
       await queryRunner.manager.save(settings);
 
-      // 테넌트 전용 DB 동적 프로비저닝
-      const dbName = `tenant_db_${dto.slug.replace(/-/g, '_')}`;
-      await queryRunner.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-
       await queryRunner.commitTransaction();
       return saved;
     } catch (err) {
       await queryRunner.rollbackTransaction();
+      if (dbCreatedInRequest) {
+        try {
+          await this.dropTenantDatabase(queryRunner, dbName);
+        } catch (dropError) {
+          this.logger.warn(`롤백 중 생성된 테넌트 DB 정리에 실패했습니다: ${dbName} (${String(dropError)})`);
+        }
+      }
+      if (this.isTenantDbAccessDenied(err)) {
+        throw new BadRequestException(
+          "MariaDB 권한 부족으로 테넌트 DB를 생성할 수 없습니다. DB 사용자에 tenant_db_% 권한(GRANT ALL, GRANT CREATE)을 부여한 뒤 다시 시도하세요.",
+        );
+      }
       throw err;
     } finally {
       await queryRunner.release();
@@ -199,6 +364,14 @@ export class TenantsService {
 
     if (tenant.slug === SYSTEM_TENANT_SLUG && dto.status && dto.status !== TenantStatus.ACTIVE) {
       throw new BadRequestException('system 테넌트는 비활성화하거나 삭제 상태로 변경할 수 없습니다.');
+    }
+
+    if (
+      dto.status === TenantStatus.ACTIVE
+      && tenant.slug !== SYSTEM_TENANT_SLUG
+      && !(await this.isMultiTenantEnabled())
+    ) {
+      throw new BadRequestException('멀티테넌트 모드가 비활성화되어 있어 system 이외 테넌트를 활성화할 수 없습니다.');
     }
 
     const hasSettingsUpdate = dto.tierId !== undefined
@@ -257,7 +430,7 @@ export class TenantsService {
     }
 
     if (dto.ipCidr !== undefined) {
-      normalized.ipCidr = this.normalizeIpCidrList(dto.ipCidr);
+      normalized.ipCidr = this.normalizeAndValidateIpCidrList(dto.ipCidr, tenant.slug);
     }
 
     Object.assign(tenant, normalized);
@@ -281,6 +454,16 @@ export class TenantsService {
       throw new NotFoundException(`테넌트 ID ${tenantId}의 설정을 찾을 수 없습니다.`);
     }
     return settings;
+  }
+
+  async getBootstrapStatus(tenantId: number): Promise<{ requiresBootstrap: boolean }> {
+    const tenant = await this.findOne(tenantId);
+    if (tenant.status !== TenantStatus.ACTIVE) {
+      return { requiresBootstrap: false };
+    }
+
+    const hasUsers = await this.hasAnyActiveTenantUser(tenant.slug);
+    return { requiresBootstrap: !hasUsers };
   }
 
   async updateSettings(

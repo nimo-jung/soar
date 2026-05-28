@@ -6,6 +6,8 @@ export declare class TenantConnectionService implements OnModuleDestroy {
     private readonly connections;
     constructor(config: ConfigService);
     getConnection(tenantId: string): Promise<DataSource>;
+    private shouldAutoRunTenantMigrations;
     closeConnection(tenantId: string): Promise<void>;
+    runMigrationsForTenant(tenantId: string): Promise<void>;
     onModuleDestroy(): Promise<void>;
 }

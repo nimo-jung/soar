@@ -5,6 +5,8 @@ import { MasterAuthSettings } from '../../auth/entities/master-auth-settings.ent
 import { AuthPolicy, DEFAULT_AUTH_POLICY } from '../../auth/auth-policy.constants';
 import { normalizeAuthPolicy, validateAuthPolicy } from '../../auth/auth-policy.util';
 import { UpdateAuthPolicyDto } from '../../auth/dto/update-auth-policy.dto';
+import { Tenant, TenantStatus } from '../tenants/entities/tenant.entity';
+import { SYSTEM_TENANT_SLUG } from '../tenants/constants/system-tenant.constants';
 
 export interface AdminAuthSettingsResponse extends AuthPolicy {
   isMultiTenantEnabled: boolean;
@@ -15,6 +17,8 @@ export class AdminAuthSettingsService {
   constructor(
     @InjectRepository(MasterAuthSettings)
     private readonly masterAuthSettingsRepo: Repository<MasterAuthSettings>,
+    @InjectRepository(Tenant)
+    private readonly tenantRepo: Repository<Tenant>,
   ) {}
   private toResponse(settings: MasterAuthSettings): AdminAuthSettingsResponse {
     return {
@@ -50,6 +54,22 @@ export class AdminAuthSettingsService {
     }
 
     let settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
+
+    if (dto.isMultiTenantEnabled === false) {
+      const nonSystemTenantCount = await this.tenantRepo
+        .createQueryBuilder('tenant')
+        .where('tenant.slug != :systemSlug', { systemSlug: SYSTEM_TENANT_SLUG })
+        .andWhere('tenant.status IN (:...statuses)', {
+          statuses: [TenantStatus.ACTIVE, TenantStatus.SUSPENDED],
+        })
+        .getCount();
+
+      if (nonSystemTenantCount > 0) {
+        throw new BadRequestException(
+          `system 이외 활성/정지 테넌트가 ${nonSystemTenantCount}개 존재하여 멀티테넌트 모드를 비활성화할 수 없습니다. 먼저 해당 테넌트를 삭제 상태로 전환하세요.`,
+        );
+      }
+    }
 
     if (!settings) {
       settings = this.masterAuthSettingsRepo.create({

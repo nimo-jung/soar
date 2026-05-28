@@ -139,3 +139,26 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 * React 앱은 로그인 응답 payload에 포함된 `brandingConfig`를 기반으로 PrimeReact 테마의 CSS 변수(`:root` 커스텀 프로퍼티)를 동적으로 덮어써 브랜딩을 적용한다.
 * 브랜딩 CSS 변수는 Zustand 전역 스토어에서 관리하며, 테넌트 전환 또는 재로그인 시 즉시 갱신한다.
 * 브랜딩 설정이 없는 테넌트에게는 시스템 기본 테마(default theme)를 폴백(fallback)으로 제공한다.
+
+---
+
+## 6. 글로벌 멀티테넌트 스위치 (`isMultiTenantEnabled`)
+
+전역 멀티테넌트 활성화 여부는 `master_auth_settings.is_multi_tenant_enabled` 값을 기준으로 동작한다.
+
+* 설정 주체는 **Master Admin**이며, 인증 설정(`Admin Auth Settings`) API에서 관리한다.
+* Tenant 화면/기능에서 전역 스위치를 변경하지 않는다.
+* 인증 정책 값(`maxLoginFailures`, `lockMinutes`, `maxConcurrentSessions`, `autoLogoutTimeoutMinutes`)과 별개로,
+  `isMultiTenantEnabled`는 **테넌트 식별 방식**을 전역에서 결정한다.
+
+### `isMultiTenantEnabled = true`
+
+* 테넌트 로그인 요청에서 `tenantSlug`가 반드시 필요하다.
+* 로그인/잠금조회/부트스트랩/비밀번호 재설정은 요청의 `tenantSlug`를 기준으로 대상 테넌트를 결정한다.
+* 테넌트별 인증 정책 및 실패 잠금 상태는 각 테넌트 스코프에서 독립적으로 적용된다.
+
+### `isMultiTenantEnabled = false`
+
+* 테넌트 로그인은 `system` 테넌트만 허용한다.
+* `tenantSlug`가 전달되더라도 `system`이 아니면 인증을 거부한다.
+* 잠금조회/부트스트랩/비밀번호 재설정의 대상 테넌트도 내부적으로 `system`으로 고정된다.

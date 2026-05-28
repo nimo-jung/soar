@@ -23,6 +23,7 @@ const audit_log_entity_1 = require("../../common/audit/entities/audit-log.entity
 const audit_log_service_1 = require("../../common/audit/audit-log.service");
 const bootstrap_token_mail_service_1 = require("./bootstrap-token-mail.service");
 const master_setting_entity_1 = require("../auth-settings/entities/master-setting.entity");
+const master_auth_settings_entity_1 = require("../../auth/entities/master-auth-settings.entity");
 let TenantsModule = class TenantsModule {
 };
 exports.TenantsModule = TenantsModule;
@@ -37,6 +38,7 @@ exports.TenantsModule = TenantsModule = __decorate([
                 tenant_bootstrap_token_entity_1.TenantBootstrapToken,
                 tenant_password_reset_token_entity_1.TenantPasswordResetToken,
                 master_setting_entity_1.MasterSetting,
+                master_auth_settings_entity_1.MasterAuthSettings,
                 audit_log_entity_1.AuditLog,
             ]),
             jwt_1.JwtModule.registerAsync({

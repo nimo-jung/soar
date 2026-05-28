@@ -4,3 +4,7 @@ export interface AuthPolicy {
   maxConcurrentSessions: number;
   autoLogoutTimeoutMinutes: number;
 }
+
+export interface AdminAuthSettings extends AuthPolicy {
+  isMultiTenantEnabled: boolean;
+}

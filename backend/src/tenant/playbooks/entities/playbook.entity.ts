@@ -34,9 +34,9 @@ export class Playbook {
   @Column({ name: 'created_by', nullable: true, comment: '작성자 사용자 ID' })
   createdBy: number;
 
-  @CreateDateColumn({ comment: '생성 일시' })
+  @CreateDateColumn({ name: 'created_at', comment: '생성 일시' })
   createdAt: Date;
 
-  @UpdateDateColumn({ comment: '수정 일시' })
+  @UpdateDateColumn({ name: 'updated_at', comment: '수정 일시' })
   updatedAt: Date;
 }

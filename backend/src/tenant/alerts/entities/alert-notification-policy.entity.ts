@@ -11,9 +11,9 @@ export class AlertNotificationPolicy {
   @Column({ type: 'json', comment: '채널별 수신자 목록' })
   recipients: string[];
 
-  @CreateDateColumn({ comment: '생성 일시' })
+  @CreateDateColumn({ name: 'created_at', comment: '생성 일시' })
   createdAt: Date;
 
-  @UpdateDateColumn({ comment: '수정 일시' })
+  @UpdateDateColumn({ name: 'updated_at', comment: '수정 일시' })
   updatedAt: Date;
 }

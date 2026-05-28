@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +20,7 @@ import { AlertsController } from './alerts/alerts.controller';
 import { AlertsService } from './alerts/alerts.service';
 import { ParsingRulesController } from './parsing-rules/parsing-rules.controller';
 import { ParsingRulesService } from './parsing-rules/parsing-rules.service';
+import { TenantMiddleware } from '../common/middleware/tenant.middleware';
 
 @Module({
   imports: [
@@ -49,6 +50,21 @@ import { ParsingRulesService } from './parsing-rules/parsing-rules.service';
     AlertsService,
     ParsingRulesService,
     AuditLogService,
+    TenantMiddleware,
   ],
 })
-export class TenantModule {}
+export class TenantModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(TenantMiddleware)
+      .forRoutes(
+        CollectorsController,
+        IpWhitelistController,
+        PlaybooksController,
+        TenantAuthSettingsController,
+        UsersController,
+        AlertsController,
+        ParsingRulesController,
+      );
+  }
+}

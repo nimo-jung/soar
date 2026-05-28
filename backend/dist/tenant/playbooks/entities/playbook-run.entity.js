@@ -62,7 +62,7 @@ __decorate([
     __metadata("design:type", Object)
 ], PlaybookRun.prototype, "finishedAt", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ comment: '레코드 생성 일시' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', comment: '레코드 생성 일시' }),
     __metadata("design:type", Date)
 ], PlaybookRun.prototype, "createdAt", void 0);
 exports.PlaybookRun = PlaybookRun = __decorate([

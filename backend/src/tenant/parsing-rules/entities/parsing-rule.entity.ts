@@ -8,7 +8,7 @@ export class ParsingRule {
   @Column({ comment: '규칙 이름' })
   name: string;
 
-  @Column({ type: 'json', comment: '파싱 규칙 정의 (JSON 구조)' })
+  @Column({ name: 'rule_definition', type: 'json', comment: '파싱 규칙 정의 (JSON 구조)' })
   ruleDefinition: Record<string, unknown>;
 
   @Column({ name: 'log_source_type', nullable: true, comment: '적용 대상 로그 소스 유형' })
@@ -20,9 +20,9 @@ export class ParsingRule {
   @Column({ type: 'int', default: 0, comment: '적용 우선순위 (낮을수록 먼저 적용)' })
   priority: number;
 
-  @CreateDateColumn({ comment: '생성 일시' })
+  @CreateDateColumn({ name: 'created_at', comment: '생성 일시' })
   createdAt: Date;
 
-  @UpdateDateColumn({ comment: '수정 일시' })
+  @UpdateDateColumn({ name: 'updated_at', comment: '수정 일시' })
   updatedAt: Date;
 }

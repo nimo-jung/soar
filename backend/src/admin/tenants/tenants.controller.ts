@@ -279,6 +279,44 @@ export class TenantsController {
     return this.tenantsService.getSettings(id);
   }
 
+  @Get(':id/bootstrap-status')
+  @ApiOperation({ summary: '테넌트 최초 관리자 등록 필요 여부 조회 (Admin 전용)' })
+  getBootstrapStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.tenantsService.getBootstrapStatus(id);
+  }
+
+  @Get(':id/database-status')
+  @ApiOperation({ summary: '테넌트 DB 준비 상태 조회 (DB 존재/필수 테이블 누락 여부)' })
+  getDatabaseStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.tenantsService.getTenantDatabaseStatus(id);
+  }
+
+  @Post(':id/database-recover')
+  @ApiOperation({ summary: '테넌트 DB 복구/재생성 (DB 생성 + 테넌트 마이그레이션 실행)' })
+  async recoverDatabase(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Req() req: Request,
+  ) {
+    const recovered = await this.tenantsService.recoverTenantDatabase(id);
+    await this.auditLogService.record({
+      ...this.buildAuditContext(user, req),
+      action: 'TENANT_DB_RECOVER',
+      resourceType: 'TENANT_DATABASE',
+      resourceId: String(id),
+      message: [
+        '테넌트 DB 복구/재생성',
+        `tenantId=${recovered.tenantId}`,
+        `tenantSlug=${this.safe(recovered.tenantSlug)}`,
+        `exists=${recovered.exists ? 'Y' : 'N'}`,
+        `isReady=${recovered.isReady ? 'Y' : 'N'}`,
+        `missingTables=${recovered.missingTables.join(',') || '-'}`,
+      ].join(' | '),
+      metadata: { ...recovered },
+    });
+    return recovered;
+  }
+
   @Post(':id/bootstrap-token')
   @ApiOperation({ summary: '테넌트 최초 관리자 등록용 토큰 발급' })
   async issueBootstrapToken(

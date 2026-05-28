@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 const IP_OR_CIDR_LIST_REGEX = /^\s*(?:\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)(?:\s*,\s*\d{1,3}(?:\.\d{1,3}){3}(?:\/(?:3[0-2]|[12]?\d))?)*\s*$/;
 
 export class CreateTenantDto {
-  @ApiProperty({ description: '테넌트 슬러그 (영문 소문자 및 숫자, DB명 접미사)', example: 'acme-corp' })
+  @ApiProperty({ description: '고객사 코드 (영문 소문자 및 숫자, DB명 접미사)', example: 'acme-corp' })
   @IsString()
   @MinLength(3)
   slug: string;

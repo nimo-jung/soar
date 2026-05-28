@@ -21,10 +21,8 @@ export class TenantMiddleware implements NestMiddleware {
         role: string;
       }>(token);
 
-      tenantStorage.run(
-        { tenantId: payload.tenantId, userId: payload.sub, role: payload.role },
-        () => next(),
-      );
+      tenantStorage.enterWith({ tenantId: payload.tenantId, userId: payload.sub, role: payload.role });
+      next();
     } catch {
       throw new UnauthorizedException('유효하지 않은 토큰입니다.');
     }

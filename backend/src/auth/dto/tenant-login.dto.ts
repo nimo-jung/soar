@@ -10,7 +10,7 @@ export class TenantLoginDto {
   @IsString()
   password: string;
 
-  @ApiProperty({ description: '테넌트 슬러그 (단일 테넌트 모드에서는 생략 가능)', example: 'acme-corp', required: false })
+  @ApiProperty({ description: '고객사 코드 (단일 테넌트 모드에서는 생략 가능)', example: 'acme-corp', required: false })
   @IsOptional()
   @IsString()
   tenantSlug?: string;

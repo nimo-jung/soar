@@ -31,7 +31,7 @@ __decorate([
     __metadata("design:type", String)
 ], ParsingRule.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'json', comment: '파싱 규칙 정의 (JSON 구조)' }),
+    (0, typeorm_1.Column)({ name: 'rule_definition', type: 'json', comment: '파싱 규칙 정의 (JSON 구조)' }),
     __metadata("design:type", Object)
 ], ParsingRule.prototype, "ruleDefinition", void 0);
 __decorate([
@@ -47,11 +47,11 @@ __decorate([
     __metadata("design:type", Number)
 ], ParsingRule.prototype, "priority", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ comment: '생성 일시' }),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at', comment: '생성 일시' }),
     __metadata("design:type", Date)
 ], ParsingRule.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ comment: '수정 일시' }),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at', comment: '수정 일시' }),
     __metadata("design:type", Date)
 ], ParsingRule.prototype, "updatedAt", void 0);
 exports.ParsingRule = ParsingRule = __decorate([

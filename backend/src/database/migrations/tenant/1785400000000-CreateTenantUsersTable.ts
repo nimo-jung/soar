@@ -1,8 +1,8 @@
 /**
  * Migration: CreateTenantUsersTable
  *
- * 목적: tenant_db_* 스키마 초기 테이블(tenant_users, alerts, alert_notification_*, parsing_rules)을 단일 마이그레이션으로 생성한다.
- * 영향: 테넌트 사용자/RBAC, 알림 정책·이력, 파싱 룰 저장소를 동시에 초기화한다.
+ * 목적: tenant_db_* 스키마 초기 테이블(tenant_users, alerts, alert_notification_*, parsing_rules, collectors, playbooks, playbook_runs)을 단일 마이그레이션으로 생성한다.
+ * 영향: 테넌트 사용자/RBAC, 알림 정책·이력, 파싱 룰, Collector, 플레이북 저장소를 동시에 초기화한다.
  */
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
@@ -78,9 +78,57 @@ export class CreateTenantUsersTable1785400000000 implements MigrationInterface {
         KEY \`idx_parsing_rules_priority\` (\`priority\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='테넌트별 커스텀 로그 파싱 룰 (Go 엔진 Redis 캐싱)'
     `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`collectors\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT COMMENT 'Collector 고유 ID',
+        \`name\` VARCHAR(255) NOT NULL COMMENT 'Collector 이름',
+        \`description\` VARCHAR(255) NULL COMMENT '설명',
+        \`api_key_hash\` VARCHAR(255) NOT NULL COMMENT 'API Key 해시 (bcrypt, 원본 재조회 불가)',
+        \`is_active\` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '활성화 여부',
+        \`created_at\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '생성 일시',
+        \`updated_at\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정 일시',
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_collectors_is_active\` (\`is_active\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='로그 수집 포인트(Collector) 등록 정보'
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`playbooks\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT COMMENT '플레이북 고유 ID',
+        \`name\` VARCHAR(255) NOT NULL COMMENT '플레이북 이름',
+        \`description\` TEXT NULL COMMENT '플레이북 설명',
+        \`definition\` JSON NOT NULL COMMENT '워크플로우 정의 JSON (트리거 조건 + 액션 스텝)',
+        \`status\` ENUM('DRAFT','ACTIVE','ARCHIVED') NOT NULL DEFAULT 'DRAFT' COMMENT '상태: DRAFT | ACTIVE | ARCHIVED',
+        \`created_by\` INT NULL COMMENT '작성자 사용자 ID',
+        \`created_at\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '생성 일시',
+        \`updated_at\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '수정 일시',
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_playbooks_status\` (\`status\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='TMS 자동 대응 플레이북 정의'
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`playbook_runs\` (
+        \`id\` INT NOT NULL AUTO_INCREMENT COMMENT '실행 고유 ID',
+        \`playbook_id\` INT NOT NULL COMMENT '실행된 플레이북 ID',
+        \`alert_id\` INT NULL COMMENT '트리거된 알람 ID',
+        \`status\` ENUM('RUNNING','COMPLETED','FAILED') NOT NULL DEFAULT 'RUNNING' COMMENT '실행 상태',
+        \`result_summary\` JSON NULL COMMENT '실행 결과 요약',
+        \`started_at\` DATETIME(6) NOT NULL COMMENT '실행 시작 일시',
+        \`finished_at\` DATETIME(6) NULL COMMENT '실행 완료 일시',
+        \`created_at\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '레코드 생성 일시',
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_playbook_runs_playbook_id\` (\`playbook_id\`),
+        KEY \`idx_playbook_runs_status\` (\`status\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이북 실행 이력'
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query('DROP TABLE IF EXISTS `playbook_runs`');
+    await queryRunner.query('DROP TABLE IF EXISTS `playbooks`');
+    await queryRunner.query('DROP TABLE IF EXISTS `collectors`');
     await queryRunner.query('DROP TABLE IF EXISTS `parsing_rules`');
     await queryRunner.query('DROP TABLE IF EXISTS `alert_notification_histories`');
     await queryRunner.query('DROP TABLE IF EXISTS `alert_notification_policies`');

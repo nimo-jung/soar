@@ -26,7 +26,7 @@ class CreateTenantDto {
 }
 exports.CreateTenantDto = CreateTenantDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: '테넌트 슬러그 (영문 소문자 및 숫자, DB명 접미사)', example: 'acme-corp' }),
+    (0, swagger_1.ApiProperty)({ description: '고객사 코드 (영문 소문자 및 숫자, DB명 접미사)', example: 'acme-corp' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(3),
     __metadata("design:type", String)

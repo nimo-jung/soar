@@ -20,6 +20,8 @@ import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
 import { formatDateTimeSeconds } from '../../utils/date';
+import type { AdminAuthSettings } from '../../types/auth-policy';
+import ResultDialog from '../../components/ResultDialog';
 
 interface TenantTier {
   id: number;
@@ -77,6 +79,14 @@ interface TenantBootstrapHistoryResponse {
   page: number;
   limit: number;
   total: number;
+}
+
+interface TenantDatabaseStatus {
+  tenantId: number;
+  tenantSlug: string;
+  exists: boolean;
+  missingTables: string[];
+  isReady: boolean;
 }
 
 type BootstrapHistoryVisibleField =
@@ -215,6 +225,8 @@ const normalizeIpCidrList = (value: string): string[] | null => {
   return items;
 };
 
+const containsAllIpWildcard = (items: string[]): boolean => items.includes('0.0.0.0');
+
 const getDefaultExpiresAt = () => {
   const date = new Date();
   date.setMonth(date.getMonth() + 1);
@@ -284,6 +296,8 @@ const TenantsPage: React.FC = () => {
   const [bootstrapHistoryDateRange, setBootstrapHistoryDateRange] = useState<[Date | null, Date | null] | null>(null);
   const [bootstrapHistoryStatusFilter, setBootstrapHistoryStatusFilter] = useState<BootstrapHistoryStatusFilter>('ALL');
   const [bootstrapHistoryVisibleFields, setBootstrapHistoryVisibleFields] = useState<BootstrapHistoryVisibleField[]>(bootstrapHistoryFieldOrder);
+  const [tenantDatabaseBusy, setTenantDatabaseBusy] = useState<Record<number, boolean>>({});
+  const [isMultiTenantEnabled, setIsMultiTenantEnabled] = useState(true);
   const [form, setForm] = useState({
     slug: '',
     name: '',
@@ -324,10 +338,11 @@ const TenantsPage: React.FC = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [tenantRes, tierRes, quotaRes] = await Promise.all([
+      const [tenantRes, tierRes, quotaRes, authSettingsRes] = await Promise.all([
         api.get<Tenant[]>('/admin/tenants'),
         api.get<TenantTier[]>('/admin/tenants/tiers'),
         api.get<TenantQuota[]>('/admin/quotas'),
+        api.get<AdminAuthSettings>('/admin/auth-settings'),
       ]);
       const quotaByTenantId = new Map(quotaRes.data.map((quota) => [quota.tenantId, quota]));
       setTenants(tenantRes.data.map((tenant) => ({
@@ -335,6 +350,7 @@ const TenantsPage: React.FC = () => {
         quota: quotaByTenantId.get(tenant.id),
       })));
       setTiers(tierRes.data);
+      setIsMultiTenantEnabled(authSettingsRes.data.isMultiTenantEnabled);
       if (!form.tierId && tierRes.data.length > 0) {
         setForm((prev) => ({
           ...prev,
@@ -375,6 +391,14 @@ const TenantsPage: React.FC = () => {
   };
 
   const openCreateDialog = () => {
+    if (!isMultiTenantEnabled) {
+      openResultDialog(
+        t('tenants.multiTenantDisabled.title'),
+        t('tenants.multiTenantDisabled.detail'),
+      );
+      return;
+    }
+
     setEditingTenant(null);
     resetCreateForm();
     setShowTenantDialog(true);
@@ -404,9 +428,7 @@ const TenantsPage: React.FC = () => {
   };
 
     const openBootstrapIssueDialog = async (tenant: Tenant) => {
-      const res = await api.get<{ requiresBootstrap: boolean }>('/auth/tenant/bootstrap/status', {
-        params: { tenantSlug: tenant.slug },
-      });
+      const res = await api.get<{ requiresBootstrap: boolean }>(`/admin/tenants/${tenant.id}/bootstrap-status`);
 
       if (!res.data.requiresBootstrap) {
         openResultDialog(t('tenants.bootstrap.issueBlockedTitle'), t('tenants.bootstrap.issueBlockedDetail'));
@@ -552,6 +574,7 @@ const TenantsPage: React.FC = () => {
     const trimmedEmail = form.contactEmail.trim();
     const trimmedCidr = form.ipCidr.trim();
     const normalizedIpCidrs = normalizeIpCidrList(trimmedCidr);
+    const normalizedSlug = trimmedSlug.toLowerCase();
 
     if (!trimmedSlug) {
       nextErrors.slug = t('tenants.validation.slugRequired');
@@ -597,6 +620,8 @@ const TenantsPage: React.FC = () => {
       nextErrors.ipCidr = t('tenants.validation.ipCidrRequired');
     } else if (!normalizedIpCidrs) {
       nextErrors.ipCidr = t('tenants.validation.ipCidrInvalid');
+    } else if (normalizedSlug !== 'system' && containsAllIpWildcard(normalizedIpCidrs)) {
+      nextErrors.ipCidr = t('tenants.validation.ipCidrAllNotAllowed');
     }
 
     setFormErrors(nextErrors);
@@ -670,6 +695,14 @@ const TenantsPage: React.FC = () => {
 
   const confirmStatusToggle = (row: Tenant) => {
     const isActive = row.status === 'ACTIVE';
+    if (!isActive && !isMultiTenantEnabled && !isSystemTenant(row)) {
+      openResultDialog(
+        t('tenants.multiTenantDisabled.restoreTitle'),
+        t('tenants.multiTenantDisabled.restoreDetail'),
+      );
+      return;
+    }
+
     confirmDialog({
       header: t('tenants.confirmStatus.header'),
       message: t('tenants.confirmStatus.message', {
@@ -701,6 +734,14 @@ const TenantsPage: React.FC = () => {
   };
 
   const confirmRestoreTenant = (row: Tenant) => {
+    if (!isMultiTenantEnabled && !isSystemTenant(row)) {
+      openResultDialog(
+        t('tenants.multiTenantDisabled.restoreTitle'),
+        t('tenants.multiTenantDisabled.restoreDetail'),
+      );
+      return;
+    }
+
     confirmDialog({
       header: t('tenants.confirmRestore.header'),
       message: t('tenants.confirmRestore.message', { name: row.name }),
@@ -710,6 +751,72 @@ const TenantsPage: React.FC = () => {
       rejectLabel: t('common.cancel'),
       accept: () => {
         handleRestore(row.id);
+      },
+    });
+  };
+
+  const setTenantDatabaseBusyState = (tenantId: number, isBusy: boolean) => {
+    setTenantDatabaseBusy((prev) => ({ ...prev, [tenantId]: isBusy }));
+  };
+
+  const getDatabaseStatusMessage = (tenantName: string, status: TenantDatabaseStatus) => {
+    if (status.isReady) {
+      return t('tenants.database.statusReadyDetail', {
+        name: tenantName,
+      });
+    }
+
+    return t('tenants.database.statusNotReadyDetail', {
+      name: tenantName,
+      missingTables: status.missingTables.length > 0 ? status.missingTables.join(', ') : t('tenants.database.none'),
+    });
+  };
+
+  const checkTenantDatabaseStatus = async (row: Tenant) => {
+    setTenantDatabaseBusyState(row.id, true);
+    try {
+      const res = await api.get<TenantDatabaseStatus>(`/admin/tenants/${row.id}/database-status`);
+      openResultDialog(
+        res.data.isReady ? t('tenants.database.statusReadyTitle') : t('tenants.database.statusNotReadyTitle'),
+        getDatabaseStatusMessage(row.name, res.data),
+      );
+    } catch (error: unknown) {
+      getApiErrorStatusAndMessage(error);
+      openResultDialog(
+        t('tenants.database.statusFailedTitle'),
+        t('tenants.database.statusFailedDetail', { name: row.name }),
+      );
+    } finally {
+      setTenantDatabaseBusyState(row.id, false);
+    }
+  };
+
+  const recoverTenantDatabase = async (row: Tenant) => {
+    setTenantDatabaseBusyState(row.id, true);
+    try {
+      const res = await api.post<TenantDatabaseStatus>(`/admin/tenants/${row.id}/database-recover`);
+      openResultDialog(t('tenants.database.recoverSuccessTitle'), getDatabaseStatusMessage(row.name, res.data));
+    } catch (error: unknown) {
+      getApiErrorStatusAndMessage(error);
+      openResultDialog(
+        t('tenants.database.recoverFailedTitle'),
+        t('tenants.database.recoverFailedDetail', { name: row.name }),
+      );
+    } finally {
+      setTenantDatabaseBusyState(row.id, false);
+    }
+  };
+
+  const confirmRecoverTenantDatabase = (row: Tenant) => {
+    confirmDialog({
+      header: t('tenants.database.recoverConfirmTitle'),
+      message: t('tenants.database.recoverConfirmMessage', { name: row.name }),
+      icon: 'pi pi-database',
+      acceptClassName: 'p-button-warning',
+      acceptLabel: t('tenants.database.recoverAction'),
+      rejectLabel: t('common.cancel'),
+      accept: () => {
+        void recoverTenantDatabase(row);
       },
     });
   };
@@ -884,7 +991,10 @@ const TenantsPage: React.FC = () => {
       label: row.status === 'ACTIVE' ? t('tenants.table.suspendBtn') : t('tenants.table.activateBtn'),
       icon: row.status === 'ACTIVE' ? 'pi pi-pause' : 'pi pi-play',
       className: row.status === 'ACTIVE' ? 'tenant-menu-action-warning' : 'tenant-menu-action-safe',
-        disabled: row.status === 'DELETED' || isSystemTenant(row),
+      disabled:
+        row.status === 'DELETED'
+        || isSystemTenant(row)
+        || (row.status === 'SUSPENDED' && !isMultiTenantEnabled && !isSystemTenant(row)),
       command: () => {
         confirmStatusToggle(row);
       },
@@ -896,7 +1006,7 @@ const TenantsPage: React.FC = () => {
       label: t('tenants.actions.restore'),
       icon: 'pi pi-refresh',
       className: 'tenant-menu-action-restore',
-      disabled: row.status !== 'DELETED',
+      disabled: row.status !== 'DELETED' || (!isMultiTenantEnabled && !isSystemTenant(row)),
       command: () => {
         confirmRestoreTenant(row);
       },
@@ -920,6 +1030,26 @@ const TenantsPage: React.FC = () => {
       separator: true,
     },
     {
+      label: t('tenants.database.statusAction'),
+      icon: 'pi pi-database',
+      disabled: tenantDatabaseBusy[row.id] === true,
+      command: () => {
+        void checkTenantDatabaseStatus(row);
+      },
+    },
+    {
+      label: t('tenants.database.recoverAction'),
+      icon: 'pi pi-wrench',
+      className: 'tenant-menu-action-warning',
+      disabled: tenantDatabaseBusy[row.id] === true,
+      command: () => {
+        confirmRecoverTenantDatabase(row);
+      },
+    },
+    {
+      separator: true,
+    },
+    {
       label: t('tenants.actions.delete'),
       icon: 'pi pi-trash',
       className: 'tenant-menu-action-danger',
@@ -932,19 +1062,14 @@ const TenantsPage: React.FC = () => {
 
   return (
     <div className="admin-page tenants-page">
-      <Dialog
+      <ResultDialog
         visible={resultDialog.visible}
-        header={resultDialog.title}
-        style={{ width: '460px', maxWidth: '96vw' }}
+        title={resultDialog.title}
+        message={resultDialog.message}
+        tone="info"
+        confirmLabel={t('common.confirm')}
         onHide={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
-        footer={(
-          <div className="flex justify-content-end">
-            <Button label={t('common.confirm')} onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))} />
-          </div>
-        )}
-      >
-        <p className="m-0">{resultDialog.message}</p>
-      </Dialog>
+      />
       <ConfirmDialog />
       <div className="admin-page-header page-header">
         <h1>{t('tenants.title')}</h1>
@@ -952,9 +1077,19 @@ const TenantsPage: React.FC = () => {
           label={t('tenants.createBtn')}
           icon="pi pi-plus"
           outlined
+          disabled={!isMultiTenantEnabled}
+          tooltip={!isMultiTenantEnabled ? t('tenants.multiTenantDisabled.detail') : undefined}
+          tooltipOptions={!isMultiTenantEnabled ? { position: 'top' } : undefined}
           onClick={openCreateDialog}
         />
       </div>
+      {!isMultiTenantEnabled && (
+        <Message
+          severity="warn"
+          text={t('tenants.multiTenantDisabled.detail')}
+          className="mb-3"
+        />
+      )}
       <div className="tenant-summary-grid mb-3">
         <div className="tenant-summary-card">
           <span className="summary-label">{t('tenants.summary.total')}</span>
@@ -1172,7 +1307,11 @@ const TenantsPage: React.FC = () => {
                       ? t('tenants.table.suspendBtn')
                       : t('tenants.table.activateBtn')
                 }
-                  disabled={row.status !== 'DELETED' && isSystemTenant(row)}
+                  disabled={
+                    (row.status !== 'DELETED' && isSystemTenant(row))
+                    || (row.status === 'DELETED' && !isMultiTenantEnabled && !isSystemTenant(row))
+                    || (row.status === 'SUSPENDED' && !isMultiTenantEnabled && !isSystemTenant(row))
+                  }
                 onClick={() => (row.status === 'DELETED' ? confirmRestoreTenant(row) : confirmStatusToggle(row))}
               />
               <Button

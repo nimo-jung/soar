@@ -13,11 +13,19 @@ import { IssueTenantPasswordResetTokenDto } from './dto/issue-tenant-password-re
 import { TenantConnectionService } from '../../common/database/tenant-connection.service';
 import { TenantPasswordResetToken } from './entities/tenant-password-reset-token.entity';
 import { BootstrapTokenMailService } from './bootstrap-token-mail.service';
+import { MasterAuthSettings } from '../../auth/entities/master-auth-settings.entity';
 export interface TierDeletionStatus {
     canDelete: boolean;
     tier: TenantTier;
     usageCount: number;
     reason: string | null;
+}
+export interface TenantDatabaseStatus {
+    tenantId: number;
+    tenantSlug: string;
+    exists: boolean;
+    missingTables: string[];
+    isReady: boolean;
 }
 export declare class TenantsService {
     private readonly tenantRepo;
@@ -25,11 +33,14 @@ export declare class TenantsService {
     private readonly tierRepo;
     private readonly tenantBootstrapTokenRepo;
     private readonly tenantPasswordResetTokenRepo;
+    private readonly masterAuthSettingsRepo;
     private readonly dataSource;
     private readonly tenantConnectionService;
     private readonly bootstrapTokenMailService;
     private readonly logger;
-    constructor(tenantRepo: Repository<Tenant>, settingsRepo: Repository<TenantSettings>, tierRepo: Repository<TenantTier>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>, dataSource: DataSource, tenantConnectionService: TenantConnectionService, bootstrapTokenMailService: BootstrapTokenMailService);
+    private readonly requiredTenantTables;
+    constructor(tenantRepo: Repository<Tenant>, settingsRepo: Repository<TenantSettings>, tierRepo: Repository<TenantTier>, tenantBootstrapTokenRepo: Repository<TenantBootstrapToken>, tenantPasswordResetTokenRepo: Repository<TenantPasswordResetToken>, masterAuthSettingsRepo: Repository<MasterAuthSettings>, dataSource: DataSource, tenantConnectionService: TenantConnectionService, bootstrapTokenMailService: BootstrapTokenMailService);
+    private isMultiTenantEnabled;
     private getTenantUserRepoBySlug;
     private hasAnyActiveTenantUser;
     private findTierForTenantById;
@@ -37,12 +48,25 @@ export declare class TenantsService {
     private isValidIpv4;
     private isValidIpv4OrCidr;
     private normalizeIpCidrList;
+    private ensureIpCidrPolicy;
+    private normalizeAndValidateIpCidrList;
+    private isTenantDbAccessDenied;
+    private buildTenantDatabaseName;
+    private tenantDatabaseExists;
+    private createTenantDatabase;
+    private dropTenantDatabase;
+    private getMissingTenantTables;
+    getTenantDatabaseStatus(tenantId: number): Promise<TenantDatabaseStatus>;
+    recoverTenantDatabase(tenantId: number): Promise<TenantDatabaseStatus>;
     create(dto: CreateTenantDto): Promise<Tenant>;
     findAll(): Promise<Tenant[]>;
     findOne(id: number): Promise<Tenant>;
     update(id: number, dto: UpdateTenantDto): Promise<Tenant>;
     softDelete(id: number): Promise<void>;
     getSettings(tenantId: number): Promise<TenantSettings>;
+    getBootstrapStatus(tenantId: number): Promise<{
+        requiresBootstrap: boolean;
+    }>;
     updateSettings(tenantId: number, updates: Partial<TenantSettings>): Promise<TenantSettings>;
     getTiers(): Promise<TenantTier[]>;
     private validateTierDuplicateRules;

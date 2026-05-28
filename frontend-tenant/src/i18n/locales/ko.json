@@ -40,7 +40,7 @@
     "subtitle": "테넌트 보안 운영 포털에 접속하려면 로그인하세요.",
     "liveGuard": "TMS 실시간 모니터링 활성",
     "securitySignal": "AI 위협 인텔리전스 엔진 활성",
-    "tenantSlug": "테넌트 슬러그",
+    "tenantSlug": "고객사 코드",
     "tenantSlugPlaceholder": "acme-corp",
     "submit": "로그인",
     "errorEmpty": "모든 필드를 입력하세요.",

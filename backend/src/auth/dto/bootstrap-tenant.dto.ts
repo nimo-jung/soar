@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class BootstrapTenantDto {
-  @ApiProperty({ description: '테넌트 슬러그', example: 'acme-corp' })
+  @ApiProperty({ description: '고객사 코드', example: 'acme-corp' })
   @IsString()
   @IsNotEmpty()
   tenantSlug: string;

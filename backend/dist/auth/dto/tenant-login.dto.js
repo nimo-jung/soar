@@ -30,7 +30,7 @@ __decorate([
     __metadata("design:type", String)
 ], TenantLoginDto.prototype, "password", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: '테넌트 슬러그 (단일 테넌트 모드에서는 생략 가능)', example: 'acme-corp', required: false }),
+    (0, swagger_1.ApiProperty)({ description: '고객사 코드 (단일 테넌트 모드에서는 생략 가능)', example: 'acme-corp', required: false }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

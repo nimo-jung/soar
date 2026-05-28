@@ -120,6 +120,12 @@
       "all": "All",
       "deleted": "Deleted"
     },
+    "multiTenantDisabled": {
+      "title": "Tenant Creation Unavailable",
+      "detail": "Multi-tenant mode is disabled, so new tenants cannot be created.",
+      "restoreTitle": "Tenant Activation Unavailable",
+      "restoreDetail": "Multi-tenant mode is disabled, so non-system tenants cannot be activated or restored."
+    },
     "toolbar": {
       "clearSearch": "Clear search",
       "refresh": "Refresh",
@@ -145,6 +151,22 @@
     "confirmRestore": {
       "header": "Confirm Tenant Restore",
       "message": "Are you sure you want to restore tenant {{name}} to active status?"
+    },
+    "database": {
+      "none": "none",
+      "statusAction": "Check DB Status",
+      "recoverAction": "Recover/Recreate DB",
+      "statusReadyTitle": "DB Is Ready",
+      "statusReadyDetail": "The database for customer ({{name}}) is ready.",
+      "statusNotReadyTitle": "DB Needs Attention",
+      "statusNotReadyDetail": "Database check for customer ({{name}}) found missing tables: {{missingTables}}",
+      "statusFailedTitle": "Failed to Check DB Status",
+      "statusFailedDetail": "An error occurred while checking the database status for customer ({{name}}).",
+      "recoverConfirmTitle": "Confirm Tenant DB Recovery/Recreation",
+      "recoverConfirmMessage": "Do you want to recover/recreate DB and run migrations for tenant {{name}}?",
+      "recoverSuccessTitle": "Tenant DB Recovery Completed",
+      "recoverFailedTitle": "Tenant DB Recovery Failed",
+      "recoverFailedDetail": "An error occurred while recovering the database for customer ({{name}})."
     },
     "dialog": {
       "title": "Add Tenant",
@@ -179,7 +201,8 @@
       "expiresAtRequired": "Expiration date is required.",
       "expiresAtInvalid": "Please enter a valid expiration date.",
       "ipCidrRequired": "At least one log collection target IP range is required.",
-      "ipCidrInvalid": "Use single IP or CIDR format, and separate multiple entries with commas (,)."
+      "ipCidrInvalid": "Use single IP or CIDR format, and separate multiple entries with commas (,).",
+      "ipCidrAllNotAllowed": "For non-system tenants, 0.0.0.0 is not allowed in log collection target IP ranges."
     },
     "table": {
       "id": "ID",
@@ -585,6 +608,23 @@
     "autoLogoutTimeoutMinutes": {
       "label": "Auto logout timeout (minutes)",
       "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
+    },
+    "multiTenantMode": {
+      "label": "Multi-tenant Mode",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "help": "Sets the global authentication routing mode. Save is required for the change to take effect.",
+      "impactEnabled": "When enabled, tenant login/lock-status/bootstrap flows use tenantSlug and run per tenant.",
+      "impactDisabled": "When disabled, only the system tenant can log in and related auth flows are fixed to system.",
+      "nonSystemTenantWarning": "There are currently {{count}} active/suspended non-system tenant(s).",
+      "confirmTitle": "Confirm Multi-tenant Mode Change",
+      "confirmMessageEnable": "Enable multi-tenant mode? tenantSlug will be required for tenant login.",
+      "confirmMessageDisable": "Disable multi-tenant mode? Only the system tenant will be allowed to log in.",
+      "disableBlockedTitle": "Cannot Disable",
+      "disableBlockedMessage": "Cannot disable because there are {{count}} active/suspended non-system tenant(s).",
+      "actionRequiredTitle": "Action Required",
+      "requiredActionDeleteTenants": "Set the {{count}} active/suspended non-system tenant(s) to deleted first.",
+      "requiredActionRetryDisable": "After updating tenant statuses, try disabling multi-tenant mode again."
     }
   },
   "smtpSettings": {

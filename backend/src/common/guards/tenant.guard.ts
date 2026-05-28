@@ -80,11 +80,8 @@ export class TenantGuard implements CanActivate {
 
     (req as any).user = payload;
 
-    return new Promise<boolean>((resolve) => {
-      tenantStorage.run(
-        { tenantId: payload.tenantId, userId: payload.sub, role: payload.role },
-        () => resolve(true),
-      );
-    });
+    // Keep tenant context available for the full downstream request lifecycle.
+    tenantStorage.enterWith({ tenantId: payload.tenantId, userId: payload.sub, role: payload.role });
+    return true;
   }
 }

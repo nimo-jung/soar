@@ -30,6 +30,7 @@ const quotas_module_1 = require("./quotas/quotas.module");
 const data_isolation_module_1 = require("./data-isolation/data-isolation.module");
 const system_status_module_1 = require("./system-status/system-status.module");
 const integrity_module_1 = require("./integrity/integrity.module");
+const tenant_entity_1 = require("./tenants/entities/tenant.entity");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -47,7 +48,7 @@ exports.AdminModule = AdminModule = __decorate([
             data_isolation_module_1.DataIsolationModule,
             system_status_module_1.SystemStatusModule,
             integrity_module_1.IntegrityModule,
-            typeorm_1.TypeOrmModule.forFeature([master_auth_settings_entity_1.MasterAuthSettings, master_setting_entity_1.MasterSetting, audit_log_entity_1.AuditLog]),
+            typeorm_1.TypeOrmModule.forFeature([master_auth_settings_entity_1.MasterAuthSettings, master_setting_entity_1.MasterSetting, audit_log_entity_1.AuditLog, tenant_entity_1.Tenant]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),

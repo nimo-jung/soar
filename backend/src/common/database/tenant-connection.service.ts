@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import * as path from 'path';
 
 /**
  * TenantConnectionService: 테넌트별 독립 DataSource를 관리하는 팩토리
@@ -28,6 +29,7 @@ export class TenantConnectionService implements OnModuleDestroy {
       password: this.config.get<string>('DB_PASSWORD', 'tmspassword'),
       database: dbName,
       entities: [__dirname + '/../../tenant/**/*.entity{.ts,.js}'],
+      migrations: [path.join(__dirname, '../../database/migrations/tenant/**/*{.ts,.js}')],
       synchronize: false,
       charset: 'utf8mb4',
       timezone: '+00:00',
@@ -37,8 +39,20 @@ export class TenantConnectionService implements OnModuleDestroy {
     });
 
     await dataSource.initialize();
+    if (this.shouldAutoRunTenantMigrations()) {
+      await dataSource.runMigrations();
+    }
     this.connections.set(tenantId, dataSource);
     return dataSource;
+  }
+
+  private shouldAutoRunTenantMigrations(): boolean {
+    const explicit = this.config.get<string>('TENANT_MIGRATIONS_RUN_ON_CONNECT');
+    if (explicit !== undefined) {
+      return explicit.toLowerCase() === 'true';
+    }
+
+    return (this.config.get<string>('NODE_ENV') ?? 'development') === 'development';
   }
 
   async closeConnection(tenantId: string): Promise<void> {
@@ -47,6 +61,11 @@ export class TenantConnectionService implements OnModuleDestroy {
       await conn.destroy();
       this.connections.delete(tenantId);
     }
+  }
+
+  async runMigrationsForTenant(tenantId: string): Promise<void> {
+    const conn = await this.getConnection(tenantId);
+    await conn.runMigrations();
   }
 
   async onModuleDestroy(): Promise<void> {

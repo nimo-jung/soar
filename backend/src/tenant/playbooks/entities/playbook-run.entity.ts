@@ -34,6 +34,6 @@ export class PlaybookRun {
   @Column({ name: 'finished_at', type: 'datetime', nullable: true, comment: '실행 완료 일시' })
   finishedAt: Date | null;
 
-  @CreateDateColumn({ comment: '레코드 생성 일시' })
+  @CreateDateColumn({ name: 'created_at', comment: '레코드 생성 일시' })
   createdAt: Date;
 }

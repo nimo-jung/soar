@@ -40,7 +40,7 @@
     "subtitle": "Sign in to access your tenant security operations portal.",
     "liveGuard": "TMS live monitoring enabled",
     "securitySignal": "AI threat intelligence engine active",
-    "tenantSlug": "Tenant Slug",
+    "tenantSlug": "Customer Code",
     "tenantSlugPlaceholder": "acme-corp",
     "submit": "Sign In",
     "errorEmpty": "Please fill in all fields.",

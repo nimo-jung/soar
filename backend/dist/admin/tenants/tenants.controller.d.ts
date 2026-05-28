@@ -26,6 +26,11 @@ export declare class TenantsController {
     update(id: number, dto: UpdateTenantDto, user: CurrentUserPayload, req: Request): Promise<import("./entities/tenant.entity").Tenant>;
     remove(id: number, user: CurrentUserPayload, req: Request): Promise<void>;
     getSettings(id: number): Promise<import("./entities/tenant-settings.entity").TenantSettings>;
+    getBootstrapStatus(id: number): Promise<{
+        requiresBootstrap: boolean;
+    }>;
+    getDatabaseStatus(id: number): Promise<import("./tenants.service").TenantDatabaseStatus>;
+    recoverDatabase(id: number, user: CurrentUserPayload, req: Request): Promise<import("./tenants.service").TenantDatabaseStatus>;
     issueBootstrapToken(id: number, dto: IssueTenantBootstrapTokenDto, user: CurrentUserPayload, req: Request): Promise<{
         tenantId: number;
         tenantSlug: string;

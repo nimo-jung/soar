@@ -261,7 +261,25 @@ start_infra() {
   info "인프라 컨테이너 기동 중..."
   docker compose -f "$REPO_ROOT/docker-compose.yml" --env-file "$ENV_FILE" up -d \
     mariadb redis clickhouse redpanda
+  ensure_tenant_db_grants || true
   success "인프라 기동 완료"
+}
+
+ensure_tenant_db_grants() {
+  info "MariaDB tenant_db_% 권한 적용 확인 중..."
+
+  if ! docker compose -f "$REPO_ROOT/docker-compose.yml" --env-file "$ENV_FILE" exec -T mariadb sh -lc "mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" <<'SQL'
+GRANT ALL PRIVILEGES ON \\`tenant_db_%\\`.* TO '${MARIADB_USER}'@'%';
+GRANT CREATE ON *.* TO '${MARIADB_USER}'@'%';
+FLUSH PRIVILEGES;
+SQL" >/dev/null 2>&1; then
+    warn "MariaDB 권한 자동 적용에 실패했습니다. 컨테이너 준비 상태 또는 docker 권한을 확인하세요."
+    warn "수동 적용: docker exec -i tms-mariadb sh -lc 'mysql -uroot -p\"\$MARIADB_ROOT_PASSWORD\" -e \"GRANT ALL PRIVILEGES ON \\\`tenant_db_%\\\`.* TO \"\'${MARIADB_USER}\'\"@\"%\"; GRANT CREATE ON *.* TO \"\'${MARIADB_USER}\'\"@\"%\"; FLUSH PRIVILEGES;\"'"
+    return 1
+  fi
+
+  success "MariaDB tenant_db_% 권한 적용 완료"
+  return 0
 }
 
 # ── Backend 빌드 + 기동 ───────────────────────────────────────────────────────
@@ -329,6 +347,7 @@ start_docker() {
   preflight_data_mounts
   info "Docker Compose로 전체 앱 기동 중 (--profile prod)..."
   docker compose -f "$REPO_ROOT/docker-compose.yml" --profile prod --env-file "$ENV_FILE" up -d --build
+  ensure_tenant_db_grants || true
   echo ""
   echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
   echo -e "${BOLD} TMS 운영 서버 기동 완료 (Docker)${RESET}"

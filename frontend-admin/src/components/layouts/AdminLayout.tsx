@@ -6,6 +6,9 @@ import LanguageSwitcher from '../LanguageSwitcher';
 import SessionTimeoutManager from '../SessionTimeoutManager';
 import api from '../../api';
 
+const SIDEBAR_INACTIVE_STORAGE_KEY = 'admin-layout-static-inactive';
+const EXPANDED_SECTIONS_STORAGE_KEY = 'admin-layout-expanded-sections';
+
 const navSections = [
   {
     sectionLabelKey: 'nav.operations',
@@ -53,9 +56,24 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
   const { t } = useTranslation();
-  const [staticInactive, setStaticInactive] = useState(false);
+  const [staticInactive, setStaticInactive] = useState<boolean>(() => {
+    const stored = localStorage.getItem(SIDEBAR_INACTIVE_STORAGE_KEY);
+    return stored === 'true';
+  });
   const [mobileActive, setMobileActive] = useState(false);
   const [expandedSectionKeys, setExpandedSectionKeys] = useState<string[]>(() => {
+    const stored = localStorage.getItem(EXPANDED_SECTIONS_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+          return parsed;
+        }
+      } catch {
+        // Ignore invalid localStorage data and fallback to route-based default.
+      }
+    }
+
     const initialSectionKey = getSectionLabelKeyByPath(location.pathname);
     return initialSectionKey ? [initialSectionKey] : [];
   });
@@ -68,6 +86,14 @@ const AdminLayout: React.FC = () => {
       setExpandedSectionKeys((prev) => (prev.includes(activeSectionKey) ? prev : [...prev, activeSectionKey]));
     }
   }, [activeSectionKey]);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_INACTIVE_STORAGE_KEY, staticInactive ? 'true' : 'false');
+  }, [staticInactive]);
+
+  useEffect(() => {
+    localStorage.setItem(EXPANDED_SECTIONS_STORAGE_KEY, JSON.stringify(expandedSectionKeys));
+  }, [expandedSectionKeys]);
 
   const handleLogout = async () => {
     try {

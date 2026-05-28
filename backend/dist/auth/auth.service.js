@@ -617,7 +617,7 @@ let AuthService = class AuthService {
         const isMultiTenantEnabled = await this.isMultiTenantEnabled();
         const requestedTenantSlug = dto.tenantSlug?.trim();
         if (isMultiTenantEnabled && !requestedTenantSlug) {
-            throw new common_1.UnauthorizedException('멀티테넌트 모드에서는 tenantSlug가 필요합니다.');
+            throw new common_1.UnauthorizedException('멀티테넌트 모드에서는 고객사 코드가 필요합니다.');
         }
         const resolvedTenantSlug = isMultiTenantEnabled
             ? requestedTenantSlug
