@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
@@ -166,7 +166,7 @@ const ThreatIntelPage: React.FC = () => {
   const actionBody = (row: ThreatFeed) => (
     <div className="flex gap-2">
       <Button
-        size="small"
+        buttonSize="dense"
         icon="pi pi-send"
         label={t('threatIntel.dispatch.retryBtn')}
         outlined
@@ -175,7 +175,7 @@ const ThreatIntelPage: React.FC = () => {
         onClick={() => { void handleDispatch(row.id); }}
       />
       <Button
-        size="small"
+        buttonSize="dense"
         label={t('common.deactivate')}
         severity="danger"
         outlined

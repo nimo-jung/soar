@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { useTranslation } from 'react-i18next';

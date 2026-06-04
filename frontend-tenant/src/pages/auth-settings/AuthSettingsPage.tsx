@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { InputNumber } from 'primereact/inputnumber';
 import { Message } from 'primereact/message';
 import { useTranslation } from 'react-i18next';

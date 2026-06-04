@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
 import { ProgressBar } from 'primereact/progressbar';
@@ -305,7 +305,7 @@ const SystemStatusPage: React.FC = () => {
               body={(row: AlertEvent) =>
                 !row.isResolved ? (
                   <Button
-                    size="small"
+                    buttonSize="dense"
                     label={t('systemStatus.alert.resolveBtn')}
                     outlined
                     onClick={() => { void handleResolve(row.id); }}

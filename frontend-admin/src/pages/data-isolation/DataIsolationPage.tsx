@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
 import CommonDataTable from '../../components/CommonDataTable';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { useTranslation } from 'react-i18next';

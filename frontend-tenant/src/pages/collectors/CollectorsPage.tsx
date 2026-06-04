@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Message } from 'primereact/message';
@@ -59,7 +59,7 @@ const CollectorsPage: React.FC = () => {
             <div>
               <p className="font-bold">{t('collectors.apiKeyWarning')}</p>
               <code className="text-sm break-all">{newKey}</code>
-              <Button size="small" icon="pi pi-times" text onClick={() => setNewKey(null)} className="ml-2" />
+              <Button buttonSize="dense" icon="pi pi-times" text onClick={() => setNewKey(null)} className="ml-2" />
             </div>
           }
         />
@@ -87,7 +87,7 @@ const CollectorsPage: React.FC = () => {
           header={t('common.actions')}
           body={(row: Collector) => (
             <Button
-              size="small"
+              buttonSize="dense"
               label={t('collectors.table.deactivateBtn')}
               severity="danger"
               onClick={() => api.patch(`/api/collectors/${row.id}/deactivate`).then(load)}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
@@ -73,7 +73,7 @@ const PlaybooksPage: React.FC = () => {
         <Column
           header={t('common.actions')}
           body={(row: Playbook) => (
-            <Button size="small" label={t('playbooks.table.runBtn')} icon="pi pi-play" onClick={() => handleExecute(row.id)} />
+            <Button buttonSize="dense" label={t('playbooks.table.runBtn')} icon="pi pi-play" onClick={() => handleExecute(row.id)} />
           )}
         />
         </CommonDataTable>

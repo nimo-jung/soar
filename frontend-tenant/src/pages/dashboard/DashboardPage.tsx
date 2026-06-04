@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Card } from 'primereact/card';
 import { Divider } from 'primereact/divider';
 import { ProgressBar } from 'primereact/progressbar';

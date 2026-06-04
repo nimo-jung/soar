@@ -39,7 +39,6 @@ const navSections = [
       { labelKey: 'nav.authSettings', path: '/auth-settings', icon: 'pi pi-lock' },
       { labelKey: 'nav.smtpSettings', path: '/smtp-settings', icon: 'pi pi-envelope' },
       { labelKey: 'nav.vectorSettings', path: '/vector-settings', icon: 'pi pi-sliders-h' },
-      { labelKey: 'nav.vectorApplyHistory', path: '/vector-settings/history', icon: 'pi pi-history' },
       { labelKey: 'nav.productInfo', path: '/product-info', icon: 'pi pi-info-circle' },
     ],
   },

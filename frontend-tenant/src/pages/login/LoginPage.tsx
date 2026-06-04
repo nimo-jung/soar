@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Message } from 'primereact/message';
 import api from '../../api';
@@ -478,6 +478,7 @@ const LoginPage: React.FC = () => {
                 icon="pi pi-sign-in"
                 onClick={handleLogin}
                 loading={loading}
+                buttonSize="default"
                 disabled={lockSecondsRemaining > 0}
                 className="login-action-btn"
               />
@@ -485,6 +486,7 @@ const LoginPage: React.FC = () => {
                 <Button
                   type="button"
                   className="login-action-btn"
+                  buttonSize="default"
                   text
                   icon="pi pi-unlock"
                   label={t('auth.resetPassword.move')}
@@ -495,6 +497,7 @@ const LoginPage: React.FC = () => {
                 <Button
                   type="button"
                   className="login-action-btn"
+                  buttonSize="default"
                   outlined
                   icon="pi pi-user-plus"
                   label={t('auth.bootstrap.move')}

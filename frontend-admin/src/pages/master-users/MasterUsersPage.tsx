@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
@@ -297,7 +297,7 @@ const MasterUsersPage: React.FC = () => {
                   icon="pi pi-pencil"
                   text
                   rounded
-                  size="small"
+                  buttonSize="dense"
                   aria-label={t('masterUsers.actions.edit')}
                   onClick={() => openEditDialog(row)}
                 />
@@ -308,7 +308,7 @@ const MasterUsersPage: React.FC = () => {
                     text
                     rounded
                     severity="success"
-                    size="small"
+                    buttonSize="dense"
                     aria-label={t('masterUsers.actions.restore')}
                     onClick={() => handleRestore(row)}
                     disabled={activeUserCount >= 10}
@@ -320,7 +320,7 @@ const MasterUsersPage: React.FC = () => {
                     text
                     rounded
                     severity="danger"
-                    size="small"
+                    buttonSize="dense"
                     aria-label={t('masterUsers.actions.delete')}
                     onClick={() => handleSoftDelete(row)}
                   />
@@ -391,7 +391,7 @@ const MasterUsersPage: React.FC = () => {
               <Button
                 label={editingUser ? t('common.save') : t('common.create')}
                 loading={saving}
-                size="small"
+                buttonSize="dense"
                 onClick={() => {
                   void handleSave();
                 }}

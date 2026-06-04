@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
@@ -13,6 +12,7 @@ import { Tag } from 'primereact/tag';
 import api from '../../api';
 import CommonDataTable from '../../components/CommonDataTable';
 import ResultDialog, { type ResultDialogTone } from '../../components/ResultDialog';
+import { formatDateTimeSeconds } from '../../utils/date';
 
 const INGESTION_MODES = ['syslog', 'snmp', 'http', 'cmd', 'file', 'kafka'] as const;
 type IngestionMode = typeof INGESTION_MODES[number];
@@ -28,8 +28,11 @@ interface VectorParserProfile {
 
 interface VectorSettingsResponse {
   parserProfiles: VectorParserProfile[];
+  seedParserProfiles: VectorParserProfile[];
   outputTopic: string;
+  defaultOutputTopic: string;
   quarantineTopic: string;
+  defaultQuarantineTopic: string;
   allowUnknownVendor: boolean;
   configVersion: number;
   appliedVersion: number;
@@ -53,6 +56,18 @@ interface VectorDryRunResponse {
   renderedBytes: number;
   warnings: string[];
   preview: string;
+}
+
+interface VectorApplyHistoryItem {
+  id: string;
+  attemptedAt: string;
+  configVersion: number;
+  applyStatus: 'APPLIED' | 'FAILED';
+  message: string;
+  configPath: string;
+  renderedBytes: number;
+  reloadAttempted: boolean;
+  reloadSucceeded: boolean;
 }
 
 interface ResultDialogState {
@@ -113,8 +128,13 @@ const normalizeParserProfile = (profile: Partial<VectorParserProfile>): VectorPa
 
 const normalizeSettingsResponse = (data: Partial<VectorSettingsResponse>) => ({
   outputTopic: typeof data.outputTopic === 'string' ? data.outputTopic : '',
+  defaultOutputTopic: typeof data.defaultOutputTopic === 'string' ? data.defaultOutputTopic : 'logs.parsed.input',
   quarantineTopic: typeof data.quarantineTopic === 'string' ? data.quarantineTopic : '',
+  defaultQuarantineTopic: typeof data.defaultQuarantineTopic === 'string' ? data.defaultQuarantineTopic : 'logs.quarantine',
   allowUnknownVendor: Boolean(data.allowUnknownVendor),
+  seedParserProfiles: Array.isArray(data.seedParserProfiles)
+    ? data.seedParserProfiles.map((profile) => normalizeParserProfile(profile))
+    : [],
   parserProfiles: Array.isArray(data.parserProfiles)
     ? data.parserProfiles.map((profile) => normalizeParserProfile(profile))
     : [],
@@ -128,19 +148,24 @@ const normalizeSettingsResponse = (data: Partial<VectorSettingsResponse>) => ({
 });
 
 const VectorSettingsPage: React.FC = () => {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
   const [dryRunning, setDryRunning] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [advancedDialogVisible, setAdvancedDialogVisible] = useState(false);
 
   const [outputTopic, setOutputTopic] = useState('logs.parsed.input');
+  const [defaultOutputTopic, setDefaultOutputTopic] = useState('logs.parsed.input');
   const [quarantineTopic, setQuarantineTopic] = useState('logs.quarantine');
+  const [defaultQuarantineTopic, setDefaultQuarantineTopic] = useState('logs.quarantine');
   const [allowUnknownVendor, setAllowUnknownVendor] = useState(false);
+  const [seedParserProfiles, setSeedParserProfiles] = useState<VectorParserProfile[]>([]);
   const [parserProfiles, setParserProfiles] = useState<VectorParserProfile[]>([]);
-  const [meta, setMeta] = useState<Pick<VectorSettingsResponse, 'configVersion' | 'appliedVersion' | 'appliedAt' | 'applyStatus' | 'applyMessage'>>({
+  const [historyRows, setHistoryRows] = useState<VectorApplyHistoryItem[]>([]);
+  const [, setMeta] = useState<Pick<VectorSettingsResponse, 'configVersion' | 'appliedVersion' | 'appliedAt' | 'applyStatus' | 'applyMessage'>>({
     configVersion: 1,
     appliedVersion: 0,
     appliedAt: null,
@@ -165,8 +190,6 @@ const VectorSettingsPage: React.FC = () => {
     label: t(`vectorSettings.ingestionModes.${mode}`),
   }));
 
-  const outputTopicMissing = showValidation && outputTopic.trim().length === 0;
-  const quarantineTopicMissing = showValidation && quarantineTopic.trim().length === 0;
   const profilesEmpty = showValidation && parserProfiles.length === 0;
 
   const extractApiMessage = (error: unknown): string => {
@@ -200,8 +223,11 @@ const VectorSettingsPage: React.FC = () => {
       const response = await api.get<VectorSettingsResponse>('/admin/vector-settings');
       const normalized = normalizeSettingsResponse(response.data);
       setOutputTopic(normalized.outputTopic);
+      setDefaultOutputTopic(normalized.defaultOutputTopic);
       setQuarantineTopic(normalized.quarantineTopic);
+      setDefaultQuarantineTopic(normalized.defaultQuarantineTopic);
       setAllowUnknownVendor(normalized.allowUnknownVendor);
+      setSeedParserProfiles(normalized.seedParserProfiles);
       setParserProfiles(normalized.parserProfiles);
       setMeta(normalized.meta);
     } catch (loadError: unknown) {
@@ -215,8 +241,24 @@ const VectorSettingsPage: React.FC = () => {
     }
   };
 
+  const loadApplyHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const response = await api.get<VectorApplyHistoryItem[]>('/admin/vector-settings/apply-history');
+      setHistoryRows(response.data);
+    } catch {
+      setHistoryRows([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadPageData = async () => {
+    await Promise.all([loadSettings(), loadApplyHistory()]);
+  };
+
   useEffect(() => {
-    void loadSettings();
+    void loadPageData();
   }, []);
 
   const openCreateProfileDialog = () => {
@@ -303,10 +345,65 @@ const VectorSettingsPage: React.FC = () => {
     setParserProfiles((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  const missingSeedProfiles = seedParserProfiles.filter(
+    (seedProfile) => !parserProfiles.some((profile) => profile.vendor === seedProfile.vendor),
+  );
+  const hasMissingSeedProfiles = missingSeedProfiles.length > 0;
+
+  const applySeedProfiles = () => {
+    if (seedParserProfiles.length === 0) {
+      openResultDialog(t('vectorSettings.resultDialog.failedTitle'), t('vectorSettings.seed.empty'), {
+        icon: 'pi pi-info-circle',
+        tone: 'info',
+      });
+      return;
+    }
+
+    const profilesToAdd = missingSeedProfiles;
+
+    if (profilesToAdd.length === 0) {
+      openResultDialog(t('vectorSettings.resultDialog.successTitle'), t('vectorSettings.seed.noneAdded'), {
+        icon: 'pi pi-info-circle',
+        tone: 'info',
+      });
+      return;
+    }
+
+    setParserProfiles((prev) => [...prev, ...profilesToAdd]);
+    openResultDialog(t('vectorSettings.resultDialog.successTitle'), t('vectorSettings.seed.added', { count: profilesToAdd.length }), {
+      icon: 'pi pi-check-circle',
+      tone: 'success',
+    });
+  };
+
+  const overwriteSeedProfiles = () => {
+    if (seedParserProfiles.length === 0) {
+      openResultDialog(t('vectorSettings.resultDialog.failedTitle'), t('vectorSettings.seed.empty'), {
+        icon: 'pi pi-info-circle',
+        tone: 'info',
+      });
+      return;
+    }
+
+    const seedByVendor = new Map(seedParserProfiles.map((profile) => [profile.vendor, profile]));
+    const customProfiles = parserProfiles.filter((profile) => !seedByVendor.has(profile.vendor));
+    const replacedCount = parserProfiles.filter((profile) => seedByVendor.has(profile.vendor)).length;
+
+    setParserProfiles([...seedParserProfiles, ...customProfiles]);
+    openResultDialog(
+      t('vectorSettings.resultDialog.successTitle'),
+      t('vectorSettings.seed.overwritten', { replaced: replacedCount, count: seedParserProfiles.length }),
+      {
+        icon: 'pi pi-check-circle',
+        tone: 'success',
+      },
+    );
+  };
+
   const handleSave = async () => {
     setShowValidation(true);
 
-    if (outputTopicMissing || quarantineTopicMissing || profilesEmpty) {
+    if (profilesEmpty) {
       return;
     }
 
@@ -322,7 +419,9 @@ const VectorSettingsPage: React.FC = () => {
       const response = await api.patch<VectorSettingsResponse>('/admin/vector-settings', payload);
       const normalized = normalizeSettingsResponse(response.data);
       setOutputTopic(normalized.outputTopic);
+      setDefaultOutputTopic(normalized.defaultOutputTopic);
       setQuarantineTopic(normalized.quarantineTopic);
+      setDefaultQuarantineTopic(normalized.defaultQuarantineTopic);
       setAllowUnknownVendor(normalized.allowUnknownVendor);
       setParserProfiles(normalized.parserProfiles);
       setMeta(normalized.meta);
@@ -390,7 +489,7 @@ const VectorSettingsPage: React.FC = () => {
       });
 
       const response = await api.post<VectorApplyResponse>('/admin/vector-settings/apply');
-      await loadSettings();
+      await loadPageData();
 
       const dialogMessage = t('vectorSettings.applyResult', {
         status: response.data.applyStatus,
@@ -424,9 +523,15 @@ const VectorSettingsPage: React.FC = () => {
   );
 
   const profileIndicatorsBody = (row: VectorParserProfile) => row.matchIndicators.join(', ');
-  const applyStatusKey = normalizeApplyStatus(meta.applyStatus).toLowerCase();
-
-
+  const profileRegexBody = (row: VectorParserProfile) => (
+    <code className="text-xs">{row.deviceCodeRegex}</code>
+  );
+  const profileVrlBody = (row: VectorParserProfile) => (
+    <Tag
+      value={row.vrlScript && row.vrlScript.trim().length > 0 ? t('vectorSettings.profileTable.vrlCustom') : t('vectorSettings.profileTable.vrlDefault')}
+      severity={row.vrlScript && row.vrlScript.trim().length > 0 ? 'info' : 'contrast'}
+    />
+  );
   return (
     <div className="admin-page">
       <div className="admin-page-header">
@@ -524,49 +629,55 @@ const VectorSettingsPage: React.FC = () => {
         </div>
       </Dialog>
 
-      <Card className="admin-card monitoring-panel-card" style={{ maxWidth: '1120px' }}>
+      <Dialog
+        header={t('vectorSettings.advanced.dialogTitle')}
+        visible={advancedDialogVisible}
+        style={{ width: '760px', maxWidth: '96vw' }}
+        onHide={() => setAdvancedDialogVisible(false)}
+        footer={(
+          <div className="flex justify-content-end gap-2">
+            <Button label={t('vectorSettings.advanced.close')} onClick={() => setAdvancedDialogVisible(false)} />
+          </div>
+        )}
+      >
+        <div className="pt-2 text-sm line-height-3">
+          <div className="font-semibold mb-2">{t('vectorSettings.pipelineSummaryTitle')}</div>
+          <div className="text-color-secondary mb-2">{t('vectorSettings.pipelineSummaryDescription')}</div>
+          <ol className="pl-3 mt-0 mb-3 line-height-3">
+            <li>{t('vectorSettings.pipelineSteps.s1')}</li>
+            <li>{t('vectorSettings.pipelineSteps.s2')}</li>
+            <li>{t('vectorSettings.pipelineSteps.s3')}</li>
+            <li>{t('vectorSettings.pipelineSteps.s4')}</li>
+            <li>{t('vectorSettings.pipelineSteps.s5')}</li>
+          </ol>
+          <div className="text-color-secondary mb-3">{t('vectorSettings.classificationPriority')}</div>
+
+          <div>
+            {t('vectorSettings.outputTopicLabel')} : {outputTopic || '-'}
+            {(outputTopic || '') !== defaultOutputTopic ? ` (${t('vectorSettings.defaultValueLabel')}: ${defaultOutputTopic})` : ''}
+          </div>
+          <div>
+            {t('vectorSettings.quarantineTopicLabel')} : {quarantineTopic || '-'}
+            {(quarantineTopic || '') !== defaultQuarantineTopic ? ` (${t('vectorSettings.defaultValueLabel')}: ${defaultQuarantineTopic})` : ''}
+          </div>
+          <div>{t('vectorSettings.routerOutputTopicLabel')} : raw-logs.{'{tenant_id}'}</div>
+        </div>
+      </Dialog>
+
+      <Card className="admin-card monitoring-panel-card">
+        <div className="flex justify-content-end mb-4">
+          <Button
+            type="button"
+            icon="pi pi-cog"
+            text
+            label={t('vectorSettings.advanced.openButton')}
+            onClick={() => setAdvancedDialogVisible(true)}
+          />
+        </div>
+
         <div className="grid">
-          <div className="col-12 md:col-6">
-            <label htmlFor="vector-output-topic" className="admin-form-label">{t('vectorSettings.outputTopicLabel')}</label>
-            <InputText
-              id="vector-output-topic"
-              value={outputTopic ?? ''}
-              onChange={(event) => setOutputTopic(event.target.value)}
-              className="w-full"
-              disabled={loading}
-              invalid={outputTopicMissing}
-            />
-            {outputTopicMissing && <small className="p-error block mt-1">{t('vectorSettings.validation.outputTopicRequired')}</small>}
-          </div>
-
-          <div className="col-12 md:col-6">
-            <label htmlFor="vector-quarantine-topic" className="admin-form-label">{t('vectorSettings.quarantineTopicLabel')}</label>
-            <InputText
-              id="vector-quarantine-topic"
-              value={quarantineTopic ?? ''}
-              onChange={(event) => setQuarantineTopic(event.target.value)}
-              className="w-full"
-              disabled={loading}
-              invalid={quarantineTopicMissing}
-            />
-            {quarantineTopicMissing && <small className="p-error block mt-1">{t('vectorSettings.validation.quarantineTopicRequired')}</small>}
-          </div>
-
-          <div className="col-12 md:col-6">
-            <label className="admin-form-label">{t('vectorSettings.configVersionLabel')}</label>
-            <InputText value={String(meta.configVersion)} className="w-full" disabled />
-            <small className="text-color-secondary">{t('vectorSettings.configVersionHelp')}</small>
-            <div className="mt-2 text-sm text-color-secondary">
-              <div>{t('vectorSettings.appliedVersionLabel')}: {meta.appliedVersion}</div>
-              <div>{t('vectorSettings.applyStatusLabel')}: {t(`vectorSettings.applyStatus.${applyStatusKey}`)}</div>
-              {meta.appliedAt && <div>{t('vectorSettings.appliedAtLabel')}: {meta.appliedAt}</div>}
-              {meta.applyMessage && <div>{t('vectorSettings.applyMessageLabel')}: {meta.applyMessage}</div>}
-            </div>
-          </div>
-
-          <div className="col-12 md:col-6">
-            <label className="admin-form-label">{t('vectorSettings.allowUnknownVendorLabel')}</label>
-            <div className="flex align-items-center gap-3 mt-2">
+          <div className="flex justify-content-between gap-3">
+            <div className="flex align-items-center gap-3">
               <InputSwitch
                 checked={allowUnknownVendor}
                 onChange={(event) => setAllowUnknownVendor(Boolean(event.value))}
@@ -574,14 +685,75 @@ const VectorSettingsPage: React.FC = () => {
               />
               <span className="font-medium">{allowUnknownVendor ? t('vectorSettings.enabled') : t('vectorSettings.disabled')}</span>
             </div>
-            <small className="text-color-secondary block mt-2">{t('vectorSettings.allowUnknownVendorHelp')}</small>
+            <label className="admin-form-label mt-2">{t('vectorSettings.allowUnknownVendorHelp')}</label>
           </div>
 
           <div className="col-12">
             <div className="flex justify-content-between align-items-center mb-2">
               <label className="admin-form-label m-0">{t('vectorSettings.parserProfilesLabel')}</label>
-              <Button label={t('vectorSettings.profileDialog.addButton')} icon="pi pi-plus" onClick={openCreateProfileDialog} />
+              <div className="flex gap-2">
+                {hasMissingSeedProfiles ? (
+                  <Button
+                    label={t('vectorSettings.seed.loadButton')}
+                    icon="pi pi-database"
+                    severity="secondary"
+                    outlined
+                    onClick={applySeedProfiles}
+                  />
+                ) : (
+                  <Button
+                    label={t('vectorSettings.seed.overwriteButton')}
+                    icon="pi pi-refresh"
+                    severity="secondary"
+                    outlined
+                    onClick={overwriteSeedProfiles}
+                  />
+                )}
+                <Button label={t('vectorSettings.profileDialog.addButton')} icon="pi pi-plus" onClick={openCreateProfileDialog} />                
+                <Button
+                  label={t('common.refresh')}
+                  severity="secondary"
+                  outlined
+                  icon="pi pi-refresh"
+                  disabled={loading || saving || applying || dryRunning}
+                  onClick={() => {
+                    setShowValidation(false);
+                    void loadPageData();
+                  }}
+                />
+                <Button
+                  label={dryRunning ? t('vectorSettings.dryRunning') : t('vectorSettings.dryRunButton')}
+                  severity="contrast"
+                  outlined
+                  icon="pi pi-check-square"
+                  onClick={() => {
+                    void handleDryRun();
+                  }}
+                  loading={dryRunning}
+                  disabled={loading || saving || applying}
+                />
+                <Button
+                  label={applying ? t('vectorSettings.applying') : t('vectorSettings.applyButton')}
+                  severity="help"
+                  icon="pi pi-play"
+                  onClick={() => {
+                    void handleApply();
+                  }}
+                  loading={applying}
+                  disabled={loading || saving || dryRunning}
+                />
+                <Button
+                  label={saving ? t('common.loading') : t('common.save')}
+                  icon="pi pi-save"
+                  onClick={() => {
+                    void handleSave();
+                  }}
+                  loading={saving}
+                  disabled={loading || applying || dryRunning}
+                />
+              </div>
             </div>
+            <small className="text-color-secondary block mb-2">{t('vectorSettings.parserProfilesHelp')}</small>
 
             {profilesEmpty && <small className="p-error block mb-2">{t('vectorSettings.validation.profilesEmpty')}</small>}
 
@@ -589,6 +761,8 @@ const VectorSettingsPage: React.FC = () => {
               <Column field="vendor" header={t('vectorSettings.profileTable.vendor')} />
               <Column field="ingestionMode" header={t('vectorSettings.profileTable.ingestionMode')} body={profileModeBody} />
               <Column field="matchIndicators" header={t('vectorSettings.profileTable.matchIndicators')} body={profileIndicatorsBody} />
+              <Column field="deviceCodeRegex" header={t('vectorSettings.profileTable.deviceCodeRegex')} body={profileRegexBody} />
+              <Column field="vrlScript" header={t('vectorSettings.profileTable.vrlScript')} body={profileVrlBody} />
               <Column field="enabled" header={t('vectorSettings.profileTable.enabled')} body={profileEnabledBody} />
               <Column
                 header={t('common.actions')}
@@ -596,8 +770,8 @@ const VectorSettingsPage: React.FC = () => {
                   const index = parserProfiles.findIndex((item) => item.vendor === row.vendor && item.ingestionMode === row.ingestionMode && item.deviceCodeRegex === row.deviceCodeRegex);
                   return (
                     <div className="flex gap-2">
-                      <Button size="small" icon="pi pi-pencil" outlined onClick={() => openEditProfileDialog(row, index)} />
-                      <Button size="small" icon="pi pi-trash" severity="danger" outlined onClick={() => deleteProfile(index)} />
+                      <Button buttonSize="dense" icon="pi pi-pencil" outlined onClick={() => openEditProfileDialog(row, index)} />
+                      <Button buttonSize="dense" icon="pi pi-trash" severity="danger" outlined onClick={() => deleteProfile(index)} />
                     </div>
                   );
                 }}
@@ -605,58 +779,39 @@ const VectorSettingsPage: React.FC = () => {
             </CommonDataTable>
           </div>
         </div>
-
-        <div className="flex justify-content-end gap-2 mt-4">
-          <Button
-            label={t('common.refresh')}
-            severity="secondary"
-            outlined
-            icon="pi pi-refresh"
-            disabled={loading || saving || applying || dryRunning}
-            onClick={() => {
-              setShowValidation(false);
-              void loadSettings();
-            }}
-          />
-          <Button
-            label={dryRunning ? t('vectorSettings.dryRunning') : t('vectorSettings.dryRunButton')}
-            severity="contrast"
-            outlined
-            icon="pi pi-check-square"
-            onClick={() => {
-              void handleDryRun();
-            }}
-            loading={dryRunning}
-            disabled={loading || saving || applying}
-          />
-          <Button
-            label={applying ? t('vectorSettings.applying') : t('vectorSettings.applyButton')}
-            severity="help"
-            icon="pi pi-play"
-            onClick={() => {
-              void handleApply();
-            }}
-            loading={applying}
-            disabled={loading || saving || dryRunning}
-          />
-          <Button
-            label={t('vectorSettings.historyButton')}
-            severity="secondary"
-            icon="pi pi-history"
-            outlined
-            onClick={() => navigate('/vector-settings/history')}
-            disabled={loading || saving || applying || dryRunning}
-          />
-          <Button
-            label={saving ? t('common.loading') : t('common.save')}
-            icon="pi pi-save"
-            onClick={() => {
-              void handleSave();
-            }}
-            loading={saving}
-            disabled={loading || applying || dryRunning}
-          />
+      </Card>
+      <Card title={t('vectorSettings.applyResultsLabel')} className="admin-card monitoring-panel-card mt-4">
+        <div className="col-12 mt-3">
+          <CommonDataTable value={historyRows} loading={historyLoading} className="admin-table p-datatable-sm" paginator rows={8}>
+            <Column
+              field="attemptedAt"
+              header={t('vectorApplyHistory.table.attemptedAt')}
+              body={(row: VectorApplyHistoryItem) => formatDateTimeSeconds(row.attemptedAt)}
+            />
+            <Column field="configVersion" header={t('vectorApplyHistory.table.configVersion')} />
+            <Column
+              field="applyStatus"
+              header={t('vectorApplyHistory.table.status')}
+              body={(row: VectorApplyHistoryItem) => (
+                <Tag value={row.applyStatus} severity={row.applyStatus === 'APPLIED' ? 'success' : 'danger'} />
+              )}
+            />
+            <Column
+              field="reloadSucceeded"
+              header={t('vectorApplyHistory.table.reload')}
+              body={(row: VectorApplyHistoryItem) => (
+                <Tag
+                  value={row.reloadSucceeded ? t('vectorApplyHistory.reloadSucceeded') : t('vectorApplyHistory.reloadNotSucceeded')}
+                  severity={row.reloadSucceeded ? 'success' : 'warning'}
+                />
+              )}
+            />
+            <Column field="renderedBytes" header={t('vectorApplyHistory.table.size')} />
+            <Column field="configPath" header={t('vectorApplyHistory.table.path')} />
+            <Column field="message" header={t('vectorApplyHistory.table.message')} />
+          </CommonDataTable>
         </div>
+
       </Card>
     </div>
   );

@@ -19,7 +19,6 @@ import SystemStatusPage from './pages/system-status/SystemStatusPage';
 import IntegrityPage from './pages/integrity/IntegrityPage';
 import SmtpSettingsPage from './pages/smtp-settings/SmtpSettingsPage';
 import VectorSettingsPage from './pages/vector-settings/VectorSettingsPage';
-import VectorApplyHistoryPage from './pages/vector-settings/VectorApplyHistoryPage';
 
 const App: React.FC = () => {
   return (
@@ -37,7 +36,6 @@ const App: React.FC = () => {
             <Route path="/auth-settings" element={<AuthSettingsPage />} />
             <Route path="/smtp-settings" element={<SmtpSettingsPage />} />
             <Route path="/vector-settings" element={<VectorSettingsPage />} />
-            <Route path="/vector-settings/history" element={<VectorApplyHistoryPage />} />
             <Route path="/product-info" element={<ProductInfoPage />} />
             <Route path="/audit-logs" element={<AuditLogsPage />} />
             <Route path="/threat-intel" element={<ThreatIntelPage />} />

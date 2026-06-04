@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 
 interface ActionConfirmDialogProps {
   visible: boolean;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth.store';
 import { formatDateOnly } from '../utils/date';

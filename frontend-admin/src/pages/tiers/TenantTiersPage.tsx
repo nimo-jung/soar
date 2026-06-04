@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
@@ -538,7 +538,7 @@ const TenantTiersPage: React.FC = () => {
                   icon="pi pi-pencil"
                   text
                   rounded
-                  size="small"
+                  buttonSize="dense"
                   aria-label={t('tenants.tiers.editDialogTitle')}
                   onClick={() => openEditDialog(row)}
                 />
@@ -547,7 +547,7 @@ const TenantTiersPage: React.FC = () => {
                   icon="pi pi-trash"
                   text
                   rounded
-                  size="small"
+                  buttonSize="dense"
                   severity="danger"
                   aria-label={t('tenants.actions.delete')}
                   loading={checkingDeleteTierId === row.id || deletingTierId === row.id}
@@ -684,7 +684,7 @@ const TenantTiersPage: React.FC = () => {
 
             </div>
             <div className="flex gap-1 flex-1 flex-row-reverse">
-                <Button label={t('common.save')} loading={saving} onClick={handleSave} size="small" />
+                <Button label={t('common.save')} loading={saving} onClick={handleSave} buttonSize="dense" />
             </div>
           </div>
         </div>
@@ -708,7 +708,7 @@ const TenantTiersPage: React.FC = () => {
           <div className="flex justify-content-end">
             <Button
               label={t('tenants.tiers.result.ok')}
-              size="small"
+              buttonSize="dense"
               severity={resultDialog.success ? 'success' : 'secondary'}
               onClick={() => setResultDialog((prev) => ({ ...prev, visible: false }))}
             />

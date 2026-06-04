@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Message } from 'primereact/message';
 import api from '../../api';
@@ -356,6 +356,7 @@ const LoginPage: React.FC = () => {
             icon={bootstrapRequired ? 'pi pi-user-plus' : 'pi pi-sign-in'}
             onClick={bootstrapRequired ? handleBootstrap : handleLogin}
             loading={loading}
+            buttonSize="default"
             disabled={bootstrapRequired === null || lockSecondsRemaining > 0}
             className="w-full"
           />

@@ -7,6 +7,11 @@ const basePath = process.env.VITE_BASE_PATH || '/';
 export default defineConfig({
   base: basePath,
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,

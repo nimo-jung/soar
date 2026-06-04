@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 

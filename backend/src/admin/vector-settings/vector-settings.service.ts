@@ -26,8 +26,11 @@ const execAsync = promisify(exec);
 
 export interface VectorSettingsResponse {
   parserProfiles: VectorParserProfile[];
+  seedParserProfiles: VectorParserProfile[];
   outputTopic: string;
+  defaultOutputTopic: string;
   quarantineTopic: string;
+  defaultQuarantineTopic: string;
   allowUnknownVendor: boolean;
   configVersion: number;
   appliedVersion: number;
@@ -186,8 +189,11 @@ export class VectorSettingsService {
 
     return {
       parserProfiles: this.parseProfiles(settingsMap.get(VECTOR_SETTINGS_KEYS.parserProfilesJson)?.value),
+      seedParserProfiles: DEFAULT_VECTOR_PARSER_PROFILES,
       outputTopic: settingsMap.get(VECTOR_SETTINGS_KEYS.outputTopic)?.value ?? DEFAULT_VECTOR_OUTPUT_TOPIC,
+      defaultOutputTopic: DEFAULT_VECTOR_OUTPUT_TOPIC,
       quarantineTopic: settingsMap.get(VECTOR_SETTINGS_KEYS.quarantineTopic)?.value ?? DEFAULT_VECTOR_QUARANTINE_TOPIC,
+      defaultQuarantineTopic: DEFAULT_VECTOR_QUARANTINE_TOPIC,
       allowUnknownVendor: this.parseBoolean(settingsMap.get(VECTOR_SETTINGS_KEYS.allowUnknownVendor)?.value, false),
       configVersion: this.parseInt(settingsMap.get(VECTOR_SETTINGS_KEYS.configVersion)?.value, 1),
       appliedVersion: this.parseInt(settingsMap.get(VECTOR_SETTINGS_KEYS.appliedVersion)?.value, 0),
@@ -635,6 +641,11 @@ sinks:
     await this.upsertSetting(VECTOR_SETTINGS_KEYS.applyHistoryJson, JSON.stringify(nextHistory), VECTOR_VTYPE.text);
   }
 
+  private toJsRegexPattern(pattern: string): string {
+    // Vector/VRL uses Rust-style named groups (?P<name>...), while Node RegExp expects (?<name>...).
+    return pattern.replace(/\(\?P<([A-Za-z_][A-Za-z0-9_]*)>/g, '(?<$1>');
+  }
+
   private validateProfiles(profiles: VectorParserProfile[]): void {
     const seen = new Set<string>();
 
@@ -655,7 +666,7 @@ sinks:
 
       try {
         // 런타임 적용 전, 잘못된 정규식을 조기에 차단한다.
-        new RegExp(profile.deviceCodeRegex);
+        new RegExp(this.toJsRegexPattern(profile.deviceCodeRegex));
       } catch {
         throw new BadRequestException(`vendor=${vendor}의 deviceCodeRegex가 유효하지 않습니다.`);
       }

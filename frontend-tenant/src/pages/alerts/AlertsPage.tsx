@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';

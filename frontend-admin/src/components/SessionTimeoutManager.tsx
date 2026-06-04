@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useAuthStore } from '../store/auth.store';

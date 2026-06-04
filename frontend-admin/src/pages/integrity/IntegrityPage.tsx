@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
@@ -160,7 +160,7 @@ const IntegrityPage: React.FC = () => {
   const actionBody = (row: IntegrityBaseline) => (
     <div className="flex gap-2">
       <Button
-        size="small"
+        buttonSize="dense"
         icon="pi pi-sync"
         label={t('integrity.syncBtn')}
         outlined
@@ -169,7 +169,7 @@ const IntegrityPage: React.FC = () => {
         disabled={row.status === 'MISSING'}
       />
       <Button
-        size="small"
+        buttonSize="dense"
         icon="pi pi-trash"
         severity="danger"
         outlined

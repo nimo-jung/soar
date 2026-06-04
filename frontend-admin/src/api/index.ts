@@ -35,6 +35,11 @@ const withBasePath = (path: string): string => {
 };
 
 api.interceptors.request.use((config) => {
+  const requestUrl = typeof config.url === 'string' ? config.url : '';
+  if (requestUrl === '/admin' || requestUrl.startsWith('/admin/')) {
+    config.url = `/api${requestUrl}`;
+  }
+
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

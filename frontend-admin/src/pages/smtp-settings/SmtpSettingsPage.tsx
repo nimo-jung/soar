@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Card } from 'primereact/card';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
@@ -340,7 +340,7 @@ const SmtpSettingsPage: React.FC = () => {
                 className="mt-2"
                 type="button"
                 outlined
-                size="small"
+                buttonSize="dense"
                 label={t('smtpSettings.clearPassButton')}
                 onClick={() => setForm((prev) => ({ ...prev, smtpPass: '', clearSmtpPass: true }))}
                 disabled={loading || form.smtpMode === 'local'}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
@@ -170,14 +170,14 @@ const UsersPage: React.FC = () => {
             <div className="flex gap-2">
               <Button
                 className="tenant-primary-action"
-                size="small"
+                buttonSize="dense"
                 icon="pi pi-pencil"
                 label={t('users.table.editBtn')}
                 onClick={() => openEditDialog(row)}
                 disabled={!canManageUsers}
               />
               <Button
-                size="small"
+                buttonSize="dense"
                 icon="pi pi-ban"
                 label={t('users.table.deactivateBtn')}
                 severity="danger"

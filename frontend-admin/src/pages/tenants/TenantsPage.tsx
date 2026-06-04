@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Tag } from 'primereact/tag';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
@@ -1538,7 +1538,7 @@ const TenantsPage: React.FC = () => {
           body={(row: Tenant) => (
             <div className="tenant-action-stack">
               <Button
-                size="small"
+                buttonSize="dense"
                 icon={row.status === 'DELETED' ? 'pi pi-refresh' : row.status === 'ACTIVE' ? 'pi pi-pause' : 'pi pi-play'}
                 severity={row.status === 'DELETED' ? 'success' : row.status === 'ACTIVE' ? 'warning' : 'success'}
                 tooltip={
@@ -1566,7 +1566,7 @@ const TenantsPage: React.FC = () => {
                 onClick={() => (row.status === 'DELETED' ? confirmRestoreTenant(row) : confirmStatusToggle(row))}
               />
               <Button
-                size="small"
+                buttonSize="dense"
                 icon="pi pi-ellipsis-v"
                 severity="secondary"
                 text
@@ -1807,7 +1807,7 @@ const TenantsPage: React.FC = () => {
                 label={t('common.save')}
                 onClick={handleSaveTenant}
                 loading={saving}
-                size="small"
+                buttonSize="dense"
               />
             </div>
           </div>

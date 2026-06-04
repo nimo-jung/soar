@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { InputNumber } from 'primereact/inputnumber';
 import { Dialog } from 'primereact/dialog';
 import CommonDataTable from '../../components/CommonDataTable';
@@ -106,7 +106,7 @@ const QuotaPage: React.FC = () => {
         icon="pi pi-pencil"
         text
         rounded
-        size="small"
+        buttonSize="dense"
         aria-label={t('common.edit')}
         tooltip={t('common.edit')}
         tooltipOptions={{ position: 'top' }}

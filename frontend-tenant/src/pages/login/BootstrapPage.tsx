@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { InputText } from 'primereact/inputtext';
 import { Password } from 'primereact/password';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Message } from 'primereact/message';
 import api from '../../api';
 
@@ -110,12 +110,14 @@ const BootstrapPage: React.FC = () => {
                 type="button"
                 outlined
                 className="w-full"
+                buttonSize="default"
                 label={t('auth.bootstrap.goLogin')}
                 onClick={() => navigate('/login')}
               />
               <Button
                 type="button"
                 className="w-full"
+                buttonSize="default"
                 label={t('auth.bootstrap.submit')}
                 icon="pi pi-check"
                 loading={loading}

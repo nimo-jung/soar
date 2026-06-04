@@ -4,7 +4,7 @@ import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
 import CommonDataTable from '../../components/CommonDataTable';

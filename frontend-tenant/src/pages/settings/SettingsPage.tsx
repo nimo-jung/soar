@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
@@ -416,14 +416,14 @@ const SettingsPage: React.FC = () => {
               <div className="flex gap-2">
                 <Button
                   className="tenant-primary-action"
-                  size="small"
+                  buttonSize="dense"
                   icon="pi pi-pencil"
                   label={t('settings.parsingRules.table.editBtn')}
                   onClick={() => openEditDialog(row)}
                   disabled={!canManageRules}
                 />
                 <Button
-                  size="small"
+                  buttonSize="dense"
                   icon="pi pi-ban"
                   label={t('settings.parsingRules.table.deactivateBtn')}
                   severity="danger"
@@ -486,14 +486,14 @@ const SettingsPage: React.FC = () => {
                 <div className="flex gap-2">
                   <Button
                     className="tenant-primary-action"
-                    size="small"
+                    buttonSize="dense"
                     icon="pi pi-pencil"
                     label={t('settings.vectorSources.table.editBtn')}
                     onClick={() => openEditSourceDialog(row)}
                     disabled={!canManageRules}
                   />
                   <Button
-                    size="small"
+                    buttonSize="dense"
                     icon="pi pi-trash"
                     label={t('settings.vectorSources.table.deleteBtn')}
                     severity="danger"

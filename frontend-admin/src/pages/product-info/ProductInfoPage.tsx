@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/AdminButton';
 import { Card } from 'primereact/card';
 import { Dialog } from 'primereact/dialog';
 import api from '../../api';

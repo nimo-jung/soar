@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from 'primereact/button';
+import { Button } from '@/components/TenantButton';
 
 const LanguageSwitcher: React.FC = () => {
   const { i18n, t } = useTranslation();
