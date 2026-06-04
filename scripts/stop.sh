@@ -4,6 +4,7 @@
 # 사용법: ./scripts/stop.sh [service]
 #   ./scripts/stop.sh          → 로컬 프로세스 + dev/prod/infra 전체 종료
 #   ./scripts/stop.sh backend  → 백엔드만 종료
+#   ./scripts/stop.sh gateway  → gateway(dev/prod)만 종료
 #   ./scripts/stop.sh docker   → Docker Compose 전체 종료(컨테이너 전부)
 #   ./scripts/stop.sh dev      → dev 관련 로컬 프로세스 + dev 컨테이너 종료
 #   ./scripts/stop.sh prod     → prod 관련 로컬 프로세스 + prod 컨테이너 종료
@@ -98,7 +99,7 @@ stop_dev() {
   kill_service frontend-admin
   kill_service frontend-tenant
   kill_service go-engine
-  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-admin-dev frontend-tenant-dev
+  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-admin-dev frontend-tenant-dev gateway-dev
   success "dev 프로파일 종료 완료"
 }
 
@@ -143,6 +144,10 @@ case "$SERVICE" in
     stop_compose_services "dev" vector-dev go-engine-dev
     stop_compose_services "prod" vector-prod go-engine-prod
     ;;
+  gateway)
+    stop_compose_services "dev" gateway-dev
+    stop_compose_services "prod" gateway-prod
+    ;;
   all)
     kill_service backend
     kill_service frontend-admin
@@ -154,7 +159,7 @@ case "$SERVICE" in
     success "로컬 프로세스 + dev/prod/infra 전체 종료 완료"
     ;;
   *)
-    echo "사용법: $0 [all|docker|dev|prod|infra|backend|admin|tenant|engine]"
+    echo "사용법: $0 [all|docker|dev|prod|infra|backend|admin|tenant|engine|gateway]"
     exit 1
     ;;
 esac

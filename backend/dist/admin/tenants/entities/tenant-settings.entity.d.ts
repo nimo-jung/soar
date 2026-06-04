@@ -7,6 +7,7 @@ export declare class TenantSettings {
     storageQuotaGb: number;
     retentionDays: number;
     brandingConfig: Record<string, string> | null;
+    vectorSourcesConfig: Array<Record<string, unknown>> | null;
     maxLoginFailures: number;
     lockMinutes: number;
     maxConcurrentSessions: number;

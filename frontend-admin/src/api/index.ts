@@ -25,6 +25,15 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const appBasePath = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL.slice(0, -1)
+  : import.meta.env.BASE_URL;
+
+const withBasePath = (path: string): string => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return appBasePath && appBasePath !== '/' ? `${appBasePath}${normalizedPath}` : normalizedPath;
+};
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
@@ -56,7 +65,7 @@ api.interceptors.response.use(
         || requestUrl.includes('/auth/tenant/login');
       if (!isAuthRequest) {
         useAuthStore.getState().logout();
-        window.location.href = '/login';
+        window.location.href = withBasePath('/login');
       }
       return Promise.reject(err);
     }
@@ -88,7 +97,7 @@ api.interceptors.response.use(
         }
       }
 
-      window.location.href = `/server-error?${searchParams.toString()}`;
+      window.location.href = withBasePath(`/server-error?${searchParams.toString()}`);
     }
 
     return Promise.reject(err);

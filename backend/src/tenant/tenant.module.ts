@@ -23,6 +23,8 @@ import { ParsingRulesService } from './parsing-rules/parsing-rules.service';
 import { TenantMiddleware } from '../common/middleware/tenant.middleware';
 import { TenantAuditLogsController } from './audit-logs/tenant-audit-logs.controller';
 import { TenantAuditLogsService } from './audit-logs/tenant-audit-logs.service';
+import { TenantVectorSourcesController } from './vector-sources/tenant-vector-sources.controller';
+import { TenantVectorSourcesService } from './vector-sources/tenant-vector-sources.service';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { TenantAuditLogsService } from './audit-logs/tenant-audit-logs.service';
     AlertsController,
     ParsingRulesController,
     TenantAuditLogsController,
+    TenantVectorSourcesController,
   ],
   providers: [
     CollectorsService,
@@ -53,6 +56,7 @@ import { TenantAuditLogsService } from './audit-logs/tenant-audit-logs.service';
     AlertsService,
     ParsingRulesService,
     TenantAuditLogsService,
+    TenantVectorSourcesService,
     AuditLogService,
     TenantMiddleware,
   ],
@@ -70,6 +74,7 @@ export class TenantModule implements NestModule {
         AlertsController,
         ParsingRulesController,
         TenantAuditLogsController,
+        TenantVectorSourcesController,
       );
   }
 }

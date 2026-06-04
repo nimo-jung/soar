@@ -255,6 +255,61 @@
         "deactivateFailed": "파싱 룰 비활성화 중 오류가 발생했습니다.",
         "invalidJson": "룰 정의 JSON 형식이 올바르지 않습니다."
       }
+    },
+    "vectorSources": {
+      "title": "Vector Source 인스턴스",
+      "addBtn": "소스 추가",
+      "auth": {
+        "none": "없음",
+        "token": "Token",
+        "basic": "Basic"
+      },
+      "modes": {
+        "syslog": "Syslog",
+        "snmp": "SNMP",
+        "http": "HTTP",
+        "cmd": "CMD",
+        "file": "File",
+        "kafka": "Kafka"
+      },
+      "table": {
+        "id": "Source ID",
+        "name": "이름",
+        "vendor": "Vendor",
+        "ingestionMode": "수집 방식",
+        "editBtn": "수정",
+        "deleteBtn": "삭제"
+      },
+      "dialog": {
+        "createTitle": "Vector Source 추가",
+        "editTitle": "Vector Source 수정",
+        "id": "Source ID",
+        "name": "이름",
+        "vendor": "Vendor",
+        "ingestionMode": "수집 방식",
+        "transport": "전송 방식",
+        "address": "수신 주소",
+        "port": "포트",
+        "path": "HTTP Path",
+        "authStrategy": "인증 전략",
+        "authToken": "인증 토큰",
+        "basicUsername": "Basic 사용자명",
+        "basicPassword": "Basic 비밀번호",
+        "command": "실행 명령",
+        "intervalSeconds": "실행 주기(초)",
+        "includePatterns": "파일 include 패턴",
+        "bootstrapServers": "Kafka Bootstrap Servers",
+        "topic": "Kafka Topic",
+        "groupId": "Kafka Group ID"
+      },
+      "errors": {
+        "loadFailed": "Vector Source 목록을 불러오지 못했습니다.",
+        "saveFailed": "Vector Source 저장 중 오류가 발생했습니다.",
+        "required": "ID, 이름, Vendor는 필수입니다.",
+        "duplicateId": "중복 Source ID가 존재합니다: {{id}}",
+        "tokenRequired": "HTTP token 인증에서는 인증 토큰이 필수입니다.",
+        "basicRequired": "HTTP basic 인증에서는 사용자명/비밀번호가 필수입니다."
+      }
     }
   },
   "authSettings": {

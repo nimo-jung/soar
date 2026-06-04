@@ -30,12 +30,12 @@ transforms:
     inputs:
       - normalize_common
     source: |
-      m = downcase!(.message)
+      m = downcase(to_string(.message) ?? "")
       if contains(m, "panos") || contains(m, "palo alto") {
         .vendor = "paloalto"
       } else if contains(m, "fortigate") || contains(m, "fortios") {
         .vendor = "fortinet"
-      } else if contains(m, "cisco") || starts_with(.host, "cisco") {
+      } else if contains(m, "cisco") || starts_with(to_string(.host) ?? "", "cisco") {
         .vendor = "cisco"
       } else {
         .vendor = "unknown"
@@ -63,7 +63,7 @@ transforms:
         .parse_status = "failed"
         .parse_error = "device_code_not_found"
       } else {
-        .device_code = upcase!(to_string!(m.device_code))
+        .device_code = upcase(to_string(m.device_code))
       }
       .parsed = {
         "vendor": .vendor,
@@ -83,7 +83,7 @@ transforms:
         .parse_status = "failed"
         .parse_error = "device_code_not_found"
       } else {
-        .device_code = upcase!(to_string!(m.device_code))
+        .device_code = upcase(to_string(m.device_code))
       }
       .parsed = {
         "vendor": .vendor,
@@ -103,7 +103,7 @@ transforms:
         .parse_status = "failed"
         .parse_error = "device_code_not_found"
       } else {
-        .device_code = upcase!(to_string!(m.device_code))
+        .device_code = upcase(to_string(m.device_code))
       }
       .parsed = {
         "vendor": .vendor,

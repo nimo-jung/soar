@@ -255,6 +255,61 @@
         "deactivateFailed": "An error occurred while deactivating parsing rule.",
         "invalidJson": "Rule definition JSON is invalid."
       }
+    },
+    "vectorSources": {
+      "title": "Vector Source Instances",
+      "addBtn": "Add Source",
+      "auth": {
+        "none": "None",
+        "token": "Token",
+        "basic": "Basic"
+      },
+      "modes": {
+        "syslog": "Syslog",
+        "snmp": "SNMP",
+        "http": "HTTP",
+        "cmd": "CMD",
+        "file": "File",
+        "kafka": "Kafka"
+      },
+      "table": {
+        "id": "Source ID",
+        "name": "Name",
+        "vendor": "Vendor",
+        "ingestionMode": "Ingestion Mode",
+        "editBtn": "Edit",
+        "deleteBtn": "Delete"
+      },
+      "dialog": {
+        "createTitle": "Add Vector Source",
+        "editTitle": "Edit Vector Source",
+        "id": "Source ID",
+        "name": "Name",
+        "vendor": "Vendor",
+        "ingestionMode": "Ingestion Mode",
+        "transport": "Transport",
+        "address": "Address",
+        "port": "Port",
+        "path": "HTTP Path",
+        "authStrategy": "Auth Strategy",
+        "authToken": "Auth Token",
+        "basicUsername": "Basic Username",
+        "basicPassword": "Basic Password",
+        "command": "Command",
+        "intervalSeconds": "Interval (seconds)",
+        "includePatterns": "File Include Patterns",
+        "bootstrapServers": "Kafka Bootstrap Servers",
+        "topic": "Kafka Topic",
+        "groupId": "Kafka Group ID"
+      },
+      "errors": {
+        "loadFailed": "Failed to load vector sources.",
+        "saveFailed": "An error occurred while saving vector sources.",
+        "required": "ID, name, and vendor are required.",
+        "duplicateId": "Duplicated source ID exists: {{id}}",
+        "tokenRequired": "Auth token is required for HTTP token strategy.",
+        "basicRequired": "Username and password are required for HTTP basic strategy."
+      }
     }
   },
   "authSettings": {

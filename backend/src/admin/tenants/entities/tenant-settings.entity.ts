@@ -54,6 +54,14 @@ export class TenantSettings {
   brandingConfig: Record<string, string> | null;
 
   @Column({
+    name: 'vector_sources_config',
+    type: 'json',
+    nullable: true,
+    comment: '테넌트별 Vector source 인스턴스 설정 목록',
+  })
+  vectorSourcesConfig: Array<Record<string, unknown>> | null;
+
+  @Column({
     name: 'max_login_failures',
     type: 'int',
     default: 3,

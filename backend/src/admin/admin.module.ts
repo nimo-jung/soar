@@ -22,6 +22,7 @@ import { DataIsolationModule } from './data-isolation/data-isolation.module';
 import { SystemStatusModule } from './system-status/system-status.module';
 import { IntegrityModule } from './integrity/integrity.module';
 import { Tenant } from './tenants/entities/tenant.entity';
+import { VectorSettingsModule } from './vector-settings/vector-settings.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { Tenant } from './tenants/entities/tenant.entity';
     DataIsolationModule,
     SystemStatusModule,
     IntegrityModule,
+    VectorSettingsModule,
     TypeOrmModule.forFeature([MasterAuthSettings, MasterSetting, AuditLog, Tenant]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({

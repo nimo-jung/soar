@@ -20,6 +20,7 @@ let TenantSettings = class TenantSettings {
     storageQuotaGb;
     retentionDays;
     brandingConfig;
+    vectorSourcesConfig;
     maxLoginFailures;
     lockMinutes;
     maxConcurrentSessions;
@@ -77,6 +78,15 @@ __decorate([
     }),
     __metadata("design:type", Object)
 ], TenantSettings.prototype, "brandingConfig", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'vector_sources_config',
+        type: 'json',
+        nullable: true,
+        comment: '테넌트별 Vector source 인스턴스 설정 목록',
+    }),
+    __metadata("design:type", Object)
+], TenantSettings.prototype, "vectorSourcesConfig", void 0);
 __decorate([
     (0, typeorm_1.Column)({
         name: 'max_login_failures',

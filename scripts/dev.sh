@@ -3,13 +3,14 @@
 # TMS 개발 서버 일괄 기동 스크립트 (dev mode)
 # 사용법: ./scripts/dev.sh [service]
 #   기본 동작: dev 컨테이너(profile=dev) 기반 기동
-#   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev
+#   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev + gateway-dev
 #   ./scripts/dev.sh infra    → 인프라만 (MariaDB, Redis, ClickHouse, RedPanda)
 #   ./scripts/dev.sh fix-perms → RedPanda 데이터 경로 권한 복구 (sudo 필요)
 #   ./scripts/dev.sh backend  → backend-dev만
 #   ./scripts/dev.sh admin    → frontend-admin-dev만
 #   ./scripts/dev.sh tenant   → frontend-tenant-dev만
 #   ./scripts/dev.sh engine   → go-engine-dev만
+#   ./scripts/dev.sh gateway  → gateway-dev만
 #   로컬 실행 강제: TMS_DEV_RUNTIME=local ./scripts/dev.sh [service]
 # =============================================================================
 set -euo pipefail
@@ -52,6 +53,9 @@ print_dev_stop_hint() {
     engine)
       echo -e "  Engine 종료  → ./scripts/stop.sh engine"
       echo -e "  인프라 종료  → ./scripts/stop.sh infra"
+      ;;
+    gateway)
+      echo -e "  Gateway 종료 → ./scripts/stop.sh gateway"
       ;;
   esac
   echo -e "  상태 확인    → ./scripts/status.sh"
@@ -467,11 +471,19 @@ case "$SERVICE" in
     fi
     print_dev_stop_hint engine
     ;;
+  gateway)
+    if [[ "$DEV_RUNTIME" == "docker" ]]; then
+      start_dev_containers gateway-dev
+    else
+      warn "gateway 서비스는 docker runtime에서만 지원됩니다."
+    fi
+    print_dev_stop_hint gateway
+    ;;
   all)
     if [[ "$DEV_RUNTIME" == "docker" ]]; then
       start_infra
       sleep 3
-      start_dev_containers backend-dev frontend-admin-dev frontend-tenant-dev go-engine-dev
+      start_dev_containers backend-dev frontend-admin-dev frontend-tenant-dev go-engine-dev gateway-dev
     else
       start_infra
       sleep 3
@@ -487,6 +499,7 @@ case "$SERVICE" in
     echo -e "  Swagger    → http://localhost:${PORT_BACKEND:-3000}/docs"
     echo -e "  Admin UI   → http://localhost:${PORT_FRONTEND_ADMIN:-5174}"
     echo -e "  Tenant UI  → http://localhost:${PORT_FRONTEND_TENANT:-5173}"
+    echo -e "  Gateway    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
     echo -e "  Go Engine  → http://localhost:${PORT_GO_ENGINE:-8081}"
     echo -e "  RedPanda   → http://localhost:${PORT_REDPANDA_CONSOLE:-8080}"
     echo -e "  Logs       → $LOG_DIR/*.log"
@@ -495,7 +508,7 @@ case "$SERVICE" in
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"
-    echo "사용법: $0 [all|infra|fix-perms|backend|admin|tenant|engine]"
+    echo "사용법: $0 [all|infra|fix-perms|backend|admin|tenant|engine|gateway]"
     exit 1
     ;;
 esac

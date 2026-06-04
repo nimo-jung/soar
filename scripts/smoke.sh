@@ -39,6 +39,8 @@ if [[ "$MODE" == "dev" ]]; then
   BACKEND_BASE="http://localhost:${PORT_BACKEND:-3000}"
   ADMIN_BASE="http://localhost:${PORT_FRONTEND_ADMIN:-5174}"
   TENANT_BASE="http://localhost:${PORT_FRONTEND_TENANT:-5173}"
+  GATEWAY_BASE="http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
+  RUN_VIA_GATEWAY_DEV="${RUN_VIA_GATEWAY_DEV:-1}"
   RUN_TENANT_LOGIN="${RUN_TENANT_LOGIN:-1}"
 else
   GATEWAY_BASE="http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
@@ -67,20 +69,35 @@ failed=0
 info "TMS 스모크 테스트 시작 (mode=$MODE)"
 
 if [[ "$MODE" == "dev" ]]; then
-  code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
-  check_code "dev backend docs" 200 "$code" || failed=1
+  if [[ "$RUN_VIA_GATEWAY_DEV" == "1" ]]; then
+    code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_dev_gateway.txt -w '%{http_code}' "$GATEWAY_BASE/docs/" || echo 000)
+    check_code "dev gateway docs" 200 "$code" || failed=1
 
-  code=$(post_json "$BACKEND_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_backend.json || echo 000)
-  check_code "dev backend master login" 200 "$code" || failed=1
+    code=$(post_json "$GATEWAY_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_dev_gateway.json || echo 000)
+    check_code "dev gateway master login" 200 "$code" || failed=1
 
-  code=$(post_json "$ADMIN_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_admin_proxy.json || echo 000)
-  check_code "dev admin proxy master login" 200 "$code" || failed=1
-
-  if [[ "$RUN_TENANT_LOGIN" == "1" ]]; then
-    code=$(post_json "$TENANT_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/tms_smoke_tenant_proxy.json || echo 000)
-    check_code "dev tenant proxy login" 200 "$code" || failed=1
+    if [[ "$RUN_TENANT_LOGIN" == "1" ]]; then
+      code=$(post_json "$GATEWAY_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/tms_smoke_tenant_dev_gateway.json || echo 000)
+      check_code "dev gateway tenant login" 200 "$code" || failed=1
+    else
+      warn "tenant 로그인 점검을 건너뜁니다. (RUN_TENANT_LOGIN=$RUN_TENANT_LOGIN)"
+    fi
   else
-    warn "tenant 로그인 점검을 건너뜁니다. (RUN_TENANT_LOGIN=$RUN_TENANT_LOGIN)"
+    code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
+    check_code "dev backend docs" 200 "$code" || failed=1
+
+    code=$(post_json "$BACKEND_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_backend.json || echo 000)
+    check_code "dev backend master login" 200 "$code" || failed=1
+
+    code=$(post_json "$ADMIN_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_admin_proxy.json || echo 000)
+    check_code "dev admin proxy master login" 200 "$code" || failed=1
+
+    if [[ "$RUN_TENANT_LOGIN" == "1" ]]; then
+      code=$(post_json "$TENANT_BASE/auth/tenant/login" "{\"tenantSlug\":\"$TENANT_SLUG\",\"email\":\"$TENANT_EMAIL\",\"password\":\"$TENANT_PASSWORD\"}" /tmp/tms_smoke_tenant_proxy.json || echo 000)
+      check_code "dev tenant proxy login" 200 "$code" || failed=1
+    else
+      warn "tenant 로그인 점검을 건너뜁니다. (RUN_TENANT_LOGIN=$RUN_TENANT_LOGIN)"
+    fi
   fi
 else
   code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_prod.txt -w '%{http_code}' "$GATEWAY_BASE/docs/" || echo 000)

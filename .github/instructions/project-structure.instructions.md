@@ -22,6 +22,7 @@ backend/
     │   ├── billing/             # 사용량 집계·빌링 리포트
     │   ├── monitoring/          # 전체 테넌트 로그 유입·시스템 부하 모니터링
     │   ├── threat-intel/        # 글로벌 TI 등록 및 RedPanda 전파
+    │   ├── vector-settings/     # Vector 벤더 파서/토픽 설정 관리
     │   ├── product-info/        # 제품 릴리즈 정보 조회 + 라이선스 조회/업데이트
     │   └── audit-logs/          # 감사로그 조회 (로그인/로그아웃, CUD 이벤트)
     │
@@ -58,6 +59,7 @@ frontend-admin/
     │   ├── billing/             # 사용량 리포트·과금 데이터
     │   ├── monitoring/          # 전체 테넌트 통합 모니터링 대시보드
     │   ├── threat-intel/        # 글로벌 TI 등록·배포 현황
+    │   ├── vector-settings/     # Vector 파서/토픽 설정 + 적용 이력 조회
     │   ├── product-info/        # 시스템 관리 > 제품 정보(릴리즈/라이선스)
     │   └── audit-logs/          # 보안감사 > 감사로그 조회
     ├── components/              # Admin 전용 PrimeReact 컴포넌트

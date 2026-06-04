@@ -97,6 +97,7 @@ print_mode_summary() {
     tms-go-engine-dev
     tms-frontend-admin-dev
     tms-frontend-tenant-dev
+    tms-gateway-dev
   )
   local prod_containers=(
     tms-backend-prod
@@ -170,6 +171,7 @@ check_container tms-vector-dev "Vector Dev"
 check_container tms-go-engine-dev "Go Engine Dev"
 check_container tms-frontend-admin-dev "Admin UI Dev"
 check_container tms-frontend-tenant-dev "Tenant UI Dev"
+check_container tms-gateway-dev "Gateway Dev"
 
 echo -e "\n${CYAN}[ Prod 컨테이너 ]${RESET}"
 check_container tms-backend-prod "Backend Prod"
