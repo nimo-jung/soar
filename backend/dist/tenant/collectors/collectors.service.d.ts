@@ -13,7 +13,16 @@ export declare class CollectorsService {
     findAll(): Promise<Collector[]>;
     deactivate(id: number): Promise<void>;
     private authKey;
+    private normalizeDeviceCode;
+    private deviceCodeOwnerKey;
+    private deviceCodeTenantKey;
+    private deviceCodeSourceIpsKey;
+    private sourceIpTenantsKey;
     private collectorApiIndexKey;
+    private reserveDeviceCode;
+    private releaseDeviceCodeOwner;
     private persistApiKeyMapping;
+    private persistRoutingMappings;
     private revokeApiKeyMappings;
+    private revokeRoutingMappings;
 }

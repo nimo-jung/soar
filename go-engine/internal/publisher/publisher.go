@@ -44,10 +44,21 @@ func (p *Publisher) PublishRawLog(ctx context.Context, tenantID string, payload 
 	}
 
 	topic := fmt.Sprintf("raw-logs.%s", tenantID)
-	return p.writer(topic).WriteMessages(ctx, kafka.Message{
-		Key:   []byte(tenantID),
-		Value: data,
-	})
+	return p.PublishTopic(ctx, topic, []byte(tenantID), data)
+}
+
+// PublishTopic writes raw bytes to any topic.
+func (p *Publisher) PublishTopic(ctx context.Context, topic string, key []byte, value []byte) error {
+	return p.writer(topic).WriteMessages(ctx, kafka.Message{Key: key, Value: value})
+}
+
+// PublishJSON marshals payload and publishes it to a given topic.
+func (p *Publisher) PublishJSON(ctx context.Context, topic string, key []byte, payload map[string]interface{}) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal error: %w", err)
+	}
+	return p.PublishTopic(ctx, topic, key, data)
 }
 
 // PublishGlobalTI sends a TI update to the global topic (consumed by all engines)

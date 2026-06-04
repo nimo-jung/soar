@@ -105,6 +105,7 @@ frontend-tenant/
 infra/
 ├── mariadb/
 ├── clickhouse/
+├── vector/                     # Syslog 수집/벤더별 VRL 파싱/RedPanda 발행 설정
 └── gateway/
     └── nginx.conf             # Prod 통합 진입점 (/admin, /tenant, /api, /auth, /docs)
 
@@ -125,6 +126,7 @@ scripts/
 ├── dev.sh                     # 개발 모드 기동 + 데이터 마운트 preflight
 ├── prod.sh                    # 운영 모드 기동 + gateway 안내
 ├── smoke.sh                   # dev/prod 로그인·라우팅 스모크 테스트
+├── smoke-vector.sh            # Vector -> RedPanda -> Go Router 파이프라인 스모크 테스트
 ├── migrate.sh
 ├── status.sh
 └── stop.sh
@@ -132,6 +134,7 @@ scripts/
 go-engine/
 └── internal/
     ├── ingestion/               # HTTP 수집 엔드포인트 (API Key 인증)
+    ├── router/                  # Vector 파싱 로그의 tenant 판정 (device_code/source_ip)
     ├── parsing/                 # 테넌트별 파싱 룰 적용 (Redis 캐시)
     ├── publisher/               # RedPanda raw-logs 토픽 발행
     ├── consumer/                # RedPanda 메시지 소비 → ClickHouse 배치 적재

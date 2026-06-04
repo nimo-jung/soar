@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import type Redis from 'ioredis';
@@ -28,21 +28,33 @@ export class CollectorsService {
     const tenantId = TenantContext.getTenantId();
     const repo = await this.getRepo(tenantId);
 
+    const normalizedDeviceCode = this.normalizeDeviceCode(dto.deviceCode ?? dto.name);
+    await this.reserveDeviceCode(tenantId, normalizedDeviceCode);
+
     const plainApiKey = crypto.randomBytes(32).toString('hex');
     const apiKeyHash = await bcrypt.hash(plainApiKey, 12);
-
-    const collector = repo.create({ ...dto, apiKeyHash });
-    const saved = await repo.save(collector);
+    const normalizedSourceIp = dto.sourceIp?.trim() || null;
+    let saved: Collector | null = null;
 
     try {
+      const collector = repo.create({
+        ...dto,
+        deviceCode: normalizedDeviceCode,
+        sourceIp: normalizedSourceIp,
+        apiKeyHash,
+      });
+      saved = await repo.save(collector);
       await this.persistApiKeyMapping(tenantId, saved.id, plainApiKey);
+      await this.persistRoutingMappings(tenantId, saved.id, normalizedDeviceCode, saved.sourceIp);
+      return { ...saved, plainApiKey };
     } catch (error) {
       // Redis 매핑 실패 시 미완성 Collector를 남기지 않도록 즉시 롤백한다.
-      await repo.remove(saved);
+      if (saved) {
+        await repo.remove(saved);
+      }
+      await this.releaseDeviceCodeOwner(normalizedDeviceCode);
       throw error;
     }
-
-    return { ...saved, plainApiKey };
   }
 
   async findAll(): Promise<Collector[]> {
@@ -61,20 +73,76 @@ export class CollectorsService {
 
     await repo.update(id, { isActive: false });
     await this.revokeApiKeyMappings(tenantId, id);
+    await this.revokeRoutingMappings(tenantId, id, collector.deviceCode, collector.sourceIp);
+    await this.releaseDeviceCodeOwner(this.normalizeDeviceCode(collector.deviceCode));
   }
 
   private authKey(apiKey: string): string {
     return `api_key:${apiKey}`;
   }
 
+  private normalizeDeviceCode(deviceCode: string): string {
+    return deviceCode.trim().toUpperCase();
+  }
+
+  private deviceCodeOwnerKey(deviceCode: string): string {
+    return `device_code_owner:${deviceCode}`;
+  }
+
+  private deviceCodeTenantKey(deviceCode: string): string {
+    return `device_code:${deviceCode}:tenant`;
+  }
+
+  private deviceCodeSourceIpsKey(tenantId: string, collectorId: number, deviceCode: string): string {
+    return `tenant:${tenantId}:collector:${collectorId}:device_code:${deviceCode}:source_ips`;
+  }
+
+  private sourceIpTenantsKey(sourceIp: string): string {
+    return `source_ip:${sourceIp}:tenants`;
+  }
+
   private collectorApiIndexKey(tenantId: string, collectorId: number): string {
     return `tenant:${tenantId}:collector:${collectorId}:api_keys`;
+  }
+
+  private async reserveDeviceCode(tenantId: string, deviceCode: string): Promise<void> {
+    const key = this.deviceCodeOwnerKey(deviceCode);
+    const ok = await this.redis.set(key, tenantId, 'NX');
+    if (ok === 'OK') {
+      return;
+    }
+
+    const currentOwner = await this.redis.get(key);
+    if (currentOwner === tenantId) {
+      throw new ConflictException(`device_code '${deviceCode}' is already registered in this tenant.`);
+    }
+
+    throw new ConflictException(`device_code '${deviceCode}' is already owned by another tenant.`);
+  }
+
+  private async releaseDeviceCodeOwner(deviceCode: string): Promise<void> {
+    await this.redis.del(this.deviceCodeOwnerKey(deviceCode));
   }
 
   private async persistApiKeyMapping(tenantId: string, collectorId: number, plainApiKey: string): Promise<void> {
     const pipeline = this.redis.pipeline();
     pipeline.set(this.authKey(plainApiKey), tenantId);
     pipeline.sadd(this.collectorApiIndexKey(tenantId, collectorId), plainApiKey);
+    await pipeline.exec();
+  }
+
+  private async persistRoutingMappings(
+    tenantId: string,
+    collectorId: number,
+    deviceCode: string,
+    sourceIp: string | null,
+  ): Promise<void> {
+    const pipeline = this.redis.pipeline();
+    pipeline.set(this.deviceCodeTenantKey(deviceCode), tenantId);
+    if (sourceIp) {
+      pipeline.sadd(this.deviceCodeSourceIpsKey(tenantId, collectorId, deviceCode), sourceIp);
+      pipeline.sadd(this.sourceIpTenantsKey(sourceIp), tenantId);
+    }
     await pipeline.exec();
   }
 
@@ -91,6 +159,22 @@ export class CollectorsService {
       pipeline.del(this.authKey(apiKey));
     }
     pipeline.del(indexKey);
+    await pipeline.exec();
+  }
+
+  private async revokeRoutingMappings(
+    tenantId: string,
+    collectorId: number,
+    deviceCode: string,
+    sourceIp: string | null,
+  ): Promise<void> {
+    const normalizedDeviceCode = this.normalizeDeviceCode(deviceCode);
+    const pipeline = this.redis.pipeline();
+    pipeline.del(this.deviceCodeTenantKey(normalizedDeviceCode));
+    pipeline.del(this.deviceCodeSourceIpsKey(tenantId, collectorId, normalizedDeviceCode));
+    if (sourceIp) {
+      pipeline.srem(this.sourceIpTenantsKey(sourceIp), tenantId);
+    }
     await pipeline.exec();
   }
 }

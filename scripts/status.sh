@@ -93,12 +93,14 @@ print_mode_summary() {
   )
   local dev_containers=(
     tms-backend-dev
+    tms-vector-dev
     tms-go-engine-dev
     tms-frontend-admin-dev
     tms-frontend-tenant-dev
   )
   local prod_containers=(
     tms-backend-prod
+    tms-vector-prod
     tms-go-engine-prod
     tms-frontend-admin-prod
     tms-frontend-tenant-prod
@@ -164,12 +166,14 @@ check_container tms-mailpit-dev "Mailpit (Dev SMTP)"
 
 echo -e "\n${CYAN}[ Dev 컨테이너 ]${RESET}"
 check_container tms-backend-dev "Backend Dev"
+check_container tms-vector-dev "Vector Dev"
 check_container tms-go-engine-dev "Go Engine Dev"
 check_container tms-frontend-admin-dev "Admin UI Dev"
 check_container tms-frontend-tenant-dev "Tenant UI Dev"
 
 echo -e "\n${CYAN}[ Prod 컨테이너 ]${RESET}"
 check_container tms-backend-prod "Backend Prod"
+check_container tms-vector-prod "Vector Prod"
 check_container tms-go-engine-prod "Go Engine Prod"
 check_container tms-frontend-admin-prod "Admin UI Prod"
 check_container tms-frontend-tenant-prod "Tenant UI Prod"

@@ -17,6 +17,18 @@ export class Collector {
   @Column({ nullable: true, comment: '설명' })
   description: string;
 
+  @Column({ name: 'device_code', length: 128, comment: '장비 고유 코드 (라우팅 식별자)' })
+  deviceCode: string;
+
+  @Column({
+    type: 'varchar',
+    name: 'source_ip',
+    nullable: true,
+    length: 45,
+    comment: '장비 고정 Source IP (선택)',
+  })
+  sourceIp: string | null;
+
   @Column({ name: 'api_key_hash', comment: 'API Key 해시 (bcrypt, 원본 재조회 불가)' })
   apiKeyHash: string;
 

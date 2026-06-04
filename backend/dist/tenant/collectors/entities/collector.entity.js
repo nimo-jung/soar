@@ -15,6 +15,8 @@ let Collector = class Collector {
     id;
     name;
     description;
+    deviceCode;
+    sourceIp;
     apiKeyHash;
     isActive;
     createdAt;
@@ -33,6 +35,20 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true, comment: '설명' }),
     __metadata("design:type", String)
 ], Collector.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'device_code', length: 128, comment: '장비 고유 코드 (라우팅 식별자)' }),
+    __metadata("design:type", String)
+], Collector.prototype, "deviceCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'varchar',
+        name: 'source_ip',
+        nullable: true,
+        length: 45,
+        comment: '장비 고정 Source IP (선택)',
+    }),
+    __metadata("design:type", Object)
+], Collector.prototype, "sourceIp", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'api_key_hash', comment: 'API Key 해시 (bcrypt, 원본 재조회 불가)' }),
     __metadata("design:type", String)

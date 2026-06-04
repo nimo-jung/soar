@@ -5,6 +5,7 @@
 #   ./scripts/prod.sh          → 전체 빌드 후 기동
 #   ./scripts/prod.sh build    → 전체 빌드만 (기동 안 함)
 #   ./scripts/prod.sh docker   → docker compose --profile prod --env-file .env.prod up -d (권장)
+#   ./scripts/prod.sh fix-perms → RedPanda 데이터 경로 권한 복구 (sudo 필요)
 #   ./scripts/prod.sh backend  → 백엔드 빌드 + 기동
 #   ./scripts/prod.sh admin    → Frontend Admin 빌드 (정적 파일 생성)
 #   ./scripts/prod.sh tenant   → Frontend Tenant 빌드 (정적 파일 생성)
@@ -201,6 +202,22 @@ check_redpanda_owner() {
   check_owner_match "RedPanda" "$dir" "$expected_owner" 1
 }
 
+fix_redpanda_permissions() {
+  local dir="$DATA_ROOT/redpanda"
+  local owner
+
+  mkdir -p "$dir"
+  owner="$(get_service_uid_gid RedPanda redpandadata/redpanda:v24.2.18 || true)"
+  if [[ -z "$owner" ]]; then
+    owner="101:101"
+  fi
+
+  info "RedPanda 권한 복구 실행: sudo chown -R $owner $dir && sudo chmod -R 750 $dir"
+  sudo chown -R "$owner" "$dir"
+  sudo chmod -R 750 "$dir"
+  success "RedPanda 권한 복구 완료: $dir ($(stat -c '%u:%g %a' "$dir"))"
+}
+
 preflight_data_mounts() {
   if [[ "${TMS_SKIP_PREFLIGHT:-0}" == "1" ]]; then
     warn "TMS_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
@@ -365,6 +382,10 @@ start_docker() {
 SERVICE="${1:-all}"
 
 case "$SERVICE" in
+  fix-perms)
+    fix_redpanda_permissions
+    print_prod_stop_hint build
+    ;;
   docker)
     start_docker
     print_prod_stop_hint docker
@@ -419,7 +440,7 @@ case "$SERVICE" in
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"
-    echo "사용법: $0 [all|build|docker|backend|admin|tenant|engine]"
+    echo "사용법: $0 [all|build|docker|fix-perms|backend|admin|tenant|engine]"
     exit 1
     ;;
 esac

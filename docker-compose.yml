@@ -151,6 +151,48 @@ services:
     networks:
       - tms-network
 
+  vector-dev:
+    profiles: [dev]
+    image: timberio/vector:0.42.0-alpine
+    container_name: tms-vector-dev
+    command: ["--config", "/etc/vector/vector.yaml"]
+    environment:
+      VECTOR_SELF_NODE_NAME: vector-dev
+      VECTOR_KAFKA_BROKERS: redpanda:9092
+      VECTOR_OUTPUT_TOPIC: logs.parsed.input
+      VECTOR_QUARANTINE_TOPIC: logs.quarantine
+    ports:
+      - "${PORT_VECTOR_SYSLOG_TCP:-1514}:1514/tcp"
+      - "${PORT_VECTOR_SYSLOG_UDP:-1514}:1514/udp"
+    volumes:
+      - ./infra/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    networks:
+      - tms-network
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  vector-prod:
+    profiles: [prod]
+    image: timberio/vector:0.42.0-alpine
+    container_name: tms-vector-prod
+    command: ["--config", "/etc/vector/vector.yaml"]
+    environment:
+      VECTOR_SELF_NODE_NAME: vector-prod
+      VECTOR_KAFKA_BROKERS: redpanda:9092
+      VECTOR_OUTPUT_TOPIC: logs.parsed.input
+      VECTOR_QUARANTINE_TOPIC: logs.quarantine
+    ports:
+      - "${PORT_VECTOR_SYSLOG_TCP:-1514}:1514/tcp"
+      - "${PORT_VECTOR_SYSLOG_UDP:-1514}:1514/udp"
+    volumes:
+      - ./infra/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    networks:
+      - tms-network
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
   # ───────────────────────────────────────────────────────────────────────────
   # Application
   #   Dev:  docker compose --profile dev --env-file .env.dev up -d --build
@@ -295,6 +337,10 @@ services:
       CLICKHOUSE_DSN: clickhouse://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:9000/default
       # General
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      ENGINE_PIPELINE_MODE: vector
+      ROUTER_INPUT_TOPIC: logs.parsed.input
+      ROUTER_QUARANTINE_TOPIC: logs.quarantine
+      ROUTER_CONSUMER_GROUP: tms-router-dev
       PORT: "8081"
     ports:
       - "${PORT_GO_ENGINE:-8081}:8081"  # 로그 수집 HTTP 엔드포인트
@@ -307,6 +353,8 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_healthy
+      vector-dev:
+        condition: service_started
 
   go-engine-prod:
     profiles: [prod]
@@ -328,6 +376,10 @@ services:
       CLICKHOUSE_DSN: clickhouse://${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}@clickhouse:9000/default
       # General
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      ENGINE_PIPELINE_MODE: vector
+      ROUTER_INPUT_TOPIC: logs.parsed.input
+      ROUTER_QUARANTINE_TOPIC: logs.quarantine
+      ROUTER_CONSUMER_GROUP: tms-router-prod
       PORT: "8081"
     ports:
       - "${PORT_GO_ENGINE:-8081}:8081"
@@ -340,6 +392,8 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_healthy
+      vector-prod:
+        condition: service_started
 
   # Master Admin UI  —  공급자용 (테넌트 생성·쿼터·TI 배포·빌링)
   frontend-admin-dev:

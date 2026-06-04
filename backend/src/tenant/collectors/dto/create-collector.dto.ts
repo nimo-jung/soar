@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIP, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCollectorDto {
@@ -11,4 +11,16 @@ export class CreateCollectorDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({ description: '장비 고유 코드(전역 유일, 미입력 시 name 사용)', example: 'PA-DC1-EDGE-001' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[A-Za-z0-9._:-]{3,128}$/)
+  deviceCode?: string;
+
+  @ApiPropertyOptional({ description: '장비 고정 Source IP (선택)', example: '10.10.10.15' })
+  @IsOptional()
+  @IsIP(4)
+  sourceIp?: string;
 }

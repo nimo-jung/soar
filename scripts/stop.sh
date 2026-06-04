@@ -98,7 +98,7 @@ stop_dev() {
   kill_service frontend-admin
   kill_service frontend-tenant
   kill_service go-engine
-  stop_compose_services "dev" backend-dev go-engine-dev frontend-admin-dev frontend-tenant-dev
+  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-admin-dev frontend-tenant-dev
   success "dev 프로파일 종료 완료"
 }
 
@@ -106,7 +106,7 @@ stop_prod() {
   info "prod 관련 로컬 프로세스 및 컨테이너 종료 중..."
   kill_service backend
   kill_service go-engine
-  stop_compose_services "prod" backend-prod go-engine-prod frontend-admin-prod frontend-tenant-prod gateway-prod
+  stop_compose_services "prod" backend-prod vector-prod go-engine-prod frontend-admin-prod frontend-tenant-prod gateway-prod
   success "prod 프로파일 종료 완료"
 }
 
@@ -140,8 +140,8 @@ case "$SERVICE" in
     ;;
   engine)
     kill_service go-engine
-    stop_compose_services "dev" go-engine-dev
-    stop_compose_services "prod" go-engine-prod
+    stop_compose_services "dev" vector-dev go-engine-dev
+    stop_compose_services "prod" vector-prod go-engine-prod
     ;;
   all)
     kill_service backend

@@ -1,0 +1,156 @@
+data_dir: /var/lib/vector
+
+sources:
+  syslog_udp:
+    type: syslog
+    address: 0.0.0.0:1514
+    mode: udp
+
+  syslog_tcp:
+    type: syslog
+    address: 0.0.0.0:1514
+    mode: tcp
+
+transforms:
+  normalize_common:
+    type: remap
+    inputs:
+      - syslog_udp
+      - syslog_tcp
+    source: |
+      .ingest_time = now()
+      .source_ip = to_string(.source_ip) ?? (to_string(.host) ?? "")
+      .raw_message = to_string(.message) ?? ""
+      .message = .raw_message
+      .host = to_string(.host) ?? ""
+      .appname = to_string(.appname) ?? ""
+
+  classify_vendor:
+    type: remap
+    inputs:
+      - normalize_common
+    source: |
+      m = downcase!(.message)
+      if contains(m, "panos") || contains(m, "palo alto") {
+        .vendor = "paloalto"
+      } else if contains(m, "fortigate") || contains(m, "fortios") {
+        .vendor = "fortinet"
+      } else if contains(m, "cisco") || starts_with(.host, "cisco") {
+        .vendor = "cisco"
+      } else {
+        .vendor = "unknown"
+      }
+
+  vendor_route:
+    type: route
+    inputs:
+      - classify_vendor
+    route:
+      paloalto: '.vendor == "paloalto"'
+      fortinet: '.vendor == "fortinet"'
+      cisco: '.vendor == "cisco"'
+      unknown: '.vendor == "unknown"'
+
+  parse_paloalto:
+    type: remap
+    inputs:
+      - vendor_route.paloalto
+    source: |
+      .parse_status = "ok"
+      .event_time = format_timestamp!(now(), "%+")
+      m, err = parse_regex(.message, r'(?P<device_code>[A-Za-z0-9._:-]{3,128})')
+      if err != null {
+        .parse_status = "failed"
+        .parse_error = "device_code_not_found"
+      } else {
+        .device_code = upcase!(to_string!(m.device_code))
+      }
+      .parsed = {
+        "vendor": .vendor,
+        "host": .host,
+        "appname": .appname,
+      }
+
+  parse_fortinet:
+    type: remap
+    inputs:
+      - vendor_route.fortinet
+    source: |
+      .parse_status = "ok"
+      .event_time = format_timestamp!(now(), "%+")
+      m, err = parse_regex(.message, r'device_id=(?P<device_code>[A-Za-z0-9._:-]{3,128})')
+      if err != null {
+        .parse_status = "failed"
+        .parse_error = "device_code_not_found"
+      } else {
+        .device_code = upcase!(to_string!(m.device_code))
+      }
+      .parsed = {
+        "vendor": .vendor,
+        "host": .host,
+        "appname": .appname,
+      }
+
+  parse_cisco:
+    type: remap
+    inputs:
+      - vendor_route.cisco
+    source: |
+      .parse_status = "ok"
+      .event_time = format_timestamp!(now(), "%+")
+      m, err = parse_regex(.message, r'device_code=(?P<device_code>[A-Za-z0-9._:-]{3,128})')
+      if err != null {
+        .parse_status = "failed"
+        .parse_error = "device_code_not_found"
+      } else {
+        .device_code = upcase!(to_string!(m.device_code))
+      }
+      .parsed = {
+        "vendor": .vendor,
+        "host": .host,
+        "appname": .appname,
+      }
+
+  parse_unknown:
+    type: remap
+    inputs:
+      - vendor_route.unknown
+    source: |
+      .parse_status = "failed"
+      .parse_error = "unknown_vendor"
+      .event_time = format_timestamp!(now(), "%+")
+      .parsed = {
+        "vendor": .vendor,
+        "host": .host,
+        "appname": .appname,
+      }
+
+  route_events:
+    type: route
+    inputs:
+      - parse_paloalto
+      - parse_fortinet
+      - parse_cisco
+      - parse_unknown
+    route:
+      accepted: '.parse_status == "ok" && exists(.device_code) && .device_code != ""'
+      quarantine: '.parse_status != "ok" || !exists(.device_code) || .device_code == ""'
+
+sinks:
+  kafka_parsed_input:
+    type: kafka
+    inputs:
+      - route_events.accepted
+    bootstrap_servers: "${VECTOR_KAFKA_BROKERS}"
+    topic: "${VECTOR_OUTPUT_TOPIC}"
+    encoding:
+      codec: json
+
+  kafka_quarantine:
+    type: kafka
+    inputs:
+      - route_events.quarantine
+    bootstrap_servers: "${VECTOR_KAFKA_BROKERS}"
+    topic: "${VECTOR_QUARANTINE_TOPIC}"
+    encoding:
+      codec: json

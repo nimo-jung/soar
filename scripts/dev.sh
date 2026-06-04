@@ -5,6 +5,7 @@
 #   기본 동작: dev 컨테이너(profile=dev) 기반 기동
 #   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev
 #   ./scripts/dev.sh infra    → 인프라만 (MariaDB, Redis, ClickHouse, RedPanda)
+#   ./scripts/dev.sh fix-perms → RedPanda 데이터 경로 권한 복구 (sudo 필요)
 #   ./scripts/dev.sh backend  → backend-dev만
 #   ./scripts/dev.sh admin    → frontend-admin-dev만
 #   ./scripts/dev.sh tenant   → frontend-tenant-dev만
@@ -221,6 +222,22 @@ check_redpanda_owner() {
   check_owner_match "RedPanda" "$dir" "$expected_owner" 1
 }
 
+fix_redpanda_permissions() {
+  local dir="$DATA_ROOT/redpanda"
+  local owner
+
+  mkdir -p "$dir"
+  owner="$(get_service_uid_gid RedPanda redpandadata/redpanda:v24.2.18 || true)"
+  if [[ -z "$owner" ]]; then
+    owner="101:101"
+  fi
+
+  info "RedPanda 권한 복구 실행: sudo chown -R $owner $dir && sudo chmod -R 750 $dir"
+  sudo chown -R "$owner" "$dir"
+  sudo chmod -R 750 "$dir"
+  success "RedPanda 권한 복구 완료: $dir ($(stat -c '%u:%g %a' "$dir"))"
+}
+
 preflight_data_mounts() {
   if [[ "${TMS_SKIP_PREFLIGHT:-0}" == "1" ]]; then
     warn "TMS_SKIP_PREFLIGHT=1 이므로 데이터 마운트 사전 점검을 건너뜁니다."
@@ -407,6 +424,9 @@ fi
 info "DEV runtime: $DEV_RUNTIME"
 
 case "$SERVICE" in
+  fix-perms)
+    fix_redpanda_permissions
+    ;;
   infra)
     start_infra
     print_dev_stop_hint infra
@@ -475,7 +495,7 @@ case "$SERVICE" in
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"
-    echo "사용법: $0 [all|infra|backend|admin|tenant|engine]"
+    echo "사용법: $0 [all|infra|fix-perms|backend|admin|tenant|engine]"
     exit 1
     ;;
 esac

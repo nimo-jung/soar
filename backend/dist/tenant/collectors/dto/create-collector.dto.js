@@ -15,6 +15,8 @@ const swagger_1 = require("@nestjs/swagger");
 class CreateCollectorDto {
     name;
     description;
+    deviceCode;
+    sourceIp;
 }
 exports.CreateCollectorDto = CreateCollectorDto;
 __decorate([
@@ -29,4 +31,18 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateCollectorDto.prototype, "description", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '장비 고유 코드(전역 유일, 미입력 시 name 사용)', example: 'PA-DC1-EDGE-001' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Matches)(/^[A-Za-z0-9._:-]{3,128}$/),
+    __metadata("design:type", String)
+], CreateCollectorDto.prototype, "deviceCode", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '장비 고정 Source IP (선택)', example: '10.10.10.15' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIP)(4),
+    __metadata("design:type", String)
+], CreateCollectorDto.prototype, "sourceIp", void 0);
 //# sourceMappingURL=create-collector.dto.js.map

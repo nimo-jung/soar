@@ -59,6 +59,7 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 | Master Admin UI | http://localhost:5174 |
 | Tenant UI | http://localhost:5173 |
 | Go Engine (수집) | http://localhost:8081/ingest |
+| Vector Syslog (UDP/TCP) | localhost:1514 |
 | RedPanda Console | http://localhost:8080 |
 | Mailpit (SMTP 테스트 UI) | http://localhost:8025 |
 
@@ -143,7 +144,25 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 
 # 운영 모드 검증 (게이트웨이 기준)
 ./scripts/smoke.sh prod
+
+# Vector -> RedPanda 파이프라인 스모크
+./scripts/smoke-vector.sh dev
 ```
+
+### 8. Vector 기반 라우팅 모드
+
+`go-engine`는 기본적으로 HTTP 수집 엔드포인트를 유지하면서, 환경변수로 Vector 입력 토픽 라우팅을 동시에 수행할 수 있습니다.
+
+주요 환경변수:
+
+```bash
+ENGINE_PIPELINE_MODE=vector
+ROUTER_INPUT_TOPIC=logs.parsed.input
+ROUTER_QUARANTINE_TOPIC=logs.quarantine
+ROUTER_CONSUMER_GROUP=tms-router-dev
+```
+
+Vector 설정 파일은 `infra/vector/vector.yaml`에 있으며, 벤더 분류/파싱 실패 이벤트는 `logs.quarantine` 토픽으로 분리됩니다.
 
 ---
 

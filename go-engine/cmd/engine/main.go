@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/tms/go-engine/internal/ingestion"
 	"github.com/tms/go-engine/internal/publisher"
+	"github.com/tms/go-engine/internal/router"
 )
 
 func main() {
@@ -34,6 +36,21 @@ func main() {
 	brokers := []string{fmt.Sprintf("%s:%s", getEnv("REDPANDA_HOST", "localhost"), getEnv("REDPANDA_PORT", "9092"))}
 	pub := publisher.New(brokers)
 	defer pub.Close()
+
+	pipelineMode := strings.ToLower(getEnv("ENGINE_PIPELINE_MODE", "http"))
+	if pipelineMode == "vector" {
+		r := router.New(
+			brokers,
+			getEnv("ROUTER_CONSUMER_GROUP", "tms-router-v1"),
+			getEnv("ROUTER_INPUT_TOPIC", "logs.parsed.input"),
+			getEnv("ROUTER_QUARANTINE_TOPIC", "logs.quarantine"),
+			rdb,
+			pub,
+		)
+		defer r.Close()
+		go r.Run(ctx)
+		log.Printf("[main] router pipeline enabled (input=%s)", getEnv("ROUTER_INPUT_TOPIC", "logs.parsed.input"))
+	}
 
 	// HTTP server
 	mux := http.NewServeMux()
