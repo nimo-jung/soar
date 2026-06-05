@@ -9,6 +9,10 @@ import 'primeflex/primeflex.css';
 import './layout/layout.css';
 import App from './App';
 import { useBrandingStore } from './store/branding.store';
+import { applyStoredThemeClass } from './constants/preferences';
+
+// 앱 초기 렌더 이전에 테마 클래스를 적용해 로그인 화면에서도 사용자 선호를 즉시 반영한다.
+applyStoredThemeClass();
 
 function resolveBasenameFromPathname(pathname: string): string {
   const firstSegment = pathname.split('/').filter(Boolean)[0] ?? '';

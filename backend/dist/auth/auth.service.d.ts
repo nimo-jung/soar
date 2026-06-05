@@ -39,8 +39,10 @@ export declare class AuthService {
     private resolvePolicy;
     private getMasterAuthPolicy;
     private isMultiTenantEnabled;
+    private getTenantVisibleMenuPaths;
     getMultiTenantStatus(): Promise<{
         isMultiTenantEnabled: boolean;
+        tenantVisibleMenuPaths: string[];
     }>;
     private getTenantAuthPolicyByTenantId;
     private getSecurityState;

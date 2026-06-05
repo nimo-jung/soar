@@ -1,0 +1,230 @@
+.app-select-btn.p-selectbutton {
+    --seg-height: 2rem;
+    --seg-font-size: 0.84rem;
+    --seg-x-padding: 0.72rem;
+    --seg-radius: 0.56rem;
+    display: inline-flex;
+    border-radius: var(--seg-radius);
+    overflow: hidden;
+}
+
+.app-select-btn.p-selectbutton .p-button {
+    margin: 0;
+    border-radius: 0;
+    border-width: 1px;
+    border-right-width: 0;
+    min-height: var(--seg-height);
+    padding: 0;
+    font-size: var(--seg-font-size);
+    line-height: 1.2;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* 1) 첫번째: 좌 라운드 / 우 직각 */
+.app-select-btn.p-selectbutton .p-button:first-child {
+    border-top-left-radius: var(--seg-radius);
+    border-bottom-left-radius: var(--seg-radius);
+}
+
+/* 2) 중간: 좌우 직각 */
+.app-select-btn.p-selectbutton .p-button:not(:first-child):not(:last-child) {
+    border-radius: 0;
+}
+
+/* 3) 마지막: 좌 직각 / 우 라운드 */
+.app-select-btn.p-selectbutton .p-button:last-child {
+    border-right-width: 1px;
+    border-top-right-radius: var(--seg-radius);
+    border-bottom-right-radius: var(--seg-radius);
+}
+
+.app-select-btn.p-selectbutton .p-button .p-button-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--seg-height);
+    width: 100%;
+    padding: 0.28rem var(--seg-x-padding);
+    font-weight: 600;
+    font-size: inherit;
+}
+
+.app-select-btn--default.p-selectbutton {
+    --seg-height: 2.2rem;
+    --seg-font-size: 0.92rem;
+    --seg-x-padding: 0.88rem;
+}
+
+.app-select-btn--compact.p-selectbutton {
+    --seg-height: 2rem;
+    --seg-font-size: 0.84rem;
+    --seg-x-padding: 0.72rem;
+}
+
+.app-select-btn--dense.p-selectbutton {
+    --seg-height: 1.8rem;
+    --seg-font-size: 0.78rem;
+    --seg-x-padding: 0.58rem;
+}
+
+.app-select-btn .tenant-filter-pill,
+.app-select-btn .tier-code-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: inherit;
+}
+
+/* 4) 내용별 색상: 상태 태그 톤 기반 */
+.app-select-btn .p-button:has(.tenant-filter-pill-all),
+.app-select-btn .p-button:has(.tier-code-tag-all) {
+    background: color-mix(in srgb, var(--ca-bg-surface) 92%, var(--ca-border-chrome) 8%);
+    color: var(--text-color-secondary);
+    border-color: color-mix(in srgb, var(--surface-border) 80%, transparent 20%);
+}
+
+.app-select-btn .p-button:has(.tenant-filter-pill-active),
+.app-select-btn .p-button:has(.tier-code-tag-active),
+.app-select-btn .p-button:has(.tier-code-tag-lite) {
+    background: color-mix(in srgb, var(--green-400) 14%, var(--ca-bg-surface) 86%);
+    color: color-mix(in srgb, var(--green-700) 78%, var(--text-color) 22%);
+    border-color: color-mix(in srgb, var(--green-400) 42%, var(--surface-border) 58%);
+}
+
+.app-select-btn .p-button:has(.tenant-filter-pill-suspended),
+.app-select-btn .p-button:has(.tier-code-tag-suspended),
+.app-select-btn .p-button:has(.tier-code-tag-premium) {
+    background: color-mix(in srgb, var(--blue-300) 16%, var(--ca-bg-surface) 84%);
+    color: color-mix(in srgb, var(--blue-700) 74%, var(--text-color) 26%);
+    border-color: color-mix(in srgb, var(--blue-400) 46%, var(--surface-border) 54%);
+}
+
+.app-select-btn .p-button:has(.tenant-filter-pill-deleted),
+.app-select-btn .p-button:has(.tier-code-tag-deleted),
+.app-select-btn .p-button:has(.tier-code-tag-enterprise) {
+    background: color-mix(in srgb, var(--yellow-300) 24%, var(--ca-bg-surface) 76%);
+    color: color-mix(in srgb, #92400e 86%, var(--text-color) 14%);
+    border-color: color-mix(in srgb, var(--yellow-500) 52%, var(--surface-border) 48%);
+}
+
+.app-select-btn .p-button.p-highlight:has(.tenant-filter-pill-all),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-all) {
+    background: color-mix(in srgb, var(--ca-border-chrome) 26%, var(--ca-bg-surface) 74%);
+    color: var(--text-color);
+}
+
+.app-select-btn .p-button.p-highlight:has(.tenant-filter-pill-active),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-active),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-lite) {
+    background: color-mix(in srgb, var(--green-400) 26%, var(--ca-bg-surface) 74%);
+    color: color-mix(in srgb, var(--green-800) 82%, var(--text-color) 18%);
+}
+
+.app-select-btn .p-button.p-highlight:has(.tenant-filter-pill-suspended),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-suspended),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-premium) {
+    background: color-mix(in srgb, var(--blue-400) 30%, var(--ca-bg-surface) 70%);
+    color: color-mix(in srgb, var(--blue-800) 82%, var(--text-color) 18%);
+}
+
+.app-select-btn .p-button.p-highlight:has(.tenant-filter-pill-deleted),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-deleted),
+.app-select-btn .p-button.p-highlight:has(.tier-code-tag-enterprise) {
+    background: color-mix(in srgb, var(--yellow-500) 30%, var(--ca-bg-surface) 70%);
+    color: color-mix(in srgb, #78350f 86%, var(--text-color) 14%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton {
+    --seg-height: 2.2rem;
+    --seg-font-size: 0.88rem;
+    --seg-x-padding: 0.92rem;
+    min-width: 23rem;
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button {
+    min-width: 5.2rem;
+    background: color-mix(in srgb, var(--ca-bg-surface) 92%, var(--ca-border-chrome) 8%);
+    color: var(--text-color-secondary);
+    border-color: color-mix(in srgb, var(--surface-border) 80%, transparent 20%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button .p-button-label {
+    padding: 0.34rem 1rem;
+    letter-spacing: 0.01em;
+    font-weight: 600;
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button:not(.p-highlight) .p-button-label {
+    opacity: 1;
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight {
+    position: relative;
+    z-index: 1;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent 72%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight .p-button-label {
+    font-weight: 700;
+    opacity: 1;
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill-all),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-all) {
+    background: color-mix(in srgb, var(--ca-border-chrome) 20%, var(--ca-bg-surface) 80%);
+    color: var(--text-color);
+    border-color: color-mix(in srgb, var(--ca-border-chrome) 36%, var(--surface-border) 64%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill-active),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-active),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-lite) {
+    background: color-mix(in srgb, var(--green-400) 20%, var(--ca-bg-surface) 80%);
+    color: color-mix(in srgb, var(--green-800) 82%, var(--text-color) 18%);
+    border-color: color-mix(in srgb, var(--green-400) 46%, var(--surface-border) 54%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill-suspended),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-suspended),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-premium) {
+    background: color-mix(in srgb, var(--blue-400) 22%, var(--ca-bg-surface) 78%);
+    color: color-mix(in srgb, var(--blue-800) 82%, var(--text-color) 18%);
+    border-color: color-mix(in srgb, var(--blue-400) 48%, var(--surface-border) 52%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill-deleted),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-deleted),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag-enterprise) {
+    background: color-mix(in srgb, var(--yellow-500) 22%, var(--ca-bg-surface) 78%);
+    color: color-mix(in srgb, #78350f 86%, var(--text-color) 14%);
+    border-color: color-mix(in srgb, var(--yellow-500) 50%, var(--surface-border) 50%);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill),
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag) {
+    color: var(--text-color);
+}
+
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill) .p-button-label,
+.app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag) .p-button-label {
+    font-weight: 700;
+    color: inherit;
+}
+
+.tenant-dark-mode .app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tenant-filter-pill),
+.tenant-dark-mode .app-select-btn.tenants-status-select.p-selectbutton .p-button.p-highlight:has(.tier-code-tag) {
+    color: var(--surface-0, #ffffff);
+}
+
+@media (max-width: 640px) {
+    .app-select-btn.tenants-status-select.p-selectbutton {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .app-select-btn.tenants-status-select.p-selectbutton .p-button {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

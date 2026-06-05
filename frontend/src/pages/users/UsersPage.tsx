@@ -196,6 +196,7 @@ const UsersPage: React.FC = () => {
       <Dialog
         header={isCreate ? t('users.dialog.createTitle') : t('users.dialog.editTitle')}
         visible={dialogVisible}
+        className="tenant-dialog"
         style={{ width: '460px' }}
         onHide={() => setDialogVisible(false)}
       >

@@ -122,9 +122,18 @@ let AuthService = class AuthService {
         const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
         return settings?.isMultiTenantEnabled ?? false;
     }
+    getTenantVisibleMenuPaths(settings) {
+        const defaults = ['/dashboard', '/alerts', '/playbooks', '/collectors', '/settings', '/users', '/audit-logs', '/auth-settings'];
+        if (!settings || !Array.isArray(settings.tenantVisibleMenuPaths)) {
+            return defaults;
+        }
+        return settings.tenantVisibleMenuPaths;
+    }
     async getMultiTenantStatus() {
+        const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
         return {
-            isMultiTenantEnabled: await this.isMultiTenantEnabled(),
+            isMultiTenantEnabled: settings?.isMultiTenantEnabled ?? false,
+            tenantVisibleMenuPaths: this.getTenantVisibleMenuPaths(settings),
         };
     }
     async getTenantAuthPolicyByTenantId(tenantId) {

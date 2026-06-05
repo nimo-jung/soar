@@ -10,6 +10,8 @@ import { useAuthStore } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import LanguageSwitcher from '../LanguageSwitcher';
 import SessionTimeoutManager from '../SessionTimeoutManager';
+import { STORAGE_KEYS, UI_CLASSES } from '../../constants/preferences';
+import { DEFAULT_TENANT_VISIBLE_MENU_PATHS } from '../../constants/tenant-menu';
 import api from '../../api';
 
 interface NavItem {
@@ -22,6 +24,11 @@ interface NavItem {
 interface NavGroup {
   categoryKey: string;
   items: NavItem[];
+}
+
+interface MultiTenantStatusResponse {
+  isMultiTenantEnabled: boolean;
+  tenantVisibleMenuPaths?: string[];
 }
 
 /* ── Verona grouped nav model (2-depth) ───────────────────────── */
@@ -154,10 +161,10 @@ const masterNavModel = [
   },
 ] as NavGroup[];
 
-const EXPANDED_OPEN_ROOTS_STORAGE_KEY = 'tenant.sidebar.expandedOpenRoots';
-const SIDEBAR_MODE_STORAGE_KEY = 'tenant.sidebar.mode';
-const THEME_STORAGE_KEY = 'tenant.theme.mode';
-const DARK_MODE_CLASS = 'tenant-dark-mode';
+const EXPANDED_OPEN_ROOTS_STORAGE_KEY = STORAGE_KEYS.sidebarExpandedRoots;
+const SIDEBAR_MODE_STORAGE_KEY = STORAGE_KEYS.sidebarMode;
+const THEME_STORAGE_KEY = STORAGE_KEYS.themeMode;
+const DARK_MODE_CLASS = UI_CLASSES.darkMode;
 
 function isPathActive(currentPath: string, path?: string): boolean {
   if (!path) return false;
@@ -235,6 +242,7 @@ const TenantLayout: React.FC = () => {
   const [activeRootMenuKey, setActiveRootMenuKey] = useState<string>('');
   const [expandedOpenRootMenuKeys, setExpandedOpenRootMenuKeys] = useState<string[]>([]);
   const [isExpandedRootsHydrated, setIsExpandedRootsHydrated] = useState(false);
+  const [tenantVisibleMenuPaths, setTenantVisibleMenuPaths] = useState<string[]>(DEFAULT_TENANT_VISIBLE_MENU_PATHS);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const sidebarTransitionTimerRef = useRef<number | null>(null);
@@ -242,10 +250,66 @@ const TenantLayout: React.FC = () => {
   const isMasterSession = sessionType === 'master' || user?.isMaster === true;
 
   const filteredNavModel = useMemo(() => {
-    const serviceGroups = navModel.filter((group) => group.categoryKey !== 'nav.categories.system');
+    if (isMasterSession) {
+      return masterNavModel;
+    }
 
-    return isMasterSession ? masterNavModel : serviceGroups;
-  }, [isMasterSession]);
+    const visibleSet = new Set(tenantVisibleMenuPaths);
+    const tenantPathFallbackMap: Record<string, string> = {
+      '/system/audit-logs': '/audit-logs',
+      '/system/auth-settings': '/auth-settings',
+    };
+
+    return masterNavModel
+      .map((group) => {
+        const nextItems = group.items
+          .map((item) => {
+            const nextChildren = (item.children ?? []).filter((child) => {
+              if (!child.path) {
+                return false;
+              }
+
+              if (child.path.startsWith('/system/')) {
+                const tenantPath = tenantPathFallbackMap[child.path];
+                return Boolean(tenantPath && visibleSet.has(tenantPath));
+              }
+
+              return visibleSet.has(child.path);
+            })
+              .map((child) => {
+                if (!child.path) {
+                  return child;
+                }
+
+                if (child.path.startsWith('/system/')) {
+                  const tenantPath = tenantPathFallbackMap[child.path];
+                  if (!tenantPath) {
+                    return child;
+                  }
+
+                  return {
+                    ...child,
+                    path: tenantPath,
+                  };
+                }
+
+                return child;
+              });
+
+            return {
+              ...item,
+              children: nextChildren,
+            };
+          })
+          .filter((item) => (item.children?.length ?? 0) > 0);
+
+        return {
+          ...group,
+          items: nextItems,
+        };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [isMasterSession, tenantVisibleMenuPaths]);
 
   /* Inject branding CSS variables */
   useEffect(() => {
@@ -261,6 +325,32 @@ const TenantLayout: React.FC = () => {
       root.style.removeProperty('--brand-gradient-to');
     }
   }, [branding.primaryColor]);
+
+  useEffect(() => {
+    if (isMasterSession) {
+      return;
+    }
+
+    let active = true;
+
+    const loadTenantVisibleMenus = async () => {
+      try {
+        const response = await api.get<MultiTenantStatusResponse>('/auth/multi-tenant/status');
+        const next = response.data.tenantVisibleMenuPaths;
+        if (active && Array.isArray(next)) {
+          setTenantVisibleMenuPaths(next);
+        }
+      } catch {
+        // 설정 조회 실패 시 기본 메뉴 정책으로 동작한다.
+      }
+    };
+
+    void loadTenantVisibleMenus();
+
+    return () => {
+      active = false;
+    };
+  }, [isMasterSession]);
 
   const breadcrumbItems = useMemo(
     () => getBreadcrumbItems(location.pathname, t, filteredNavModel).map((item) => ({
@@ -450,10 +540,11 @@ const TenantLayout: React.FC = () => {
         <div className="layout-topbar-right">
           <button
             type="button"
-            className="topbar-icon-btn p-link"
+            className="topbar-icon-btn p-link tooltip-target"
             onClick={() => setIsDarkMode((prev) => !prev)}
             aria-label={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
-            title={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
+            data-pr-tooltip={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
+            data-pr-position="bottom"
           >
             <i className={`pi ${isDarkMode ? 'pi-sun' : 'pi-moon'}`} />
           </button>
@@ -528,7 +619,6 @@ const TenantLayout: React.FC = () => {
                         data-pr-tooltip={t(item.labelKey)}
                         data-pr-disabled={isSidebarExpanded}
                         tabIndex={0}
-                        title={t(item.labelKey)}
                         role="button"
                         aria-expanded={isSubmenuOpen ? 'true' : 'false'}
                         onClick={(event) => {
@@ -545,23 +635,27 @@ const TenantLayout: React.FC = () => {
                         {hasChildren && <i className="pi pi-fw pi-angle-down layout-submenu-toggler" />}
                       </a>
                       <ul className={`layout-root-submenulist ${isSubmenuOpen ? 'layout-submenu-open' : 'layout-submenu-closed'}`}>
-                        {item.children?.map((child) => (
-                          <li key={child.path ?? child.labelKey}>
-                            <NavLink
-                              to={child.path ?? '/'}
-                              className={({ isActive }) => (isActive ? 'p-ripple active-route' : 'p-ripple')}
-                              onClick={() => {
-                                setMobileActive(false);
-                                if (window.innerWidth >= 992) {
-                                  setActiveRootMenuKey('');
-                                }
-                              }}
-                            >
-                              <i className={`layout-menuitem-icon ${child.icon}`} />
-                              <span className="layout-menuitem-text">{t(child.labelKey)}</span>
-                            </NavLink>
-                          </li>
-                        ))}
+                        {item.children?.map((child) => {
+                          const childPath = child.path ?? '/';
+
+                          return (
+                            <li key={child.path ?? child.labelKey}>
+                              <NavLink
+                                to={childPath}
+                                className={({ isActive }) => (isActive ? 'p-ripple active-route' : 'p-ripple')}
+                                onClick={() => {
+                                  setMobileActive(false);
+                                  if (window.innerWidth >= 992) {
+                                    setActiveRootMenuKey('');
+                                  }
+                                }}
+                              >
+                                <i className={`layout-menuitem-icon ${child.icon}`} />
+                                <span className="layout-menuitem-text">{t(child.labelKey)}</span>
+                              </NavLink>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </React.Fragment>
                   );
@@ -574,10 +668,11 @@ const TenantLayout: React.FC = () => {
         <div className="layout-sidebar-toggle-wrap">
           <button
             type="button"
-            className="layout-sidebar-toggle p-link"
+            className="layout-sidebar-toggle p-link tooltip-target"
             onClick={handleSidebarModeToggle}
             aria-label={t('common.menuToggle')}
-            title={t('common.menuToggle')}
+            data-pr-tooltip={t('common.menuToggle')}
+            data-pr-position="right"
           >
             <i className={`pi ${isSidebarExpanded ? 'pi-angle-double-left' : 'pi-angle-double-right'}`} />
           </button>
@@ -611,7 +706,7 @@ const TenantLayout: React.FC = () => {
       <div className="layout-mask" onClick={() => setMobileActive(false)} />
 
       <Tooltip
-        target=".layout-sidebar .tooltip-target"
+        target=".layout-wrapper .tooltip-target"
         position="right"
         showDelay={120}
         hideDelay={80}

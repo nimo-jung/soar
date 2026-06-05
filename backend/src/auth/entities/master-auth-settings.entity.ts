@@ -51,6 +51,14 @@ export class MasterAuthSettings {
   })
   isMultiTenantEnabled: boolean;
 
+  @Column({
+    name: 'tenant_visible_menu_paths',
+    type: 'simple-json',
+    nullable: true,
+    comment: '테넌트 권한 로그인 시 사이드바에 표시할 메뉴 경로 목록',
+  })
+  tenantVisibleMenuPaths: string[] | null;
+
   @CreateDateColumn({ comment: '생성 일시' })
   createdAt: Date;
 

@@ -258,6 +258,12 @@ Tenant 앱은 로그인 응답의 `brandingConfig`를 기반으로 CSS 변수를
 - CSS에서 `.p-password { width: 100% }` 오버라이드를 통해 PrimeReact 기본 `inline-flex`를 재정의한다.
 - 입력창 너비, 레이블 폰트 크기(`0.875rem`), 폰트 굵기(`500`), 색상(`var(--text-color-secondary)`)은 두 앱에서 동일하게 유지한다.
 
+## 8. 툴팁 규칙
+
+- 브라우저 기본 툴팁(`title` 속성)을 디자인/도움말 툴팁으로 사용하지 않는다.
+- 툴팁은 PrimeReact `Tooltip` 또는 공용 Tooltip 래퍼 컴포넌트만 사용한다.
+- 텍스트가 길거나 다중 라인인 툴팁은 `max-width`, `line-height`, `white-space`를 CSS로 명시해 레이아웃이 깨지지 않게 한다.
+
 ---
 
 ## 8. UI 상호작용 공통 규칙 (중요)

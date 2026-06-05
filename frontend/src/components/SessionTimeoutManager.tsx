@@ -9,7 +9,7 @@ import { useBrandingStore } from '../store/branding.store';
 import { parseJwt } from '../utils/jwt';
 import { AuthPolicy } from '../types/auth-policy';
 
-const WARNING_THRESHOLD_MS = 70_000;
+const WARNING_THRESHOLD_MS = 61_000;
 const AUTO_EXTEND_COOLDOWN_MS = 15_000;
 const AUTO_EXTEND_REMAINING_MS = 120_000;
 const SESSION_VALIDATE_INTERVAL_MS = 10_000;
@@ -191,7 +191,7 @@ const SessionTimeoutManager: React.FC = () => {
   }, []);
 
   const remainingText = useMemo(() => {
-    const totalSeconds = Math.max(Math.floor(remainingMs / 1000), 0);
+    const totalSeconds = Math.max(Math.ceil(remainingMs / 1000), 0);
     const minutes = Math.floor(totalSeconds / 60)
       .toString()
       .padStart(2, '0');
@@ -206,6 +206,7 @@ const SessionTimeoutManager: React.FC = () => {
     <Dialog
       header={t('sessionTimeout.dialogTitle')}
       visible={warningVisible}
+      className="tenant-dialog"
       onHide={() => undefined}
       closable={false}
       draggable={false}

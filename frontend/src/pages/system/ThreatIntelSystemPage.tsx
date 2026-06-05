@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from '@/components/AdminButton';
+import { Button } from '@/components/TenantButton';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/AdminButton';
+import { Button } from '@/components/TenantButton';
 import { Card } from 'primereact/card';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
-import { SelectButton } from 'primereact/selectbutton';
+import { SelectButton } from '@/components/AppSelectButton';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 

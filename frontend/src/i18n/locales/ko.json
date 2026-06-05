@@ -30,6 +30,7 @@
     "languageSwitch": "언어 변경",
     "switchToEnglish": "영어로 변경",
     "switchToKorean": "한국어로 변경",
+    "menuAccessDenied": "접근 권한이 없습니다",
     "suspend": "정지",
     "noDataFound": "조회된 데이터가 없습니다.",
     "edit": "수정",
@@ -416,6 +417,10 @@
       "actionRequiredTitle": "즉시 조치 필요",
       "requiredActionDeleteTenants": "system 이외 활성/정지 테넌트 {{count}}개를 먼저 삭제 상태로 전환하세요.",
       "requiredActionRetryDisable": "테넌트 상태 전환 후 멀티테넌트 모드 비활성화를 다시 시도하세요."
+    },
+    "tenantMenuVisibility": {
+      "label": "테넌트 메뉴 노출",
+      "help": "테넌트 권한 로그인 시 사이드바에 표시할 메뉴를 선택합니다. 이 설정은 system에서만 관리됩니다."
     }
   },
   "users": {
@@ -572,6 +577,19 @@
       "updateFailed": "테넌트 상태 변경에 실패했습니다."
     },
     "createBtn": "테넌트 추가",
+    "menuManagement": {
+      "button": "메뉴 관리",
+      "title": "테넌트 메뉴 관리",
+      "description": "테넌트 권한 로그인 시 사이드바에 표시할 메뉴를 선택합니다.",
+      "selectAll": "전체 선택",
+      "clearAll": "전체 해제",
+      "validationTitle": "메뉴 선택 필요",
+      "validationAtLeastOne": "최소 1개 이상의 메뉴를 선택해야 합니다.",
+      "savedTitle": "저장 완료",
+      "savedDetail": "테넌트 메뉴 노출 설정이 저장되었습니다.",
+      "saveFailedTitle": "저장 실패",
+      "saveFailedDetail": "테넌트 메뉴 노출 설정 저장 중 오류가 발생했습니다."
+    },
     "searchPlaceholder": "고객사 코드, 고객사명, 이메일",
     "summary": {
       "total": "전체 테넌트",

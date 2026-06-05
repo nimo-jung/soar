@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
-import { Button } from '@/components/AdminButton';
+import { Button } from '@/components/TenantButton';
 import { Tag } from 'primereact/tag';
 import { ProgressBar } from 'primereact/progressbar';
 import { TabView, TabPanel } from 'primereact/tabview';

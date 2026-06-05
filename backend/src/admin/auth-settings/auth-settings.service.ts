@@ -10,7 +10,19 @@ import { SYSTEM_TENANT_SLUG } from '../tenants/constants/system-tenant.constants
 
 export interface AdminAuthSettingsResponse extends AuthPolicy {
   isMultiTenantEnabled: boolean;
+  tenantVisibleMenuPaths: string[];
 }
+
+const DEFAULT_TENANT_VISIBLE_MENU_PATHS = [
+  '/dashboard',
+  '/alerts',
+  '/playbooks',
+  '/collectors',
+  '/settings',
+  '/users',
+  '/audit-logs',
+  '/auth-settings',
+] as const;
 
 @Injectable()
 export class AdminAuthSettingsService {
@@ -24,6 +36,9 @@ export class AdminAuthSettingsService {
     return {
       ...normalizeAuthPolicy(settings),
       isMultiTenantEnabled: settings.isMultiTenantEnabled,
+      tenantVisibleMenuPaths: Array.isArray(settings.tenantVisibleMenuPaths)
+        ? settings.tenantVisibleMenuPaths
+        : [...DEFAULT_TENANT_VISIBLE_MENU_PATHS],
     };
   }
 
@@ -35,6 +50,7 @@ export class AdminAuthSettingsService {
           id: 1,
           ...DEFAULT_AUTH_POLICY,
           isMultiTenantEnabled: false,
+          tenantVisibleMenuPaths: [...DEFAULT_TENANT_VISIBLE_MENU_PATHS],
         }),
       );
     }
@@ -76,11 +92,15 @@ export class AdminAuthSettingsService {
         id: 1,
         ...policy,
         isMultiTenantEnabled: dto.isMultiTenantEnabled ?? false,
+        tenantVisibleMenuPaths: dto.tenantVisibleMenuPaths ?? [...DEFAULT_TENANT_VISIBLE_MENU_PATHS],
       });
     } else {
       Object.assign(settings, policy);
       if (dto.isMultiTenantEnabled !== undefined) {
         settings.isMultiTenantEnabled = dto.isMultiTenantEnabled;
+      }
+      if (dto.tenantVisibleMenuPaths !== undefined) {
+        settings.tenantVisibleMenuPaths = dto.tenantVisibleMenuPaths;
       }
     }
 

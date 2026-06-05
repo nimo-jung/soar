@@ -30,6 +30,7 @@
     "languageSwitch": "Change language",
     "switchToEnglish": "Switch to English",
     "switchToKorean": "Switch to Korean",
+    "menuAccessDenied": "You do not have access to this menu",
     "suspend": "Suspend",
     "noDataFound": "No data found.",
     "edit": "Edit",
@@ -416,6 +417,10 @@
       "actionRequiredTitle": "Action Required",
       "requiredActionDeleteTenants": "Set the {{count}} active/suspended non-system tenant(s) to deleted first.",
       "requiredActionRetryDisable": "After updating tenant statuses, try disabling multi-tenant mode again."
+    },
+    "tenantMenuVisibility": {
+      "label": "Tenant Menu Visibility",
+      "help": "Select which sidebar menus are shown to tenant-role sessions. This setting is managed only in system."
     }
   },
   "users": {
@@ -572,6 +577,19 @@
       "updateFailed": "Failed to update tenant status."
     },
     "createBtn": "Add Tenant",
+    "menuManagement": {
+      "button": "Menu Management",
+      "title": "Tenant Menu Management",
+      "description": "Select the sidebar menus to show for tenant-role logins.",
+      "selectAll": "Select All",
+      "clearAll": "Clear All",
+      "validationTitle": "Menu Selection Required",
+      "validationAtLeastOne": "Please select at least one menu.",
+      "savedTitle": "Saved",
+      "savedDetail": "Tenant menu visibility settings have been saved.",
+      "saveFailedTitle": "Save Failed",
+      "saveFailedDetail": "An error occurred while saving tenant menu visibility settings."
+    },
     "searchPlaceholder": "company code, company name, email",
     "summary": {
       "total": "Total Tenants",

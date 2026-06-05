@@ -1,5 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
+const TENANT_VISIBLE_MENU_PATH_CANDIDATES = [
+  '/dashboard',
+  '/alerts',
+  '/playbooks',
+  '/collectors',
+  '/settings',
+  '/users',
+  '/audit-logs',
+  '/auth-settings',
+] as const;
 
 export class UpdateAuthPolicyDto {
   @ApiProperty({ example: 3, minimum: 1, maximum: 5 })
@@ -30,4 +41,15 @@ export class UpdateAuthPolicyDto {
   @IsBoolean()
   @IsOptional()
   isMultiTenantEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    description: '테넌트 권한 로그인 시 표시할 메뉴 경로 목록',
+    type: [String],
+    example: ['/dashboard', '/alerts', '/playbooks'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsIn(TENANT_VISIBLE_MENU_PATH_CANDIDATES, { each: true })
+  @IsOptional()
+  tenantVisibleMenuPaths?: string[];
 }

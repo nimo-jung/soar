@@ -79,7 +79,7 @@ const PlaybooksPage: React.FC = () => {
         </CommonDataTable>
       </div>
 
-      <Dialog header={t('playbooks.dialog.title')} visible={showCreate} style={{ width: '560px' }} onHide={() => setShowCreate(false)}>
+      <Dialog header={t('playbooks.dialog.title')} visible={showCreate} className="tenant-dialog" style={{ width: '560px' }} onHide={() => setShowCreate(false)}>
         <div className="flex flex-column gap-3 pt-2">
           <div>
             <label className="tenant-form-label">{t('playbooks.dialog.name')}</label>

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Button } from '@/components/AdminButton';
+import { Button } from '@/components/TenantButton';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
-import { SelectButton } from 'primereact/selectbutton';
+import { SelectButton } from '@/components/AppSelectButton';
 import { Tag } from 'primereact/tag';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { IconField } from 'primereact/iconfield';
@@ -151,27 +151,34 @@ const TenantTiersPage: React.FC = () => {
     [t, tierCodeOptions],
   );
 
+  const getTierCodeColorClass = (code: TierCode): string => {
+    if (code === 'LITE') return 'tier-code-tag-lite';
+    if (code === 'PREMIUM') return 'tier-code-tag-premium';
+    return 'tier-code-tag-enterprise';
+  };
+
   const renderTierCodeOption = (option: { label: string; value: TierCode }) => {
-    return <span className="tenant-filter-pill">{option.label}</span>;
+    return <span className={`tier-code-tag ${getTierCodeColorClass(option.value)}`}>{option.label}</span>;
   };
 
   const renderTierFilterOption = (option: { label: string; value: TierCodeFilter }) => {
-    const colorClass =
-      option.value === 'ALL'
-        ? 'tenant-filter-pill-all'
-        : option.value === 'LITE'
-          ? 'tenant-filter-pill-active'
-          : option.value === 'PREMIUM'
-            ? 'tenant-filter-pill-suspended'
-            : 'tenant-filter-pill-deleted';
+    if (option.value === 'ALL') {
+      return <span className="tenant-filter-pill tenant-filter-pill-all">{option.label}</span>;
+    }
 
-    return <span className={`tenant-filter-pill ${colorClass}`}>{option.label}</span>;
+    return <span className={`tier-code-tag ${getTierCodeColorClass(option.value)}`}>{option.label}</span>;
   };
 
   const getTierCodeTagClass = (code: TierCode): string => {
-    if (code === 'LITE') return 'tier-code-tag tier-code-tag-active';
-    if (code === 'PREMIUM') return 'tier-code-tag tier-code-tag-suspended';
-    return 'tier-code-tag tier-code-tag-deleted';
+    if (code === 'LITE') return 'tenant-status-tag tenant-status-active';
+    if (code === 'PREMIUM') return 'tenant-status-tag tenant-status-inactive';
+    return 'tenant-status-tag tenant-status-suspended';
+  };
+
+  const getTierCodeSeverity = (code: TierCode): 'success' | 'info' | 'warning' => {
+    if (code === 'LITE') return 'success';
+    if (code === 'PREMIUM') return 'info';
+    return 'warning';
   };
 
   const fieldOptions = useMemo(
@@ -480,10 +487,11 @@ const TenantTiersPage: React.FC = () => {
             <Column
               field="code"
               header={t('tenants.tiers.code')}
-              style={{ width: '10rem' }}
+              style={{ width: '11rem' }}
               body={(row: TenantTier) => (
                 <Tag
                   value={getTierCodeLabel(row.code)}
+                  severity={getTierCodeSeverity(row.code)}
                   rounded
                   className={getTierCodeTagClass(row.code)}
                 />
@@ -491,13 +499,13 @@ const TenantTiersPage: React.FC = () => {
             />
           )}
           {isFieldVisible('name') && (
-            <Column field="name" header={t('tenants.tiers.name')} style={{ minWidth: '10rem' }} />
+            <Column field="name" header={t('tenants.tiers.name')} style={{ minWidth: '12rem' }} />
           )}
           {isFieldVisible('dailyLogQuotaGb') && (
             <Column
               field="dailyLogQuotaGb"
               header={t('tenants.tiers.dailyLogQuotaGb')}
-              style={{ width: '12rem' }}
+              style={{ width: '10.5rem' }}
               body={(row: TenantTier) => formatLimit(row.dailyLogQuotaGb, 'GB', t('tenants.tiers.unlimited'))}
             />
           )}
@@ -505,12 +513,12 @@ const TenantTiersPage: React.FC = () => {
             <Column
               field="maxUsers"
               header={t('tenants.tiers.maxUsers')}
-              style={{ width: '9rem' }}
+              style={{ width: '8.5rem' }}
               body={(row: TenantTier) => formatLimit(row.maxUsers, '', t('tenants.tiers.unlimited'))}
             />
           )}
           {isFieldVisible('description') && (
-            <Column field="description" header={t('tenants.tiers.description')} style={{ minWidth: '18rem' }} />
+            <Column field="description" header={t('tenants.tiers.description')} style={{ minWidth: '22rem' }} />
           )}
           {isFieldVisible('isActive') && (
             <Column
@@ -528,8 +536,8 @@ const TenantTiersPage: React.FC = () => {
           )}
           <Column
             header={t('common.actions')}
-            style={{ width: '5.2rem' }}
-            bodyClassName="text-center"
+            style={{ width: '7rem' }}
+            bodyClassName="text-center tier-actions-cell"
             headerClassName="text-center"
             body={(row: TenantTier) => (
               <div className="tier-action-stack">

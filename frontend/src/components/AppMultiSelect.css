@@ -1,0 +1,70 @@
+.app-multiselect.p-multiselect {
+    border-radius: 0.5rem;
+}
+
+.app-multiselect.p-multiselect .p-multiselect-label {
+    font-weight: 500;
+}
+
+.app-multiselect.p-multiselect .p-multiselect-label,
+.app-multiselect.p-multiselect .p-multiselect-trigger {
+    min-height: 2rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+.app-multiselect.p-multiselect .p-multiselect-label {
+    padding-left: 0.68rem;
+    padding-right: 0.68rem;
+    font-size: 0.84rem;
+    line-height: 1.2;
+}
+
+.app-multiselect.p-multiselect .p-multiselect-trigger {
+    width: 2rem;
+}
+
+.app-multiselect--default.p-multiselect .p-multiselect-label,
+.app-multiselect--default.p-multiselect .p-multiselect-trigger {
+    min-height: 2.2rem;
+}
+
+.app-multiselect--default.p-multiselect .p-multiselect-label {
+    padding-left: 0.88rem;
+    padding-right: 0.88rem;
+    font-size: 0.92rem;
+}
+
+.app-multiselect--default.p-multiselect .p-multiselect-trigger {
+    width: 2.2rem;
+}
+
+.app-multiselect--compact.p-multiselect .p-multiselect-label,
+.app-multiselect--compact.p-multiselect .p-multiselect-trigger {
+    min-height: 2rem;
+}
+
+.app-multiselect--compact.p-multiselect .p-multiselect-label {
+    padding-left: 0.68rem;
+    padding-right: 0.68rem;
+    font-size: 0.84rem;
+}
+
+.app-multiselect--compact.p-multiselect .p-multiselect-trigger {
+    width: 2rem;
+}
+
+.app-multiselect--dense.p-multiselect .p-multiselect-label,
+.app-multiselect--dense.p-multiselect .p-multiselect-trigger {
+    min-height: 1.8rem;
+}
+
+.app-multiselect--dense.p-multiselect .p-multiselect-label {
+    padding-left: 0.58rem;
+    padding-right: 0.58rem;
+    font-size: 0.78rem;
+}
+
+.app-multiselect--dense.p-multiselect .p-multiselect-trigger {
+    width: 1.8rem;
+}

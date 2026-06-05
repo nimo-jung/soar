@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/AdminButton';
+import { Button } from '@/components/TenantButton';
 import { Card } from 'primereact/card';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';

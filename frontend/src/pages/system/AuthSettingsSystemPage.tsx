@@ -14,6 +14,7 @@ const defaultForm: AdminAuthSettings = {
   maxConcurrentSessions: 1,
   autoLogoutTimeoutMinutes: 5,
   isMultiTenantEnabled: true,
+  tenantVisibleMenuPaths: [],
 };
 
 const AuthSettingsSystemPage: React.FC = () => {
@@ -89,7 +90,7 @@ const AuthSettingsSystemPage: React.FC = () => {
         {success && <Message severity="success" text={success} className="w-full mb-3" />}
 
         <div className="grid formgrid">
-          <div className="col-12 md:col-6">
+          <div className="col-12 mb-3">
             <label className="block mb-2">{t('authSettings.multiTenantMode.label')}</label>
             <InputSwitch
               checked={form.isMultiTenantEnabled}

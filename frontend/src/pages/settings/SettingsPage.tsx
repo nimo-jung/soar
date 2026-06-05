@@ -511,6 +511,7 @@ const SettingsPage: React.FC = () => {
       <Dialog
         header={isCreate ? t('settings.parsingRules.dialog.createTitle') : t('settings.parsingRules.dialog.editTitle')}
         visible={dialogVisible}
+        className="tenant-dialog"
         style={{ width: '620px' }}
         onHide={() => setDialogVisible(false)}
       >
@@ -570,6 +571,7 @@ const SettingsPage: React.FC = () => {
       <Dialog
         header={editingSourceId ? t('settings.vectorSources.dialog.editTitle') : t('settings.vectorSources.dialog.createTitle')}
         visible={sourceDialogVisible}
+        className="tenant-dialog"
         style={{ width: '680px' }}
         onHide={() => setSourceDialogVisible(false)}
       >

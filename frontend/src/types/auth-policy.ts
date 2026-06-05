@@ -7,4 +7,5 @@ export interface AuthPolicy {
 
 export interface AdminAuthSettings extends AuthPolicy {
   isMultiTenantEnabled: boolean;
+  tenantVisibleMenuPaths: string[];
 }

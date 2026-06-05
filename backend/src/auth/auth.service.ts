@@ -135,9 +135,22 @@ export class AuthService {
     return settings?.isMultiTenantEnabled ?? false;
   }
 
-  async getMultiTenantStatus(): Promise<{ isMultiTenantEnabled: boolean }> {
+  private getTenantVisibleMenuPaths(settings: MasterAuthSettings | null): string[] {
+    const defaults = ['/dashboard', '/alerts', '/playbooks', '/collectors', '/settings', '/users', '/audit-logs', '/auth-settings'];
+
+    if (!settings || !Array.isArray(settings.tenantVisibleMenuPaths)) {
+      return defaults;
+    }
+
+    return settings.tenantVisibleMenuPaths;
+  }
+
+  async getMultiTenantStatus(): Promise<{ isMultiTenantEnabled: boolean; tenantVisibleMenuPaths: string[] }> {
+    const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
+
     return {
-      isMultiTenantEnabled: await this.isMultiTenantEnabled(),
+      isMultiTenantEnabled: settings?.isMultiTenantEnabled ?? false,
+      tenantVisibleMenuPaths: this.getTenantVisibleMenuPaths(settings),
     };
   }
 

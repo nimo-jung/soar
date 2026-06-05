@@ -7,7 +7,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Message } from 'primereact/message';
-import { MultiSelect } from 'primereact/multiselect';
+import { MultiSelect } from '@/components/AppMultiSelect';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import { useAuthStore } from '../../store/auth.store';
@@ -228,6 +228,7 @@ const AlertsPage: React.FC = () => {
               options={channelOptions.map((channel) => ({ label: channel, value: channel }))}
               onChange={(event) => setPolicyChannels(event.value as string[])}
               optionLabel="label"
+              controlSize="compact"
               placeholder={t('alerts.policy.channelsPlaceholder')}
               className="w-full"
               disabled={!canManagePolicy}
@@ -278,6 +279,7 @@ const AlertsPage: React.FC = () => {
       <Dialog
         header={t('alerts.dialog.title')}
         visible={createVisible}
+        className="tenant-dialog"
         style={{ width: '520px' }}
         onHide={() => setCreateVisible(false)}
       >

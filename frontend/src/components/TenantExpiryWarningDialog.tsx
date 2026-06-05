@@ -40,6 +40,7 @@ const TenantExpiryWarningDialog: React.FC = () => {
   return (
     <Dialog
       visible={visible}
+      className="tenant-dialog"
       header={
         <span className="flex align-items-center gap-2">
           <i className="pi pi-exclamation-triangle text-yellow-400" />

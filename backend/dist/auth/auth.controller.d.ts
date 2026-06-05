@@ -27,6 +27,7 @@ export declare class AuthController {
     }>;
     getMultiTenantStatus(): Promise<{
         isMultiTenantEnabled: boolean;
+        tenantVisibleMenuPaths: string[];
     }>;
     masterLogin(dto: LoginDto, req: Request): Promise<{
         accessToken: string;

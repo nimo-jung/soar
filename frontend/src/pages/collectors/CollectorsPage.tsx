@@ -98,7 +98,7 @@ const CollectorsPage: React.FC = () => {
         </CommonDataTable>
       </div>
 
-      <Dialog header={t('collectors.dialog.title')} visible={showCreate} style={{ width: '440px' }} onHide={() => setShowCreate(false)}>
+      <Dialog header={t('collectors.dialog.title')} visible={showCreate} className="tenant-dialog" style={{ width: '440px' }} onHide={() => setShowCreate(false)}>
         <div className="flex flex-column gap-3 pt-2">
           <div>
             <label className="tenant-form-label">{t('collectors.dialog.name')}</label>
