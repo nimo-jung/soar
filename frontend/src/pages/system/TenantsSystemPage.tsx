@@ -300,7 +300,7 @@ const BOOTSTRAP_TOKEN_MIN_EXPIRES_MINUTES = 10;
 const BOOTSTRAP_TOKEN_MAX_EXPIRES_MINUTES = 2880;
 const PASSWORD_RESET_TOKEN_MIN_EXPIRES_MINUTES = 5;
 const PASSWORD_RESET_TOKEN_MAX_EXPIRES_MINUTES = 1440;
-type TreeSelectionState = Record<string, boolean | { checked?: boolean; partialChecked?: boolean }>;
+type TreeSelectionState = Record<string, { checked?: boolean; partialChecked?: boolean }>;
 
 const TenantsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -607,11 +607,6 @@ const TenantsPage: React.FC = () => {
           if (!TENANT_MENU_OPTIONS.some((item) => item.path === key)) {
             return false;
           }
-
-          if (typeof node === 'boolean') {
-            return node;
-          }
-
           return node?.checked === true;
         })
         .map(([key]) => key),
@@ -1857,7 +1852,14 @@ const TenantsPage: React.FC = () => {
                 setMenuManageTreeExpandedKeys(event.value as Record<string, boolean>);
               }}
               onSelectionChange={(event) => {
-                applyMenuTreeSelection((event.value ?? {}) as TreeSelectionState);
+                const nextSelection = event.value;
+
+                if (!nextSelection || typeof nextSelection !== 'object') {
+                  applyMenuTreeSelection({});
+                  return;
+                }
+
+                applyMenuTreeSelection(nextSelection as TreeSelectionState);
               }}
               className="tenant-menu-tree"
             />

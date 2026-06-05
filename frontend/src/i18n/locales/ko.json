@@ -133,7 +133,7 @@
   "auth": {
     "logoAlt": "회사 로고",
     "welcome": "Sniper TMS 콘솔에 오신 것을 환영합니다",
-    "subtitle": "테넌트 보안 운영 포털에 접속하려면 로그인하세요.",
+    "subtitle": "사용자 로그인 후 다양하고 편리한 서비스를 이용하세요.",
     "masterModeLabel": "마스터 콘솔",
     "tenantModeLabel": "서비스 콘솔",
     "liveGuard": "Sniper TMS 실시간 모니터링 활성",
@@ -155,6 +155,13 @@
       "confidenceValue": "96%",
       "responseLabel": "자동 대응 준비도",
       "responseValue": "82%"
+    },
+    "threatWidget": {
+      "title": "위협 지표",
+      "live": "실시간",
+      "critical": "치명",
+      "high": "높음",
+      "blocked": "차단"
     },
     "features": {
       "realtime": "AI 기반 실시간 네트워크 행위 분석과 이상 징후 추적",
@@ -197,7 +204,7 @@
       "errorPasswordMismatch": "새 비밀번호와 확인 비밀번호가 일치하지 않습니다.",
       "errorFailed": "비밀번호 재설정에 실패했습니다. 토큰/입력값을 확인하세요."
     },
-    "title": "Sniper TMS Master",
+    "title": "Sniper TMS Console",
     "badge": "Master Control",
     "emailPlaceholder": "admin@tms.io",
     "licenseExpirySoon": "라이선스 만료 임박: {{days}}일 후 만료됩니다. (만료일: {{date}}) 제품 정보 페이지에서 라이선스를 업데이트하세요."

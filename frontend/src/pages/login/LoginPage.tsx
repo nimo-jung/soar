@@ -6,12 +6,14 @@ import { Password } from 'primereact/password';
 import { Message } from 'primereact/message';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Button } from '@/components/TenantButton';
+import WorldMapVisual from '@/components/WorldMapVisual';
 import api from '../../api';
 import { useAuthStore, type TenantWarning } from '../../store/auth.store';
 import { useBrandingStore } from '../../store/branding.store';
 import { parseJwt } from '../../utils/jwt';
 import type { AuthPolicy } from '../../types/auth-policy';
 import { formatDateOnly } from '../../utils/date';
+import { STORAGE_KEYS, UI_CLASSES, readStoredThemeMode } from '../../constants/preferences';
 
 interface MasterLoginResponse {
   accessToken: string;
@@ -49,6 +51,11 @@ const LoginPage: React.FC = () => {
   const [bootstrapRequired, setBootstrapRequired] = useState(false);
   const [bootstrapPrecheckRequired, setBootstrapPrecheckRequired] = useState(false);
   const [masterBootstrapRequired, setMasterBootstrapRequired] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => readStoredThemeMode() === 'dark');
+
+  const loginTitle = t('auth.title');
+  const titlePrefix = loginTitle.slice(0, -1);
+  const titleLastChar = loginTitle.slice(-1);
 
   const normalizedTenantSlug = tenantSlug.trim().toLowerCase();
   const isMasterEntry = !isMultiTenantEnabled || normalizedTenantSlug === 'system';
@@ -125,6 +132,16 @@ const LoginPage: React.FC = () => {
       cancelled = true;
     };
   }, [isMasterEntry]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    root.classList.toggle(UI_CLASSES.darkMode, isDarkMode);
+    window.localStorage.setItem(STORAGE_KEYS.themeMode, isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   const checkTenantExpiry = async (rawSlug: string) => {
     const trimmed = rawSlug.trim();
@@ -352,19 +369,49 @@ const LoginPage: React.FC = () => {
   return (
     <div className="layout-login-verona">
       <ConfirmDialog />
+      <button
+        type="button"
+        className="login-theme-toggle"
+        onClick={() => setIsDarkMode((prev) => !prev)}
+        aria-label={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
+        title={isDarkMode ? t('common.switchToLightMode') : t('common.switchToDarkMode')}
+      >
+        <i className={`pi ${isDarkMode ? 'pi-sun' : 'pi-moon'}`} />
+      </button>
       <div className="layout-login-left">
+        <div className="network-visual" aria-hidden="true">
+          <span className="network-grid" />
+          <span className="network-beam beam-a" />
+          <span className="network-beam beam-b" />
+        </div>
         <div className="login-left-content">
           <div className="login-left-logo">
             <i className="pi pi-shield logo-icon" />
-            <span className="logo-name">Sniper TMS</span>
+            <span className="logo-name layout-login-title" data-text={loginTitle}>
+              <span>{titlePrefix}</span>
+              <span className="layout-login-title-last">{titleLastChar}</span>
+            </span>
           </div>
           <h2>{t('auth.welcome')}</h2>
           <p>{t('auth.subtitle')}</p>
         </div>
+        <div className="login-world-map" aria-hidden="true">
+          <WorldMapVisual />
+        </div>
       </div>
 
       <div className="layout-login-right">
-        <div className="surface-card border-round-xl shadow-2 p-4 md:p-5 w-full" style={{ maxWidth: 460 }}>
+        <div className="right-cyber-hud" aria-hidden="true">
+          <span className="hud-grid" />
+          <span className="hud-neural-line line-1" />
+          <span className="hud-neural-line line-2" />
+          <span className="hud-link link-a" />
+          <span className="hud-link link-b" />
+          <span className="hud-icon-badge badge-hacker"><i className="pi pi-microchip-ai" /></span>
+          <span className="hud-icon-badge badge-shield"><i className="pi pi-shield" /></span>
+          <span className="hud-icon-badge badge-bug"><i className="pi pi-bolt" /></span>
+        </div>
+        <div className="surface-card login-right-content border-round-xl shadow-2 p-4 md:p-5 w-full" style={{ maxWidth: 460 }}>
           {error && <Message severity="error" text={error} className="w-full mb-3" />}
           {success && <Message severity="success" text={success} className="w-full mb-3" />}
           {tenantWarning && (
@@ -384,7 +431,7 @@ const LoginPage: React.FC = () => {
             <Message severity="warn" text={t('auth.bootstrap.notice')} className="w-full mb-3" />
           )}
 
-          <div className="flex flex-column gap-3">
+          <div className="login-form flex flex-column gap-3">
             {isMultiTenantEnabled && (
               <div className="flex flex-column gap-2">
                 <label htmlFor="tenantSlug">{t('auth.tenantSlug')}</label>
@@ -455,6 +502,7 @@ const LoginPage: React.FC = () => {
 
             <div className="flex flex-column gap-2">
               <Button
+                className="tenant-primary-action"
                 label={(isMasterEntry && masterBootstrapRequired) ? t('auth.bootstrap.submit') : t('common.login')}
                 icon={(isMasterEntry && masterBootstrapRequired) ? 'pi pi-check' : 'pi pi-sign-in'}
                 disabled={statusLoading}

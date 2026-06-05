@@ -14,6 +14,8 @@ interface BrandingState {
   reset: () => void;
 }
 
+const BRANDING_STORAGE_KEY = 'tenant-branding';
+
 const DEFAULT_BRANDING: BrandingConfig = {
   // Keep tenant fallback aligned with the Verona-based palette used in frontend.
   primaryColor: '#34d3c3',
@@ -21,6 +23,33 @@ const DEFAULT_BRANDING: BrandingConfig = {
   faviconUrl: undefined,
   companyName: 'Sniper TMS',
 };
+
+function readStoredBranding(): BrandingConfig {
+  if (typeof window === 'undefined') {
+    return DEFAULT_BRANDING;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(BRANDING_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_BRANDING;
+    }
+
+    const parsed = JSON.parse(raw) as { state?: { branding?: BrandingConfig } };
+    const stored = parsed?.state?.branding;
+    if (!stored) {
+      return DEFAULT_BRANDING;
+    }
+
+    return { ...DEFAULT_BRANDING, ...normalizeBrandingConfig(stored) };
+  } catch {
+    return DEFAULT_BRANDING;
+  }
+}
+
+export function applyStoredBrandingVariables(): void {
+  applyCssVariables(readStoredBranding());
+}
 
 /**
  * brandingStore: 로그인 응답의 brandingConfig를 저장하고
@@ -41,7 +70,7 @@ export const useBrandingStore = create<BrandingState>()(
         applyCssVariables(DEFAULT_BRANDING);
       },
     }),
-    { name: 'tenant-branding' },
+    { name: BRANDING_STORAGE_KEY },
   ),
 );
 
@@ -62,7 +91,14 @@ function normalizeBrandingConfig(config: BrandingConfig | null): BrandingConfig 
 function applyCssVariables(config: BrandingConfig): void {
   const root = document.documentElement;
   if (config.primaryColor) {
+    root.style.setProperty('--brand-primary', config.primaryColor);
+    root.style.setProperty('--brand-gradient-from', config.primaryColor);
+    root.style.setProperty('--brand-gradient-to', config.primaryColor);
+    root.style.setProperty('--ca-accent-a', config.primaryColor);
+    root.style.setProperty('--ca-accent-b', config.primaryColor);
     root.style.setProperty('--primary-color', config.primaryColor);
+    root.style.setProperty('--primary-400', config.primaryColor);
+    root.style.setProperty('--primary-500', config.primaryColor);
     root.style.setProperty('--primary-color-text', '#ffffff');
   }
 }

@@ -133,7 +133,7 @@
   "auth": {
     "logoAlt": "Company logo",
     "welcome": "Welcome to the Sniper TMS Console",
-    "subtitle": "Sign in to access your tenant security operations portal.",
+    "subtitle": "After signing in, enjoy a variety of convenient services.",
     "masterModeLabel": "Master Console",
     "tenantModeLabel": "Service Console",
     "liveGuard": "Sniper TMS live monitoring enabled",
@@ -155,6 +155,13 @@
       "confidenceValue": "96%",
       "responseLabel": "Auto-Response Readiness",
       "responseValue": "82%"
+    },
+    "threatWidget": {
+      "title": "Threat Indicators",
+      "live": "Live",
+      "critical": "Critical",
+      "high": "High",
+      "blocked": "Blocked"
     },
     "features": {
       "realtime": "AI-powered real-time network behavior analytics and anomaly tracking",
@@ -197,7 +204,7 @@
       "errorPasswordMismatch": "New password and confirmation do not match.",
       "errorFailed": "Password reset failed. Please check token and input values."
     },
-    "title": "Sniper TMS Master",
+    "title": "Sniper TMS Console",
     "badge": "Master Control",
     "emailPlaceholder": "admin@tms.io",
     "licenseExpirySoon": "License Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please update the license on the Product Info page."

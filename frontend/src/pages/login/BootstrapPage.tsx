@@ -116,7 +116,7 @@ const BootstrapPage: React.FC = () => {
               />
               <Button
                 type="button"
-                className="w-full"
+                className="w-full tenant-primary-action"
                 buttonSize="default"
                 label={t('auth.bootstrap.submit')}
                 icon="pi pi-check"
