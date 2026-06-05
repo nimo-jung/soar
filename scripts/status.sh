@@ -95,17 +95,13 @@ print_mode_summary() {
     tms-backend-dev
     tms-vector-dev
     tms-go-engine-dev
-    tms-frontend-admin-dev
-    tms-frontend-tenant-dev
-    tms-gateway-dev
+    tms-frontend-dev
   )
   local prod_containers=(
     tms-backend-prod
     tms-vector-prod
     tms-go-engine-prod
-    tms-frontend-admin-prod
-    tms-frontend-tenant-prod
-    tms-gateway-prod
+    tms-frontend-prod
   )
 
   for container in "${infra_containers[@]}"; do
@@ -169,23 +165,18 @@ echo -e "\n${CYAN}[ Dev 컨테이너 ]${RESET}"
 check_container tms-backend-dev "Backend Dev"
 check_container tms-vector-dev "Vector Dev"
 check_container tms-go-engine-dev "Go Engine Dev"
-check_container tms-frontend-admin-dev "Admin UI Dev"
-check_container tms-frontend-tenant-dev "Tenant UI Dev"
-check_container tms-gateway-dev "Gateway Dev"
+check_container tms-frontend-dev "Master UI Dev"
 
 echo -e "\n${CYAN}[ Prod 컨테이너 ]${RESET}"
 check_container tms-backend-prod "Backend Prod"
 check_container tms-vector-prod "Vector Prod"
 check_container tms-go-engine-prod "Go Engine Prod"
-check_container tms-frontend-admin-prod "Admin UI Prod"
-check_container tms-frontend-tenant-prod "Tenant UI Prod"
-check_container tms-gateway-prod "Gateway Prod"
+check_container tms-frontend-prod "Master UI Prod"
 
 echo -e "\n${CYAN}[ 로컬 프로세스 ]${RESET}"
 check_pid backend       "Backend (NestJS)"   "http://localhost:${PORT_BACKEND:-3000}" "${PORT_BACKEND:-3000}"
 check_pid go-engine     "Go Engine"          "http://localhost:${PORT_GO_ENGINE:-8081}" "${PORT_GO_ENGINE:-8081}"
-check_pid frontend-admin  "Admin UI"         "http://localhost:${PORT_FRONTEND_ADMIN:-5174}" "${PORT_FRONTEND_ADMIN:-5174}"
-check_pid frontend-tenant "Tenant UI"        "http://localhost:${PORT_FRONTEND_TENANT:-5173}" "${PORT_FRONTEND_TENANT:-5173}"
+check_pid frontend "Master UI"        "http://localhost:${PORT_FRONTEND:-5173}" "${PORT_FRONTEND:-5173}"
 
 print_mode_summary
 

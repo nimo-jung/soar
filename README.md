@@ -8,8 +8,7 @@ TMS 플랫폼.
 | 영역 | 기술 |
 |------|------|
 | Backend | NestJS (TypeORM, JWT, Swagger) |
-| Frontend Admin | React + PrimeReact + Zustand (포트 5174) |
-| Frontend Tenant | React + PrimeReact + Zustand (포트 5173) |
+| Frontend | React + PrimeReact + Zustand (포트 5173) |
 | Log Engine | Go + RedPanda (kafka-go) + ClickHouse |
 | DB | MariaDB (관리), ClickHouse (로그 OLAP) |
 | Cache | Redis (세션·화이트리스트·파싱룰 캐싱) |
@@ -36,8 +35,7 @@ TMS 플랫폼.
 # 개별 서비스만 기동
 ./scripts/dev.sh infra    # MariaDB, Redis, ClickHouse, RedPanda 컨테이너만
 ./scripts/dev.sh backend  # NestJS (hot-reload)
-./scripts/dev.sh admin    # Frontend Admin (Vite dev, 포트 5174)
-./scripts/dev.sh tenant   # Frontend Tenant (Vite dev, 포트 5173)
+./scripts/dev.sh frontend # Frontend (Vite dev, 포트 5173)
 ./scripts/dev.sh engine   # Go Engine (go run, 포트 8081)
 
 # 데이터 마운트 권한 자동 보정(가능한 경우 sudo 필요)
@@ -56,8 +54,7 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 |--------|------|
 | Backend API | http://localhost:3000 |
 | Swagger 문서 | http://localhost:3000/docs |
-| Master Admin UI | http://localhost:5174 |
-| Tenant UI | http://localhost:5173 |
+| Master UI | http://localhost:5173/master |
 | Go Engine (수집) | http://localhost:8081/ingest |
 | Vector Syslog (UDP/TCP) | localhost:1514 |
 | RedPanda Console | http://localhost:8080 |
@@ -75,8 +72,7 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/dev.sh infra
 # 개별 서비스 빌드 + 기동
 ./scripts/prod.sh backend  # NestJS 빌드 후 node dist/main
 ./scripts/prod.sh engine   # Go 바이너리 빌드 후 실행
-./scripts/prod.sh admin    # Vite 빌드 → frontend-admin/dist/
-./scripts/prod.sh tenant   # Vite 빌드 → frontend-tenant/dist/
+./scripts/prod.sh frontend # Vite 빌드 → frontend/dist/
 
 # 데이터 마운트 권한 자동 보정(가능한 경우 sudo 필요)
 TMS_PREFLIGHT_AUTOFIX=1 ./scripts/prod.sh docker
@@ -89,11 +85,9 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 
 | 용도 | 주소 |
 |------|------|
-| Gateway | http://localhost:8088 |
-| Master Admin UI | http://localhost:8088/admin |
-| Tenant UI | http://localhost:8088/tenant |
-| Backend API/Auth | http://localhost:8088/api, http://localhost:8088/auth |
-| Swagger | http://localhost:8088/docs |
+| Master UI | http://localhost:5173/master |
+| Backend API/Auth | http://localhost:3000/api, http://localhost:3000/auth |
+| Swagger | http://localhost:3000/docs |
 
 ### 4. 서비스 종료
 
@@ -139,10 +133,10 @@ TMS_SKIP_PREFLIGHT=1 ./scripts/prod.sh docker
 ### 7. 스모크 테스트
 
 ```bash
-# 개발 모드 검증 (백엔드/프록시 로그인 포함)
+# 개발 모드 검증 (backend + master-ui 프록시 로그인 포함)
 ./scripts/smoke.sh dev
 
-# 운영 모드 검증 (게이트웨이 기준)
+# 운영 모드 검증 (backend/master 직접 접근 기준)
 ./scripts/smoke.sh prod
 
 # Vector -> RedPanda 파이프라인 스모크
@@ -182,10 +176,9 @@ docker compose --profile dev --env-file .env.dev up -d --build
 # 운영 모드 전체 기동
 docker compose --profile prod --env-file .env.prod up -d --build
 
-# 운영 모드 단일 진입점
-# http://localhost:8088/admin
-# http://localhost:8088/tenant
-# http://localhost:8088/docs
+# 운영 모드 접근
+# http://localhost:5173/master
+# http://localhost:3000/docs
 
 # 종료
 docker compose down
@@ -225,10 +218,9 @@ tms/
 │       ├── tenant/       # /api/*   — TenantGuard + RolesGuard
 │       ├── auth/         # 로그인 (master / tenant)
 │       └── common/       # Guards, Middleware, Context, DB Factory
-├── frontend-admin/       # Master Admin UI (포트 5174)
-├── frontend-tenant/      # Tenant UI, 화이트라벨링 (포트 5173)
+├── frontend/      # Unified Master UI (포트 5173)
 ├── go-engine/            # 로그 수집·파싱·RedPanda 발행·ClickHouse 적재
-├── infra/                # MariaDB init, ClickHouse config, prod gateway nginx
+├── infra/                # MariaDB init, ClickHouse config, Vector config
 ├── scripts/              # dev.sh / prod.sh / stop.sh / status.sh / migrate.sh / smoke.sh
 └── docker-compose.yml
 ```

@@ -44,6 +44,9 @@ let AuthController = class AuthController {
     getTenantLockStatus(tenantSlug, email) {
         return this.authService.getTenantLockStatus(tenantSlug ?? '', email ?? '');
     }
+    getMultiTenantStatus() {
+        return this.authService.getMultiTenantStatus();
+    }
     masterLogin(dto, req) {
         return this.authService.loginAsMaster(dto, this.getRequestContext(req));
     }
@@ -115,6 +118,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getTenantLockStatus", null);
+__decorate([
+    (0, common_1.Get)('multi-tenant/status'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: '글로벌 멀티테넌트 활성화 상태 조회 (공개 API)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getMultiTenantStatus", null);
 __decorate([
     (0, common_1.Post)('master/login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

@@ -3,14 +3,13 @@
 # TMS 개발 서버 일괄 기동 스크립트 (dev mode)
 # 사용법: ./scripts/dev.sh [service]
 #   기본 동작: dev 컨테이너(profile=dev) 기반 기동
-#   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev + gateway-dev
+#   ./scripts/dev.sh          → 인프라 + backend-dev + frontend-dev + go-engine-dev
 #   ./scripts/dev.sh infra    → 인프라만 (MariaDB, Redis, ClickHouse, RedPanda)
 #   ./scripts/dev.sh fix-perms → RedPanda 데이터 경로 권한 복구 (sudo 필요)
 #   ./scripts/dev.sh backend  → backend-dev만
-#   ./scripts/dev.sh admin    → frontend-admin-dev만
-#   ./scripts/dev.sh tenant   → frontend-tenant-dev만
+#   ./scripts/dev.sh frontend → frontend-dev만
+#   ./scripts/dev.sh master   → frontend-dev만 (호환 별칭)
 #   ./scripts/dev.sh engine   → go-engine-dev만
-#   ./scripts/dev.sh gateway  → gateway-dev만
 #   로컬 실행 강제: TMS_DEV_RUNTIME=local ./scripts/dev.sh [service]
 # =============================================================================
 set -euo pipefail
@@ -18,6 +17,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="${TMS_ENV_FILE:-$REPO_ROOT/.env.dev}"
 DEV_RUNTIME="${TMS_DEV_RUNTIME:-docker}"
+export HOST_UID="${HOST_UID:-$(id -u)}"
+export HOST_GID="${HOST_GID:-$(id -g)}"
 
 # ── 색상 출력 헬퍼 ───────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -44,18 +45,12 @@ print_dev_stop_hint() {
       echo -e "  Backend 종료 → ./scripts/stop.sh backend"
       echo -e "  인프라 종료  → ./scripts/stop.sh infra"
       ;;
-    admin)
-      echo -e "  Admin 종료   → ./scripts/stop.sh admin"
-      ;;
-    tenant)
-      echo -e "  Tenant 종료  → ./scripts/stop.sh tenant"
+    frontend|master)
+      echo -e "  Frontend 종료 → ./scripts/stop.sh frontend"
       ;;
     engine)
       echo -e "  Engine 종료  → ./scripts/stop.sh engine"
       echo -e "  인프라 종료  → ./scripts/stop.sh infra"
-      ;;
-    gateway)
-      echo -e "  Gateway 종료 → ./scripts/stop.sh gateway"
       ;;
   esac
   echo -e "  상태 확인    → ./scripts/status.sh"
@@ -379,22 +374,13 @@ start_backend() {
   success "Swagger:  http://localhost:${PORT_BACKEND:-3000}/docs"
 }
 
-# ── Frontend Admin ────────────────────────────────────────────────────────────
-start_admin() {
-  info "Frontend Admin (Vite dev) 기동 중..."
-  cd "$REPO_ROOT/frontend-admin"
+# ── Frontend Master ───────────────────────────────────────────────────────────
+start_master() {
+  info "Frontend Master (Vite dev) 기동 중..."
+  cd "$REPO_ROOT/frontend"
   [[ -d node_modules ]] || npm install
-  start_bg_with_log frontend-admin npm run dev
-  success "Admin UI PID: $(cat "$PID_DIR/frontend-admin.pid")  →  http://localhost:${PORT_FRONTEND_ADMIN:-5174}"
-}
-
-# ── Frontend Tenant ───────────────────────────────────────────────────────────
-start_tenant() {
-  info "Frontend Tenant (Vite dev) 기동 중..."
-  cd "$REPO_ROOT/frontend-tenant"
-  [[ -d node_modules ]] || npm install
-  start_bg_with_log frontend-tenant npm run dev
-  success "Tenant UI PID: $(cat "$PID_DIR/frontend-tenant.pid")  →  http://localhost:${PORT_FRONTEND_TENANT:-5173}"
+  start_bg_with_log frontend npm run dev
+  success "Master UI PID: $(cat "$PID_DIR/frontend.pid")  →  http://localhost:${PORT_FRONTEND:-5173}"
 }
 
 # ── Go Engine ─────────────────────────────────────────────────────────────────
@@ -445,21 +431,13 @@ case "$SERVICE" in
     fi
     print_dev_stop_hint backend
     ;;
-  admin)
+  frontend|master)
     if [[ "$DEV_RUNTIME" == "docker" ]]; then
-      start_dev_containers frontend-admin-dev
+      start_dev_containers frontend-dev
     else
-      start_admin
+      start_master
     fi
-    print_dev_stop_hint admin
-    ;;
-  tenant)
-    if [[ "$DEV_RUNTIME" == "docker" ]]; then
-      start_dev_containers frontend-tenant-dev
-    else
-      start_tenant
-    fi
-    print_dev_stop_hint tenant
+    print_dev_stop_hint frontend
     ;;
   engine)
     if [[ "$DEV_RUNTIME" == "docker" ]]; then
@@ -471,25 +449,16 @@ case "$SERVICE" in
     fi
     print_dev_stop_hint engine
     ;;
-  gateway)
-    if [[ "$DEV_RUNTIME" == "docker" ]]; then
-      start_dev_containers gateway-dev
-    else
-      warn "gateway 서비스는 docker runtime에서만 지원됩니다."
-    fi
-    print_dev_stop_hint gateway
-    ;;
   all)
     if [[ "$DEV_RUNTIME" == "docker" ]]; then
       start_infra
       sleep 3
-      start_dev_containers backend-dev frontend-admin-dev frontend-tenant-dev go-engine-dev gateway-dev
+      start_dev_containers backend-dev frontend-dev go-engine-dev
     else
       start_infra
       sleep 3
       start_backend
-      start_admin
-      start_tenant
+      start_master
       start_engine
     fi
     echo ""
@@ -497,9 +466,7 @@ case "$SERVICE" in
     echo -e "${BOLD} TMS 개발 서버 기동 완료${RESET}"
     echo -e "  Backend    → http://localhost:${PORT_BACKEND:-3000}"
     echo -e "  Swagger    → http://localhost:${PORT_BACKEND:-3000}/docs"
-    echo -e "  Admin UI   → http://localhost:${PORT_FRONTEND_ADMIN:-5174}"
-    echo -e "  Tenant UI  → http://localhost:${PORT_FRONTEND_TENANT:-5173}"
-    echo -e "  Gateway    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
+    echo -e "  Master UI  → http://localhost:${PORT_FRONTEND:-5173}"
     echo -e "  Go Engine  → http://localhost:${PORT_GO_ENGINE:-8081}"
     echo -e "  RedPanda   → http://localhost:${PORT_REDPANDA_CONSOLE:-8080}"
     echo -e "  Logs       → $LOG_DIR/*.log"
@@ -508,7 +475,7 @@ case "$SERVICE" in
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"
-    echo "사용법: $0 [all|infra|fix-perms|backend|admin|tenant|engine|gateway]"
+    echo "사용법: $0 [all|infra|fix-perms|backend|frontend|master|engine]"
     exit 1
     ;;
 esac

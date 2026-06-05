@@ -15,6 +15,8 @@ FORCE="0"
 SKIP_PRUNE="0"
 WITH_VOLUMES="0"
 WITH_DB_RESET="0"
+export HOST_UID="${HOST_UID:-$(id -u)}"
+export HOST_GID="${HOST_GID:-$(id -g)}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }

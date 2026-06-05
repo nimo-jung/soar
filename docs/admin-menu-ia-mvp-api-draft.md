@@ -1,7 +1,7 @@
 # Admin 메뉴 IA + MVP 스펙 + API/DTO 초안
 
 작성일: 2026-05-20
-대상: Sniper TMS Master Console (frontend-admin + backend/admin)
+대상: Sniper TMS Master Console (frontend + backend/admin)
 
 ## 1) 목적
 - 현재 구현 상태를 기준으로, 멀티테넌트 TMS 운영에 필요한 Admin 기능/메뉴를 출시 제품 벤치마크 관점에서 우선순위화한다.

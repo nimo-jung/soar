@@ -4,7 +4,8 @@
 # 사용법: ./scripts/stop.sh [service]
 #   ./scripts/stop.sh          → 로컬 프로세스 + dev/prod/infra 전체 종료
 #   ./scripts/stop.sh backend  → 백엔드만 종료
-#   ./scripts/stop.sh gateway  → gateway(dev/prod)만 종료
+#   ./scripts/stop.sh frontend → frontend UI만 종료
+#   ./scripts/stop.sh master   → frontend UI만 종료 (호환 별칭)
 #   ./scripts/stop.sh docker   → Docker Compose 전체 종료(컨테이너 전부)
 #   ./scripts/stop.sh dev      → dev 관련 로컬 프로세스 + dev 컨테이너 종료
 #   ./scripts/stop.sh prod     → prod 관련 로컬 프로세스 + prod 컨테이너 종료
@@ -36,8 +37,7 @@ port_for_service() {
   local name="$1"
   case "$name" in
     backend) echo "${PORT_BACKEND:-3000}" ;;
-    frontend-admin) echo "${PORT_FRONTEND_ADMIN:-5174}" ;;
-    frontend-tenant) echo "${PORT_FRONTEND_TENANT:-5173}" ;;
+    frontend) echo "${PORT_FRONTEND:-5173}" ;;
     go-engine) echo "${PORT_GO_ENGINE:-8081}" ;;
     *) echo "" ;;
   esac
@@ -96,24 +96,24 @@ stop_docker() {
 stop_dev() {
   info "dev 관련 로컬 프로세스 및 컨테이너 종료 중..."
   kill_service backend
-  kill_service frontend-admin
-  kill_service frontend-tenant
+  kill_service frontend
   kill_service go-engine
-  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-admin-dev frontend-tenant-dev gateway-dev
+  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-dev mailpit
   success "dev 프로파일 종료 완료"
 }
 
 stop_prod() {
   info "prod 관련 로컬 프로세스 및 컨테이너 종료 중..."
   kill_service backend
+  kill_service frontend
   kill_service go-engine
-  stop_compose_services "prod" backend-prod vector-prod go-engine-prod frontend-admin-prod frontend-tenant-prod gateway-prod
+  stop_compose_services "prod" backend-prod vector-prod go-engine-prod frontend-prod mailpit
   success "prod 프로파일 종료 완료"
 }
 
 stop_infra() {
   info "인프라 컨테이너 종료 중..."
-  stop_compose_services "" mariadb redis clickhouse redpanda redpanda-console
+  stop_compose_services "" mariadb redis clickhouse redpanda redpanda-console mailpit
   success "인프라 종료 완료"
 }
 
@@ -129,29 +129,19 @@ case "$SERVICE" in
     stop_compose_services "dev" backend-dev
     stop_compose_services "prod" backend-prod
     ;;
-  admin)
-    kill_service frontend-admin
-    stop_compose_services "dev" frontend-admin-dev
-    stop_compose_services "prod" frontend-admin-prod
-    ;;
-  tenant)
-    kill_service frontend-tenant
-    stop_compose_services "dev" frontend-tenant-dev
-    stop_compose_services "prod" frontend-tenant-prod
+  frontend|master)
+    kill_service frontend
+    stop_compose_services "dev" frontend-dev
+    stop_compose_services "prod" frontend-prod
     ;;
   engine)
     kill_service go-engine
     stop_compose_services "dev" vector-dev go-engine-dev
     stop_compose_services "prod" vector-prod go-engine-prod
     ;;
-  gateway)
-    stop_compose_services "dev" gateway-dev
-    stop_compose_services "prod" gateway-prod
-    ;;
   all)
     kill_service backend
-    kill_service frontend-admin
-    kill_service frontend-tenant
+    kill_service frontend
     kill_service go-engine
     stop_dev
     stop_prod
@@ -159,7 +149,7 @@ case "$SERVICE" in
     success "로컬 프로세스 + dev/prod/infra 전체 종료 완료"
     ;;
   *)
-    echo "사용법: $0 [all|docker|dev|prod|infra|backend|admin|tenant|engine|gateway]"
+    echo "사용법: $0 [all|docker|dev|prod|infra|backend|frontend|master|engine]"
     exit 1
     ;;
 esac

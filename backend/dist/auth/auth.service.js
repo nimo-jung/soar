@@ -122,6 +122,11 @@ let AuthService = class AuthService {
         const settings = await this.masterAuthSettingsRepo.findOne({ where: { id: 1 } });
         return settings?.isMultiTenantEnabled ?? false;
     }
+    async getMultiTenantStatus() {
+        return {
+            isMultiTenantEnabled: await this.isMultiTenantEnabled(),
+        };
+    }
     async getTenantAuthPolicyByTenantId(tenantId) {
         const settings = await this.tenantSettingsRepo.findOne({ where: { tenantId } });
         return this.resolvePolicy(settings ?? null);

@@ -89,7 +89,7 @@
 3. `tenantId` 숫자와 tenant slug 매핑은 admin DB의 tenants 테이블 기준
 
 ## 보안/운영 지침
-1. `/metrics/v2`는 내부망 접근 또는 gateway allowlist 제한
+1. `/metrics/v2`는 내부망 접근 또는 backend allowlist 제한
 2. 응답 timeout 1.5초, 실패 시 즉시 fallback
 3. 응답에 민감정보(API key, IP 원문) 포함 금지
 

@@ -8,22 +8,21 @@
 
 ## 2. 기술 스택 및 핵심 규칙
 
-### Runtime Profiles & Gateway (중요)
+### Runtime Profiles & Unified Master Entry (중요)
 
 * Docker Compose 실행은 `dev`/`prod` profile을 명확히 분리한다.
-* Dev 모드에서는 `*-dev` 서비스(`backend-dev`, `frontend-admin-dev`, `frontend-tenant-dev`)를 사용하고, Prod 모드에서는 `*-prod` 서비스를 사용한다.
-* Prod 외부 진입은 단일 Gateway(`gateway-prod`)로 통일하고 경로 기반 라우팅을 사용한다.
-	* `/admin` → Master Admin UI
-	* `/tenant` → Tenant UI
-	* `/api`, `/auth`, `/docs` → Backend
-* Master Admin UI와 Tenant UI는 보안 경계가 다르므로 앱을 물리적으로 합치지 않는다. 단일 진입점은 Gateway로 제공한다.
+* Dev 모드에서는 `*-dev` 서비스(`backend-dev`, `frontend-dev`)를 사용하고, Prod 모드에서는 `*-prod` 서비스를 사용한다.
+* 외부 진입은 `frontend` UI와 `backend` API를 직접 사용한다.
+	* `frontend` 진입 경로: `/master`
+	* `backend` 진입 경로: `/api`, `/auth`, `/docs`
+* Master 콘솔은 tenant-first 디자인 기반 통합 UI(`frontend`)를 기본으로 한다.
 * 컨테이너 내 프론트엔드 dev proxy는 `localhost`가 아닌 Docker 서비스명(`backend-dev`)을 기본 타깃으로 사용한다.
 
 ### Operations Reliability (중요)
 
 * Host bind mount를 사용할 경우 기동 전 preflight로 디렉토리 권한·소유권·쓰기 가능 여부를 점검한다.
 * 데이터 경로 권한은 최소 권한 원칙을 적용한다 (`750` 또는 `770` 권장, `777` 금지).
-* 스모크 테스트 스크립트(`scripts/smoke.sh`)로 dev/prod 로그인 및 게이트웨이 라우팅을 검증한다.
+* 스모크 테스트 스크립트(`scripts/smoke.sh`)로 dev/prod 로그인 및 master/backend 라우팅을 검증한다.
 * 운영 환경에서는 Auto-Migration을 활성화하지 않고, 마이그레이션/권한 부여를 명시적으로 수행한다.
 
 ### Backend - NestJS
@@ -40,7 +39,7 @@
 * 레이아웃 및 커스텀 스타일링은 **Tailwind CSS**를 사용한다.
 * 전역 상태 관리는 **Zustand**를 사용한다.
 * PrimeReact 컴포넌트 사용 시 DataTable, Chart 등 복잡한 UI 요소에 대해 공식 모범 사례를 우선 적용한다.
-* **감사로그 의무화**: `frontend-admin` 및 `frontend-tenant`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.
+* **감사로그 의무화**: `frontend` 및 `frontend`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.
 * CUD 화면을 구현할 때는 대응 백엔드 API에서 `AuditLogService` 기록을 함께 구현하고, 감사로그가 누락되는 CUD 엔드포인트를 허용하지 않는다.
 * **날짜 표기 표준**: 화면 날짜 표기는 용도별 정밀도에 맞춰 아래 형식을 사용한다.
 	* 날짜만 표시: `YYYY-MM-DD`

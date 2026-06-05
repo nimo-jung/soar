@@ -25,6 +25,9 @@ export declare class AuthController {
         locked: boolean;
         lockedUntil: string | null;
     }>;
+    getMultiTenantStatus(): Promise<{
+        isMultiTenantEnabled: boolean;
+    }>;
     masterLogin(dto: LoginDto, req: Request): Promise<{
         accessToken: string;
         authSettings: import("./auth-policy.constants").AuthPolicy;

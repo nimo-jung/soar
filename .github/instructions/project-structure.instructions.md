@@ -45,12 +45,12 @@ backend/
 
 ---
 
-## Frontend — Admin UI (`frontend-admin/`)
+## Frontend — Admin UI (`frontend/`)
 
 시스템 공급자 전용. 화이트라벨링 없음. `MasterGuard` 인증.
 
 ```
-frontend-admin/
+frontend/
 ├── nginx.conf                 # Prod 정적 서빙용 Nginx 설정
 └── src/
     ├── pages/
@@ -69,12 +69,12 @@ frontend-admin/
 
 ---
 
-## Frontend — Tenant UI (`frontend-tenant/`)
+## Frontend — Tenant UI (`frontend/`)
 
 고객사 운영자·분석가·감사자 전용. 로그인 시 `brandingConfig` 기반 화이트라벨링 적용.
 
 ```
-frontend-tenant/
+frontend/
 ├── nginx.conf                 # Prod 정적 서빙용 Nginx 설정
 └── src/
     ├── pages/
@@ -101,18 +101,16 @@ frontend-tenant/
 
 ## Infrastructure & Runtime — `infra/`, root files
 
-운영 모드에서는 단일 진입점 Gateway를 사용하고, 개발/운영은 profile 기반으로 분리한다.
+운영 모드에서는 `frontend`와 `backend`를 직접 노출하고, 개발/운영은 profile 기반으로 분리한다.
 
 ```
 infra/
 ├── mariadb/
 ├── clickhouse/
-├── vector/                     # Syslog 수집/벤더별 VRL 파싱/RedPanda 발행 설정
-└── gateway/
-    └── nginx.conf             # Prod 통합 진입점 (/admin, /tenant, /api, /auth, /docs)
+└── vector/                     # Syslog 수집/벤더별 VRL 파싱/RedPanda 발행 설정
 
 .
-├── docker-compose.yml         # dev/prod profile 및 gateway-prod 정의
+├── docker-compose.yml         # dev/prod profile 및 frontend/backend 정의
 ├── .env.dev                   # 개발 모드 환경변수
 └── .env.prod                  # 운영 모드 환경변수
 ```
@@ -126,7 +124,7 @@ infra/
 ```
 scripts/
 ├── dev.sh                     # 개발 모드 기동 + 데이터 마운트 preflight
-├── prod.sh                    # 운영 모드 기동 + gateway 안내
+├── prod.sh                    # 운영 모드 기동 + master/backend 안내
 ├── smoke.sh                   # dev/prod 로그인·라우팅 스모크 테스트
 ├── smoke-vector.sh            # Vector -> RedPanda -> Go Router 파이프라인 스모크 테스트
 ├── migrate.sh

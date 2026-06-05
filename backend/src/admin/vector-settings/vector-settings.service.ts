@@ -374,7 +374,7 @@ export class VectorSettingsService {
     return entries;
   }
 
-  async validateGatewayHttpAuth(
+  async validateVectorHttpAuth(
     tenantSlugRaw: string,
     sourceIdRaw: string,
     authHeaderRaw?: string,

@@ -51,6 +51,13 @@ export class AuthController {
     return this.authService.getTenantLockStatus(tenantSlug ?? '', email ?? '');
   }
 
+  @Get('multi-tenant/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '글로벌 멀티테넌트 활성화 상태 조회 (공개 API)' })
+  getMultiTenantStatus() {
+    return this.authService.getMultiTenantStatus();
+  }
+
   @Post('master/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '마스터 관리자 로그인' })

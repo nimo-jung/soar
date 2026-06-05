@@ -1,5 +1,5 @@
 ---
-applyTo: "frontend-admin/**,frontend-tenant/**"
+applyTo: "frontend/**"
 ---
 
 # 프론트엔드 디자인 컨셉 규칙
@@ -12,8 +12,8 @@ applyTo: "frontend-admin/**,frontend-tenant/**"
 
 | 앱 | 디렉토리 | 디자인 컨셉 | 레퍼런스 |
 |----|----------|------------|---------|
-| Master Admin UI | `frontend-admin/` | **Sakai** | https://sakai.primereact.org/ |
-| Tenant UI | `frontend-tenant/` | **Verona** | https://verona.primereact.org/ |
+| Master Admin UI | `frontend/` | **Sakai** | https://sakai.primereact.org/ |
+| Tenant UI | `frontend/` | **Verona** | https://verona.primereact.org/ |
 
 두 앱의 레이아웃 CSS는 **절대로 공유하지 않는다.** 각 앱은 독립적인 `src/layout/layout.css`를 유지한다.
 
@@ -36,7 +36,7 @@ import './layout/layout.css';   // 반드시 테마 import 이후에 위치
 
 ---
 
-## 3. Admin — Sakai 레이아웃 규칙 (`frontend-admin/`)
+## 3. Admin — Sakai 레이아웃 규칙 (`frontend/`)
 
 ### 레이아웃 구조
 
@@ -69,7 +69,7 @@ const navItems = [
 ### 새 페이지 추가 시 구조 예시
 
 ```tsx
-// frontend-admin/src/pages/new-feature/NewPage.tsx
+// frontend/src/pages/new-feature/NewPage.tsx
 const NewPage: React.FC = () => (
   <div className="p-4">
     <div className="page-header">
@@ -86,7 +86,7 @@ const NewPage: React.FC = () => (
 
 ---
 
-## 4. Tenant — Verona 레이아웃 규칙 (`frontend-tenant/`)
+## 4. Tenant — Verona 레이아웃 규칙 (`frontend/`)
 
 ### 레이아웃 구조
 
@@ -134,7 +134,7 @@ const navModel = [
 ### 새 페이지 추가 시 구조 예시
 
 ```tsx
-// frontend-tenant/src/pages/new-feature/NewPage.tsx
+// frontend/src/pages/new-feature/NewPage.tsx
 const NewPage: React.FC = () => (
   <div>
     <div className="page-header">
@@ -168,7 +168,7 @@ Tenant 앱은 로그인 응답의 `brandingConfig`를 기반으로 CSS 변수를
 
 - 브랜딩 컬러가 필요한 CSS 속성은 반드시 `var(--brand-primary)` 변수를 사용한다. 하드코딩된 색상값을 사용하지 않는다.
 - `TenantLayout.tsx`의 `useEffect` 내에서만 CSS 변수를 `document.documentElement.style.setProperty`로 설정한다. 그 외 컴포넌트에서 직접 주입하지 않는다.
-- Admin 앱(`frontend-admin/`)에는 브랜딩 변수를 절대 적용하지 않는다.
+- Admin 앱(`frontend/`)에는 브랜딩 변수를 절대 적용하지 않는다.
 - 브랜딩 설정이 없을 경우 `:root`에 정의된 기본값(`--brand-primary: var(--primary-color)`)이 폴백으로 동작한다.
 
 ---

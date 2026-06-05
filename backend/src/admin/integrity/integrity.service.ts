@@ -10,7 +10,6 @@ import { RegisterIntegrityDto } from './dto/register-integrity.dto';
 // 기본 등록 파일 목록 (컨테이너 환경 기준)
 const DEFAULT_FILES: Array<{ filePath: string; fileLabel: string }> = [
   { filePath: path.resolve(process.cwd(), '../.env'), fileLabel: '.env (환경 변수)' },
-  { filePath: path.resolve(process.cwd(), '../infra/gateway/nginx.conf'), fileLabel: 'Gateway nginx.conf' },
   { filePath: path.resolve(process.cwd(), '../infra/mariadb/init'), fileLabel: 'MariaDB init 디렉토리' },
   { filePath: path.resolve(process.cwd(), 'dist/main.js'), fileLabel: 'Backend 빌드 결과물 (main.js)' },
 ];

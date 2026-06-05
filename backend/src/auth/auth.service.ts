@@ -135,6 +135,12 @@ export class AuthService {
     return settings?.isMultiTenantEnabled ?? false;
   }
 
+  async getMultiTenantStatus(): Promise<{ isMultiTenantEnabled: boolean }> {
+    return {
+      isMultiTenantEnabled: await this.isMultiTenantEnabled(),
+    };
+  }
+
   private async getTenantAuthPolicyByTenantId(tenantId: number): Promise<AuthPolicy> {
     const settings = await this.tenantSettingsRepo.findOne({ where: { tenantId } });
     return this.resolvePolicy(settings ?? null);

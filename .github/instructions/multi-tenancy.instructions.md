@@ -13,11 +13,12 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 
 | 앱 | 디렉토리 | 대상 | 특징 |
 |----|----------|------|------|
-| Master Admin UI | `frontend-admin/` | 시스템 공급자 | `MasterGuard` 인증, 브랜딩 고정 |
-| Tenant UI | `frontend-tenant/` | 고객사 운영자·분석가·감사자 | `RolesGuard` + tenant scope, 화이트라벨링 적용 |
+| Master Admin UI | `frontend/` | 시스템 공급자 | `MasterGuard` 인증, 브랜딩 고정 |
+| Tenant UI | `frontend/` | 고객사 운영자·분석가·감사자 | `RolesGuard` + tenant scope, 화이트라벨링 적용 |
 
 * 두 앱은 동일한 NestJS API(`/api`)를 바라보되, 진입점 URL과 인증 Guard가 다르다.
-* 운영 배포에서는 단일 Gateway 진입점을 사용하되, 경로 기반으로 분리한다. (`/admin` = Master Admin UI, `/tenant` = Tenant UI)
+* 운영 배포에서는 `frontend`(UI)와 `backend`(API/Auth/Docs)를 직접 노출한다.
+* 통합 UI 진입 경로는 `/master`를 사용하고, 내부적으로 master/tenant 세션 모드를 분기한다.
 * 경로 기반 배포 시 React Router basename 및 Vite base path를 앱별로 명시해 라우팅 충돌을 방지한다.
 * Tenant UI에서만 로그인 응답의 `brandingConfig`를 기반으로 PrimeReact CSS 변수를 동적으로 적용한다.
 * 공용 UI 컴포넌트(디자인 시스템)는 별도 패키지(`packages/ui`)로 분리하여 두 앱이 공유할 수 있다.
@@ -77,7 +78,7 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 
 ### 감사로그 (CUD 공통 의무)
 
-* `frontend-admin`과 `frontend-tenant`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.
+* `frontend`과 `frontend`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.
 * CUD 기능을 추가할 때는 프론트엔드 버튼/폼 구현과 함께 백엔드 API의 감사로그 기록(`AuditLogService`) 구현을 반드시 포함한다.
 * 감사로그에는 최소한 행위자(사용자), 액션 코드, 대상 리소스, 테넌트 식별자(해당 시), 발생 시각이 포함되어야 한다.
 * CUD API 코드 리뷰 기준: 감사로그 기록이 누락된 Create/Update/Delete 엔드포인트는 승인하지 않는다.

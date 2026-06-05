@@ -9,7 +9,7 @@ import { VectorSettingsController } from './vector-settings.controller';
 import { VectorSettingsService } from './vector-settings.service';
 import { TenantSettings } from '../tenants/entities/tenant-settings.entity';
 import { Tenant } from '../tenants/entities/tenant.entity';
-import { VectorGatewayAuthController } from './vector-gateway-auth.controller';
+import { VectorHttpAuthController } from './vector-http-auth.controller';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { VectorGatewayAuthController } from './vector-gateway-auth.controller';
       inject: [ConfigService],
     }),
   ],
-  controllers: [VectorSettingsController, VectorGatewayAuthController],
+  controllers: [VectorSettingsController, VectorHttpAuthController],
   providers: [VectorSettingsService, AuditLogService],
 })
 export class VectorSettingsModule {}

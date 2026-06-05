@@ -24,8 +24,8 @@ applyTo: "**"
 ## 4. Dev/Prod 접근 경로 규칙
 - Dev 모드에서는 각 UI가 Vite proxy를 통해 backend-dev로 인증 요청을 전달해야 한다.
 - 컨테이너 환경의 dev proxy target은 localhost가 아닌 backend-dev 서비스명을 기본값으로 사용한다.
-- Prod 모드 외부 진입은 gateway-prod 단일 엔드포인트를 사용한다.
-- Prod 경로는 /admin, /tenant, /api, /auth, /docs 로 분리한다.
+- Prod 모드에서는 frontend(UI)와 backend(API/Auth/Docs)를 직접 노출한다.
+- Prod UI 경로는 /master를 사용하고, API/Auth/Docs는 backend 엔드포인트를 사용한다.
 
 ## 5. 인증 장애 예방/검증 규칙
 - 로그인 500 에러 발생 시 우선 DB 스키마와 권한(tms_admin, tenant_db_*)을 확인한다.

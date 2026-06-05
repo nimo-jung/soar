@@ -1,0 +1,1341 @@
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "logout": "Logout",
+    "actions": "Settings",
+    "status": "Status",
+    "createdAt": "Created At",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "register": "Register",
+    "active": "Active",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "loading": "Loading...",
+    "name": "Name",
+    "description": "Description",
+    "user": "User",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "inbox": "Inbox",
+    "settings": "Settings",
+    "menuToggle": "Toggle menu",
+    "switchToDarkMode": "Switch to dark mode",
+    "switchToLightMode": "Switch to light mode",
+    "languageSwitch": "Change language",
+    "switchToEnglish": "Switch to English",
+    "switchToKorean": "Switch to Korean",
+    "suspend": "Suspend",
+    "noDataFound": "No data found.",
+    "edit": "Edit",
+    "refresh": "Refresh"
+  },
+  "nav": {
+    "categories": {
+      "security": "Security Ops",
+      "collection": "Collection",
+      "management": "Management",
+      "system": "System"
+    },
+    "dashboard": "Dashboard",
+    "securityCenter": "Security Center",
+    "alerts": "Alerts",
+    "playbooks": "Playbooks",
+    "ingestion": "Ingestion Pipeline",
+    "collectors": "Collector",
+    "tenantAdmin": "Tenant Admin",
+    "users": "Users",
+    "auditLogs": "Audit Logs",
+    "settings": "Settings",
+    "normalizationSettings": "Normalization Settings",
+    "authSettings": "Auth Settings",
+    "systemConsole": "System Console",
+    "systemHome": "System Hub",
+    "systemTenants": "Tenant Management",
+    "systemAuthSettings": "Auth Settings",
+    "systemAuditLogs": "Audit Logs",
+    "systemMonitoring": "Monitoring",
+    "systemBilling": "Billing",
+    "systemThreatIntel": "Threat Intel",
+    "systemMasterUsers": "Master Users",
+    "systemProductInfo": "Product Info",
+    "systemVectorSettings": "Vector Settings",
+    "systemVectorHistory": "Vector Apply History",
+    "systemDataIsolation": "Data Isolation",
+    "systemStatus": "System Status",
+    "systemIntegrity": "Integrity",
+    "systemSmtpSettings": "SMTP Settings",
+    "systemTiers": "Tenant Tiers",
+    "operations": "Operations",
+    "tenants": "Tenant Management",
+    "tiers": "Tier Management",
+    "threatIntel": "Threat Intelligence",
+    "billing": "Billing",
+    "monitoring": "Monitoring",
+    "quotas": "Quota Policy",
+    "dataIsolation": "Data Isolation",
+    "integrity": "Integrity Check",
+    "dataPolicy": "Data Policy",
+    "securityPolicy": "Data Policy",
+    "securityAudit": "Security Audit",
+    "systemManagement": "System Settings",
+    "userManagement": "Admin Settings",
+    "smtpSettings": "SMTP Settings",
+    "vectorSettings": "Vector Settings",
+    "vectorApplyHistory": "Vector Apply History",
+    "productInfo": "Product Info",
+    "masterAdmin": "Master Admin"
+  },
+  "dashboard": {
+    "title": "Security Operations Dashboard",
+    "subtitle": "Monitor real-time threat detection and auto-response workflows at a glance.",
+    "live": "LIVE",
+    "actions": {
+      "refresh": "Refresh",
+      "newPlaybook": "New Playbook"
+    },
+    "metrics": {
+      "threatScore": "Threat Score",
+      "eventsPerSecond": "Event Throughput",
+      "collectorHealth": "Collector Health",
+      "playbookSuccess": "Playbook Success"
+    },
+    "readiness": {
+      "title": "Operational Readiness",
+      "threatModel": "AI threat model confidence",
+      "pipelineStability": "Ingestion pipeline stability",
+      "autoResponse": "Auto-response readiness"
+    },
+    "timeline": {
+      "title": "Recent Response Timeline",
+      "items": [
+        {
+          "title": "High-risk scan traffic blocked",
+          "detail": "Automatic containment was applied to 3 external IP addresses."
+        },
+        {
+          "title": "Collector latency detected",
+          "detail": "Latency from collectors in the Seoul region crossed the threshold."
+        },
+        {
+          "title": "Response playbook completed",
+          "detail": "The credential-theft mitigation playbook finished successfully."
+        }
+      ]
+    }
+  },
+  "auth": {
+    "logoAlt": "Company logo",
+    "welcome": "Welcome to the Sniper TMS Console",
+    "subtitle": "Sign in to access your tenant security operations portal.",
+    "masterModeLabel": "Master Console",
+    "tenantModeLabel": "Service Console",
+    "liveGuard": "Sniper TMS live monitoring enabled",
+    "securitySignal": "AI threat intelligence engine active",
+    "tenantSlug": "Customer Code",
+    "submit": "Sign In",
+    "errorEmpty": "Please fill in all fields.",
+    "errorInvalid": "Please check your login credentials.",
+    "sessionLimitConfirm": "Do you want to force-close existing sessions and continue login?",
+    "errorLocked": "Account locked due to too many failed attempts. Try again in {{clock}}.",
+    "lockReleased": "Account unlocked. Please sign in again.",
+    "tenantExpirySoon": "⚠ Subscription Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please contact your administrator to renew the subscription.",
+    "tagline": "Correlate distributed security events in real time with an AI engine.\nTrigger automated response playbooks the moment threats are detected.",
+    "aiPanel": {
+      "title": "AI Inference Status",
+      "threatScoreLabel": "Threat Score",
+      "threatScoreValue": "89 / 100",
+      "confidenceLabel": "Detection Confidence",
+      "confidenceValue": "96%",
+      "responseLabel": "Auto-Response Readiness",
+      "responseValue": "82%"
+    },
+    "features": {
+      "realtime": "AI-powered real-time network behavior analytics and anomaly tracking",
+      "isolation": "Tenant-isolated protection for logs, policies, and sessions",
+      "playbook": "Detection-driven automated response playbook orchestration"
+    },
+    "bootstrap": {
+      "required": "You must register the first tenant administrator before login.",
+      "move": "Go To First Admin Registration",
+      "title": "Tenant First Admin Registration",
+      "subtitle": "Register the first operator using a one-time token issued by Master Admin.",
+      "invitationToken": "Invitation Token",
+      "submit": "Register First Admin",
+      "goLogin": "Go To Login",
+      "success": "First admin registration completed. Redirecting to login.",
+      "errorEmpty": "Please fill in all fields.",
+      "errorFailed": "Failed to register first admin. Please check token and input values.",
+      "notice": "No master admin account exists yet. Initial registration is required.",
+      "confirmPassword": "Confirm Password",
+      "errorPasswordConfirm": "Password and confirmation do not match.",
+      "passwordPolicy": "Password must contain no spaces and satisfy either 10+ characters with at least 2 categories, or 8+ characters with all 3 categories (letters/numbers/special), and must not include 3+ sequential or repeated characters.",
+      "registered": "Initial admin registration completed. You can now sign in.",
+      "registerFailed": "Failed to register the initial admin account.",
+      "noticeDialogTitle": "License Notice",
+      "noticeDialogBody": "When the first master admin account is registered, a demo license is stored automatically. Please update it with a formal license."
+    },
+    "resetPassword": {
+      "move": "Reset Password",
+      "title": "Tenant Admin Password Reset",
+      "subtitle": "Change your password using the issued reset token.",
+      "token": "Reset Token",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "passwordPolicy": "Password must be at least 8 characters long.",
+      "submit": "Reset Password",
+      "goLogin": "Go To Login",
+      "success": "Password reset completed. Redirecting to login.",
+      "errorEmpty": "Please fill in all fields.",
+      "errorPasswordTooShort": "New password must be at least 8 characters long.",
+      "errorPasswordMismatch": "New password and confirmation do not match.",
+      "errorFailed": "Password reset failed. Please check token and input values."
+    },
+    "title": "Sniper TMS Master",
+    "badge": "Master Control",
+    "emailPlaceholder": "admin@tms.io",
+    "licenseExpirySoon": "License Expiry Notice: Expires in {{days}} day(s). (Expiry date: {{date}}) Please update the license on the Product Info page."
+  },
+  "collectors": {
+    "title": "Collector Management",
+    "registerBtn": "Register Collector",
+    "apiKeyWarning": "API Key (shown only once — save it immediately!)",
+    "dialog": {
+      "title": "Register Collector",
+      "name": "Name",
+      "description": "Description"
+    },
+    "table": {
+      "name": "Name",
+      "description": "Description",
+      "registeredAt": "Registered At",
+      "deactivateBtn": "Deactivate"
+    }
+  },
+  "alerts": {
+    "title": "Alert List",
+    "description": "Create security alerts and manage status, notification policy, and delivery history.",
+    "createBtn": "Create Alert",
+    "table": {
+      "title": "Title",
+      "severity": "Severity",
+      "sourceIp": "Source IP",
+      "occurredAt": "Occurred At",
+      "acknowledgeBtn": "Acknowledge",
+      "statusUpdate": "Update Status"
+    },
+    "dialog": {
+      "title": "Create Alert",
+      "titleLabel": "Title",
+      "descriptionLabel": "Description",
+      "severity": "Severity",
+      "sourceIp": "Source IP",
+      "ruleId": "Detection Rule ID"
+    },
+    "policy": {
+      "title": "Notification Policy",
+      "channels": "Delivery Channels",
+      "channelsPlaceholder": "Select channels",
+      "recipients": "Recipients",
+      "recipientsHelp": "Separate values with commas. Example: soc@acme.com, #soc-alerts"
+    },
+    "history": {
+      "title": "Delivery History",
+      "alertId": "Alert ID",
+      "channel": "Channel",
+      "recipient": "Recipient",
+      "deliveryStatus": "Result",
+      "sentAt": "Sent At"
+    },
+    "errors": {
+      "loadFailed": "Failed to load alert data.",
+      "createFailed": "An error occurred while creating alert.",
+      "statusFailed": "An error occurred while updating alert status.",
+      "policyFailed": "An error occurred while saving notification policy."
+    }
+  },
+  "playbooks": {
+    "title": "Playbooks",
+    "createBtn": "Create Playbook",
+    "dialog": {
+      "title": "Create Playbook",
+      "name": "Name",
+      "description": "Description",
+      "definition": "Workflow Definition (JSON)"
+    },
+    "table": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status",
+      "runBtn": "Run"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage IP whitelist, parsing rules, and branding settings.",
+    "parsingRules": {
+      "title": "Parsing Rules",
+      "createBtn": "Create Parsing Rule",
+      "table": {
+        "name": "Rule Name",
+        "logSourceType": "Log Source",
+        "priority": "Priority",
+        "editBtn": "Edit",
+        "deactivateBtn": "Deactivate"
+      },
+      "sources": {
+        "all": "All",
+        "syslog": "Syslog",
+        "firewall": "Firewall",
+        "waf": "WAF",
+        "edr": "EDR"
+      },
+      "dialog": {
+        "createTitle": "Create Parsing Rule",
+        "editTitle": "Edit Parsing Rule",
+        "name": "Rule Name",
+        "logSourceType": "Log Source",
+        "priority": "Priority",
+        "ruleDefinition": "Rule Definition JSON",
+        "ruleDefinitionHelp": "Example: {\"fieldMappings\": {\"src_ip\": \"source_ip\"}}"
+      },
+      "errors": {
+        "loadFailed": "Failed to load parsing rules.",
+        "saveFailed": "An error occurred while saving parsing rule.",
+        "deactivateFailed": "An error occurred while deactivating parsing rule.",
+        "invalidJson": "Rule definition JSON is invalid."
+      }
+    },
+    "vectorSources": {
+      "title": "Vector Source Instances",
+      "addBtn": "Add Source",
+      "auth": {
+        "none": "None",
+        "token": "Token",
+        "basic": "Basic"
+      },
+      "modes": {
+        "syslog": "Syslog",
+        "snmp": "SNMP",
+        "http": "HTTP",
+        "cmd": "CMD",
+        "file": "File",
+        "kafka": "Kafka"
+      },
+      "table": {
+        "id": "Source ID",
+        "name": "Name",
+        "vendor": "Vendor",
+        "ingestionMode": "Ingestion Mode",
+        "editBtn": "Edit",
+        "deleteBtn": "Delete"
+      },
+      "dialog": {
+        "createTitle": "Add Vector Source",
+        "editTitle": "Edit Vector Source",
+        "id": "Source ID",
+        "name": "Name",
+        "vendor": "Vendor",
+        "ingestionMode": "Ingestion Mode",
+        "transport": "Transport",
+        "address": "Address",
+        "port": "Port",
+        "path": "HTTP Path",
+        "authStrategy": "Auth Strategy",
+        "authToken": "Auth Token",
+        "basicUsername": "Basic Username",
+        "basicPassword": "Basic Password",
+        "command": "Command",
+        "intervalSeconds": "Interval (seconds)",
+        "includePatterns": "File Include Patterns",
+        "bootstrapServers": "Kafka Bootstrap Servers",
+        "topic": "Kafka Topic",
+        "groupId": "Kafka Group ID"
+      },
+      "errors": {
+        "loadFailed": "Failed to load vector sources.",
+        "saveFailed": "An error occurred while saving vector sources.",
+        "required": "ID, name, and vendor are required.",
+        "duplicateId": "Duplicated source ID exists: {{id}}",
+        "tokenRequired": "Auth token is required for HTTP token strategy.",
+        "basicRequired": "Username and password are required for HTTP basic strategy."
+      }
+    }
+  },
+  "authSettings": {
+    "title": "Auth Settings",
+    "description": "Configure login lockout, concurrent sessions, and auto logout policies.",
+    "loadFailed": "Failed to load auth settings.",
+    "saveSuccess": "Auth settings have been saved.",
+    "saveFailed": "An error occurred while saving auth settings.",
+    "validation": {
+      "rangeValues": "Please check validation range values.",
+      "autoLogoutTimeoutMinutes": "Auto logout timeout must be 0 or between 1 and 30 minutes.",
+      "maxLoginFailures": "Max failed login attempts must be between 1 and 5.",
+      "lockMinutes": "Lock time must be between 3 and 30 minutes.",
+      "maxConcurrentSessions": "Max concurrent sessions per account must be between 1 and 5."
+    },
+    "maxLoginFailures": {
+      "label": "Max failed login attempts",
+      "help": "Default 3, minimum 1, maximum 5"
+    },
+    "lockMinutes": {
+      "label": "Lock time (minutes)",
+      "help": "Default 5 min, minimum 3 min, maximum 30 min"
+    },
+    "maxConcurrentSessions": {
+      "label": "Max concurrent sessions per account",
+      "help": "Default 1, minimum 1, maximum 5"
+    },
+    "autoLogoutTimeoutMinutes": {
+      "label": "Auto logout timeout (minutes)",
+      "help": "Default 5 min, minimum 1 min, maximum 30 min, 0 means no timeout"
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
+    "multiTenantMode": {
+      "label": "Multi-tenant Mode",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "help": "Sets the global authentication routing mode. Save is required for the change to take effect.",
+      "impactEnabled": "When enabled, tenant login/lock-status/bootstrap flows use tenantSlug and run per tenant.",
+      "impactDisabled": "When disabled, only the system tenant can log in and related auth flows are fixed to system.",
+      "nonSystemTenantWarning": "There are currently {{count}} active/suspended non-system tenant(s).",
+      "confirmTitle": "Confirm Multi-tenant Mode Change",
+      "confirmMessageEnable": "Enable multi-tenant mode? tenantSlug will be required for tenant login.",
+      "confirmMessageDisable": "Disable multi-tenant mode? Only the system tenant will be allowed to log in.",
+      "disableBlockedTitle": "Cannot Disable",
+      "disableBlockedMessage": "Cannot disable because there are {{count}} active/suspended non-system tenant(s).",
+      "actionRequiredTitle": "Action Required",
+      "requiredActionDeleteTenants": "Set the {{count}} active/suspended non-system tenant(s) to deleted first.",
+      "requiredActionRetryDisable": "After updating tenant statuses, try disabling multi-tenant mode again."
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "description": "Manage tenant user accounts and roles.",
+    "createBtn": "Create User",
+    "roles": {
+      "operator": "Operator",
+      "analyst": "Analyst",
+      "auditor": "Auditor"
+    },
+    "table": {
+      "email": "Email",
+      "displayName": "Name",
+      "role": "Role",
+      "editBtn": "Edit",
+      "deactivateBtn": "Deactivate"
+    },
+    "dialog": {
+      "createTitle": "Create User",
+      "editTitle": "Edit User",
+      "email": "Email",
+      "displayName": "Name",
+      "role": "Role",
+      "password": "Password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter only when changing",
+      "createConfirm": "Create",
+      "editConfirm": "Save"
+    },
+    "errors": {
+      "loadFailed": "Failed to load user list.",
+      "saveFailed": "An error occurred while saving user.",
+      "deactivateFailed": "An error occurred while deactivating user."
+    }
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "subtitle": "View tenant login/settings/CUD events.",
+    "loadFailed": "Failed to load audit logs.",
+    "actions": {
+      "search": "Search",
+      "refresh": "Refresh",
+      "clearSearch": "Clear search"
+    },
+    "filters": {
+      "actionPlaceholder": "Search action code",
+      "allActorTypes": "All actors",
+      "allTenants": "All",
+      "tenantSelectPlaceholder": "Select tenant"
+    },
+    "table": {
+      "createdAt": "Created At",
+      "actorType": "Actor Type",
+      "actor": "Actor",
+      "action": "Action",
+      "resource": "Resource",
+      "message": "Message",
+      "ipAddress": "IP",
+      "tenant": "Tenant",
+      "empty": "No audit logs found."
+    },
+    "actor": {
+      "idPrefix": "Actor ID",
+      "masterIdPrefix": "Master Admin ID"
+    },
+    "refresh": "Refresh",
+    "detail": {
+      "title": "Audit Log Detail",
+      "metadata": "Metadata",
+      "userAgent": "User-Agent"
+    }
+  },
+  "tenantWarning": {
+    "dialogTitle": "Subscription Expiry Warning",
+    "dialogBody": "Your tenant subscription will expire in {{days}} day(s).\nExpiry date: {{date}}\n\nPlease contact your administrator to renew the subscription."
+  },
+  "sessionTimeout": {
+    "dialogTitle": "Session About To Expire",
+    "dialogMessage": "For security, you will be logged out soon. Extend your session to continue.",
+    "remainingLabel": "Remaining time: {{time}}",
+    "extendSession": "Extend Session",
+    "logoutNow": "Log Out Now"
+  },
+  "serverError": {
+    "title": "A server connection problem occurred",
+    "description": "A server error occurred while processing your request. Please try again shortly or move to the dashboard.",
+    "statusCode": "Error code: {{code}}",
+    "devMessageTitle": "Development Error Detail",
+    "goBack": "Previous Page",
+    "goDashboard": "Go To Dashboard",
+    "retry": "Retry"
+  },
+  "layout": {
+    "topbar": {
+      "tip": "Use (cmd + click) to open a tab",
+      "searchPlaceholder": "Search",
+      "searchAria": "Search"
+    },
+    "footer": {
+      "copyright": "© WINSTECHNET. All rights reserved."
+    },
+    "notifications": {
+      "title": "Live Notifications",
+      "securitySpikeTitle": "Threat score spike detected",
+      "securitySpikeBody": "Anomalous traffic patterns increased sharply in the last 15 minutes.",
+      "ingestionDelayTitle": "Log ingestion latency warning",
+      "ingestionDelayBody": "Average ingestion delay has been detected on 2 collectors.",
+      "playbookTitle": "Auto-response playbook executed",
+      "playbookBody": "A containment playbook has been executed for a high-severity event."
+    },
+    "brandSubtext": "Master Console"
+  },
+  "productInfo": {
+    "title": "Product Info",
+    "subtitle": "View release information and license data, then upload a license file to update it.",
+    "loadFailed": "Failed to load product information.",
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
+    "product": {
+      "title": "Release Information",
+      "productName": "Product Name",
+      "productVersion": "Product Version",
+      "releaseVersion": "Release Version",
+      "buildInfo": "Build Information",
+      "readOnly": "Product info is read from product.dat and cannot be edited on this screen."
+    },
+    "license": {
+      "title": "License Information",
+      "licenseKey": "License Key",
+      "expiresAt": "Expires At",
+      "nicMacAddress": "NIC MAC Address",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "empty": "No license information is registered."
+    },
+    "upload": {
+      "button": "Update License",
+      "dialogTitle": "Upload License File",
+      "help": "Upload a license file in JSON or key=value text format. Required fields: licenseKey, expiresAt, nicMacAddress(optional)",
+      "submit": "Apply",
+      "fileRequired": "Please select a license file to upload.",
+      "success": "License information has been updated.",
+      "failed": "Failed to update license information."
+    }
+  },
+  "tenants": {
+    "title": "Tenant Management",
+    "systemPage": {
+      "subtitle": "Manage tenant lifecycle directly from frontend.",
+      "loadFailed": "Failed to load tenant list.",
+      "updateFailed": "Failed to update tenant status."
+    },
+    "createBtn": "Add Tenant",
+    "searchPlaceholder": "company code, company name, email",
+    "summary": {
+      "total": "Total Tenants",
+      "active": "Active",
+      "suspended": "Suspended",
+      "deleted": "Deleted"
+    },
+    "filters": {
+      "all": "All",
+      "deleted": "Deleted"
+    },
+    "multiTenantDisabled": {
+      "title": "Tenant Creation Unavailable",
+      "detail": "Multi-tenant mode is disabled, so new tenants cannot be created.",
+      "restoreTitle": "Tenant Activation Unavailable",
+      "restoreDetail": "Multi-tenant mode is disabled, so non-system tenants cannot be activated or restored."
+    },
+    "toolbar": {
+      "clearSearch": "Clear search",
+      "refresh": "Refresh",
+      "fieldSettings": "Field Settings",
+      "fieldsSelected": "{{0}} fields selected"
+    },
+    "actions": {
+      "more": "More",
+      "settings": "Edit",
+      "edit": "Edit",
+      "delete": "Delete",
+      "restore": "Restore",
+      "deletedLocked": "Deleted tenant cannot change status"
+    },
+    "confirmStatus": {
+      "header": "Confirm Status Change",
+      "message": "Are you sure you want to {{action}} tenant {{name}}?"
+    },
+    "confirmDelete": {
+      "header": "Confirm Tenant Deletion",
+      "message": "Are you sure you want to mark tenant {{name}} as deleted?"
+    },
+    "confirmRestore": {
+      "header": "Confirm Tenant Restore",
+      "message": "Are you sure you want to restore tenant {{name}} to active status?"
+    },
+    "database": {
+      "none": "none",
+      "statusAction": "Check DB Status",
+      "recoverAction": "Recover DB",
+      "resetAction": "Reset DB",
+      "statusReadyTitle": "DB Is Ready",
+      "statusReadyDetail": "The database for customer ({{name}}) is ready.",
+      "statusNotReadyTitle": "DB Needs Attention",
+      "statusNotReadyDetail": "Database check for customer ({{name}}) found missing tables: {{missingTables}}",
+      "statusFailedTitle": "Failed to Check DB Status",
+      "statusFailedDetail": "An error occurred while checking the database status for customer ({{name}}).",
+      "recoverConfirmTitle": "Confirm Tenant DB Recovery",
+      "recoverConfirmMessage": "Do you want to recover the database and run migrations for customer ({{name}})?",
+      "recoverSuccessTitle": "Tenant DB Recovery Completed",
+      "recoverFailedTitle": "Tenant DB Recovery Failed",
+      "recoverFailedDetail": "An error occurred while recovering the database for customer ({{name}}).",
+      "resetConfirmTitle": "Confirm Tenant DB Reset",
+      "resetConfirmMessage": "You are about to reset the database for customer ({{name}}). All existing data will be deleted and cannot be restored. Continue?",
+      "resetSuccessTitle": "Tenant DB Reset Completed",
+      "resetFailedTitle": "Tenant DB Reset Failed",
+      "resetFailedDetail": "An error occurred while resetting the database for customer ({{name}})."
+    },
+    "dialog": {
+      "title": "Add Tenant",
+      "editTitle": "Edit Tenant",
+      "slug": "Company Code (lowercase)",
+      "slugPlaceholder": "acme-corp",
+      "companyName": "Company Name",
+      "contactEmail": "Contact Email",
+      "tierCode": "Tier",
+      "tierPlaceholder": "Select a tier",
+      "quotaSectionTitle": "Service Limit Guide",
+      "quotaSectionHelp": "The selected tier suggests starting limits, and you can adjust the fields below for this tenant as needed.",
+      "tierDefaults": "Selected tier baseline: daily log {{dailyLogQuotaGb}}, max users {{maxUsers}}",
+      "expiresAt": "Expiration",
+      "expiresAtOptionalUnlimited": "Unlimited tiers or the system tenant do not require an expiration date.",
+      "ipCidr": "Log Collection Target IP Ranges",
+      "ipCidrPlaceholder": "e.g. 10.0.0.10, 10.0.1.0/24",
+      "ipCidrHelp": "Press Enter or type a comma to add multiple entries.",
+      "submitAdd": "Add Tenant",
+      "submitEdit": "Save Changes"
+    },
+    "validation": {
+      "slugRequired": "Company code is required.",
+      "slugInvalid": "Company code can include lowercase letters, numbers, and hyphens only.",
+      "nameRequired": "Company name is required.",
+      "contactEmailRequired": "Contact email is required.",
+      "contactEmailInvalid": "Please enter a valid email format.",
+      "tierRequired": "Tier is required.",
+      "epsLimitInvalid": "EPS limit must be 0 or greater. (0 = unlimited)",
+      "storageQuotaGbInvalid": "Storage quota must be 0 or greater. (0 = unlimited)",
+      "retentionDaysInvalid": "Retention must be 0 or greater. (0 = unlimited)",
+      "expiresAtRequired": "Expiration date is required.",
+      "expiresAtInvalid": "Please enter a valid expiration date.",
+      "ipCidrRequired": "At least one log collection target IP range is required.",
+      "ipCidrInvalid": "Use single IP or CIDR format, and separate multiple entries with commas (,).",
+      "ipCidrAllNotAllowed": "For non-system tenants, 0.0.0.0 is not allowed in log collection target IP ranges."
+    },
+    "table": {
+      "id": "ID",
+      "slug": "Company Code",
+      "name": "Company Name",
+      "tier": "Tier",
+      "expiresAt": "Expiration",
+      "ipCidr": "Log Collection Target IP Ranges",
+      "contactEmail": "Contact Email",
+      "empty": "No tenants match your criteria.",
+      "suspendBtn": "Suspend",
+      "activateBtn": "Activate"
+    },
+    "tiers": {
+      "title": "Tier Management",
+      "createBtn": "Add Tier",
+      "searchPlaceholder": "tier name, description",
+      "createDialogTitle": "Add Tier",
+      "editDialogTitle": "Edit Tier",
+      "code": "Tier Code",
+      "name": "Tier Name",
+      "dailyLogQuotaGb": "Daily Log Quota (GB)",
+      "maxUsers": "Users",
+      "unlimited": "Unlimited",
+      "description": "Description",
+      "empty": "No tiers available.",
+      "liteName": "Lite",
+      "premiumName": "Premium",
+      "enterpriseName": "Enterprise",
+      "validation": {
+        "codeRequired": "Tier code is required.",
+        "nameRequired": "Tier name is required.",
+        "dailyLogQuotaGbRequired": "Daily log quota must be 0 or greater. (0 = unlimited)",
+        "maxUsersRequired": "User limit must be 0 or greater. (0 = unlimited)",
+        "descriptionRequired": "Description is required."
+      },
+      "delete": {
+        "confirmTitle": "Confirm Tier Deletion",
+        "confirmAccept": "Delete",
+        "confirmCode": "Tier Code: {{code}}",
+        "confirmName": "Tier Name: {{name}}",
+        "blockedRuleMessage": "Deletion rule: a tier code currently used by tenants cannot be deleted.",
+        "inUseReason": "This tier is currently used by {{count}} tenant(s), so it cannot be deleted."
+      },
+      "result": {
+        "successTitle": "Completed",
+        "errorTitle": "Failed",
+        "saveSuccess": "Saved successfully.",
+        "saveFailed": "An error occurred while saving.",
+        "deleteSuccess": "Tier deleted successfully.",
+        "deleteFailed": "An error occurred while deleting the tier.",
+        "ok": "OK"
+      }
+    },
+    "bootstrap": {
+      "issueAction": "First Admin Token",
+      "historyAction": "Token Issue History",
+      "issueTitle": "Issue First Admin Registration Token",
+      "historyTitle": "Token Issue History",
+      "emailPlaceholder": "Invite email (optional)",
+      "expiresMinutes": "Expires In (minutes)",
+      "expiresMinutesHint": "Enter between {{min}} and {{max}} minutes (up to 48 hours).",
+      "issueSubmit": "Issue Token",
+      "issueSuccessTitle": "Token Issued",
+      "issueSuccessDetail": "First-admin registration token has been issued.",
+      "issueSuccessDetailSent": "The first-admin registration token was sent to {{email}}.",
+      "issueSuccessDetailNotSent": "Token was issued, but email delivery to {{email}} failed. Reason: {{reason}}",
+      "issueConflictTitle": "An active token already exists",
+      "issueConflictDetail": "A valid first-admin registration token already exists. Issue a new token after the current one expires.",
+      "issueOverwriteConfirmTitle": "Expire Existing Active Token",
+      "issueOverwriteConfirmMessage": "An active first-admin registration token exists for customer ({{name}}). Do you want to expire it now and issue a new token?",
+      "issueFailedTitle": "Token Issue Failed",
+      "issueFailedDetail": "An error occurred while issuing the first-admin registration token.",
+      "issueInvalidEmailTitle": "Invalid Email",
+      "issueInvalidEmailDetail": "If email is provided, it must be a valid email format.",
+      "issueInvalidExpiresTitle": "Invalid Expiration",
+      "issueInvalidExpiresDetail": "Expiration must be between {{min}} and {{max}} minutes.",
+      "issueBlockedTitle": "Cannot Issue",
+      "issueBlockedDetail": "An active user already exists, so a first-admin token cannot be issued. Use a password reset token for account recovery.",
+      "tokenLabel": "Issued Token (shown once)",
+      "copyToken": "Copy Token",
+      "registrationLinkLabel": "Admin Registration Link",
+      "copyRegistrationLink": "Copy Registration Link",
+      "copyRegistrationLinkSuccessTitle": "Copied",
+      "copyRegistrationLinkSuccessDetail": "Admin registration link copied to clipboard.",
+      "copyRegistrationLinkFailedTitle": "Copy Failed",
+      "copyRegistrationLinkFailedDetail": "Failed to copy admin registration link.",
+      "copySuccessTitle": "Copied",
+      "copySuccessDetail": "Token copied to clipboard.",
+      "copyFailedTitle": "Copy Failed",
+      "copyFailedDetail": "Failed to copy token.",
+      "filterRangePlaceholder": "Select issue date range",
+      "filterFrom": "Issued From",
+      "filterTo": "Issued To",
+      "filterApply": "Search",
+      "filterReset": "Reset",
+      "issuedAt": "Issued At",
+      "expiresAt": "Expires At",
+      "usedAt": "Used At",
+      "issuedBy": "Issuer ID",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "used": "Used"
+      }
+    },
+    "passwordReset": {
+      "issueAction": "Password Reset Token",
+      "issueTitle": "Issue Tenant Admin Password Reset Token",
+      "confirmTitle": "Confirm Password Reset Token Issuance",
+      "confirmMessage": "Issue a password reset token for customer ({{name}}) admin account ({{email}})?",
+      "emailPlaceholder": "Target email for password reset",
+      "expiresMinutes": "Expires In (minutes)",
+      "expiresMinutesHint": "Enter between {{min}} and {{max}} minutes (up to 24 hours).",
+      "issueSubmit": "Issue Reset Token",
+      "issueSuccessTitle": "Reset Token Issued",
+      "issueSuccessDetailSent": "The password reset token was sent to {{email}}.",
+      "issueSuccessDetailNotSent": "Token was issued, but email delivery to {{email}} failed. Reason: {{reason}}",
+      "issueFailedTitle": "Reset Token Issue Failed",
+      "issueFailedDetail": "An error occurred while issuing the password reset token.",
+      "issueInvalidEmailDetail": "Please enter a valid email format.",
+      "issueInvalidExpiresDetail": "Expiration must be between {{min}} and {{max}} minutes.",
+      "tokenLabel": "Issued Token (shown once)",
+      "copyToken": "Copy Token",
+      "copySuccessTitle": "Copied",
+      "copySuccessDetail": "Reset token copied to clipboard.",
+      "copyFailedTitle": "Copy Failed",
+      "copyFailedDetail": "Failed to copy reset token.",
+      "expiresAt": "Expires At"
+    }
+  },
+  "threatIntel": {
+    "title": "Global Threat Intelligence",
+    "registerBtn": "Register TI",
+    "dialog": {
+      "title": "Register TI Feed",
+      "type": "Type",
+      "indicator": "Indicator",
+      "severity": "Severity",
+      "source": "Source"
+    },
+    "table": {
+      "type": "Type",
+      "indicator": "Indicator",
+      "severity": "Severity",
+      "source": "Source",
+      "deactivateBtn": "Deactivate",
+      "dispatchStatus": "Dispatch Status"
+    },
+    "dispatch": {
+      "retryBtn": "Retry Dispatch",
+      "successTitle": "Dispatch Succeeded",
+      "success": "TI feed dispatched successfully.",
+      "failedTitle": "Dispatch Failed",
+      "failed": "An error occurred during dispatch.",
+      "pending": "Waiting for dispatch",
+      "dispatchedAt": "Dispatched at: {{at}}",
+      "status": {
+        "PENDING": "Pending",
+        "DISPATCHED": "Dispatched",
+        "FAILED": "Failed"
+      }
+    },
+    "validation": {
+      "typeRequired": "Type is required.",
+      "indicatorRequired": "Indicator is required.",
+      "severityRequired": "Severity is required."
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed",
+      "loadFailed": "Failed to load TI feed list.",
+      "createSuccess": "TI feed has been registered.",
+      "createFailed": "An error occurred while registering TI feed.",
+      "deactivateSuccess": "TI feed has been deactivated.",
+      "deactivateFailed": "An error occurred while deactivating TI feed."
+    }
+  },
+  "quota": {
+    "title": "Quota Policy Management",
+    "unlimited": "Unlimited",
+    "table": {
+      "tenant": "Tenant",
+      "slug": "Slug",
+      "epsLimit": "EPS Limit",
+      "storageQuotaGb": "Storage Quota (GB)",
+      "retentionDays": "Retention (Days)",
+      "updatedAt": "Last Updated"
+    },
+    "dialog": {
+      "title": "Edit Quota: {{name}}",
+      "epsLimit": "EPS Limit (events/sec)",
+      "storageQuotaGb": "Storage Quota",
+      "retentionDays": "Log Retention",
+      "epsSuffix": " EPS",
+      "daysSuffix": " days",
+      "zeroMeansUnlimited": "0 means unlimited."
+    },
+    "result": {
+      "successTitle": "Saved",
+      "saveSuccess": "Quota policy saved successfully.",
+      "errorTitle": "Save Failed",
+      "saveFailed": "An error occurred while saving."
+    }
+  },
+  "dataIsolation": {
+    "title": "Data Isolation Verification",
+    "loadFailed": "Failed to load isolation stats.",
+    "checkedAt": "Last checked: {{checkedAt}}",
+    "summary": {
+      "totalTenants": "Total Tenants",
+      "ok": "OK",
+      "warn": "Warning",
+      "critical": "Critical"
+    },
+    "risk": {
+      "OK": "OK",
+      "WARN": "Warning",
+      "CRITICAL": "Critical"
+    },
+    "table": {
+      "title": "Per-Tenant Isolation Metrics",
+      "tenant": "Tenant",
+      "slug": "Slug",
+      "riskLevel": "Risk Level",
+      "snapshotCount": "Snapshots",
+      "lastSnapshotAt": "Last Snapshot",
+      "missingContextCount": "Missing Context",
+      "auditCrossCount": "Cross-Tenant Audit"
+    },
+    "resultDialog": {
+      "failedTitle": "Failed"
+    }
+  },
+  "billing": {
+    "title": "Billing & Usage",
+    "actions": {
+      "collectUsage": "Run Usage Collection",
+      "refresh": "Refresh",
+      "exportCsv": "Export CSV",
+      "filter": "Filter",
+      "applyFilters": "Apply Filters",
+      "resetFilters": "Reset"
+    },
+    "filters": {
+      "tenant": "Tenant",
+      "tier": "Tier",
+      "from": "From",
+      "to": "To",
+      "allTenants": "All Tenants",
+      "allTiers": "All Tiers",
+      "dialogTitle": "Search Filters"
+    },
+    "summary": {
+      "totalLogCount": "Total Log Count",
+      "avgEps": "Average EPS",
+      "avgStorageGb": "Average Storage (GB)"
+    },
+    "table": {
+      "title": "Usage Snapshots",
+      "snapshotAt": "Snapshot Time",
+      "tenant": "Tenant",
+      "epsAvg": "Average EPS",
+      "storageUsedGb": "Used Storage (GB)",
+      "logCount": "Log Count"
+    },
+    "pricing": {
+      "title": "Pricing Policies",
+      "save": "Save Pricing Policies",
+      "columns": {
+        "tierCode": "Tier Code",
+        "baseFee": "Base Fee",
+        "includedEps": "Included EPS",
+        "epsOveragePer100": "Per 100 EPS Overage",
+        "storageOveragePerGb": "Per GB Storage Overage",
+        "logPerMillion": "Per Million Logs",
+        "currency": "Currency"
+      }
+    }
+  },
+  "monitoring": {
+    "title": "Platform Monitoring",
+    "actions": {
+      "refresh": "Refresh",
+      "filter": "Filter",
+      "applyFilters": "Apply Filters",
+      "resetFilters": "Reset"
+    },
+    "filters": {
+      "tenant": "Tenant",
+      "severity": "Severity",
+      "from": "From",
+      "to": "To",
+      "allTenants": "All Tenants",
+      "allSeverities": "All Severities",
+      "dialogTitle": "Search Filters"
+    },
+    "cards": {
+      "ingestErrorRate": "Ingest Error Rate",
+      "parseErrorRate": "Parse Error Rate",
+      "avgIngestLatencyMs": "Avg Ingest Latency (ms)",
+      "eventCount": "Event Count",
+      "engineHealth": "Go Engine Status"
+    },
+    "chart": {
+      "epsTitle": "EPS Trend",
+      "noData": "No EPS data to display.",
+      "minLabel": "Min EPS: {{value}}",
+      "maxLabel": "Max EPS: {{value}}",
+      "startLabel": "Start: {{value}}",
+      "middleLabel": "Middle: {{value}}",
+      "endLabel": "End: {{value}}"
+    },
+    "engine": {
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "checkedAt": "Checked at: {{checkedAt}}"
+    },
+    "table": {
+      "title": "Recent Events",
+      "occurredAt": "Occurred At",
+      "tenant": "Tenant",
+      "severity": "Severity",
+      "code": "Code",
+      "message": "Message"
+    }
+  },
+  "masterUsers": {
+    "title": "User Management",
+    "description": "Active admins {{current}} / max {{max}}",
+    "createBtn": "Add Admin",
+    "limitReached": "Master admins are limited to a maximum of 10 accounts.",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "confirmDelete": {
+      "header": "Confirm Admin Deletion",
+      "message": "Are you sure you want to mark {{email}} as deleted?"
+    },
+    "confirmRestore": {
+      "header": "Confirm Admin Restore",
+      "message": "Are you sure you want to restore {{email}}?"
+    },
+    "dialog": {
+      "createTitle": "Add Admin",
+      "editTitle": "Edit Admin",
+      "email": "Email",
+      "password": "Password",
+      "passwordOptional": "Leave blank to keep the current password",
+      "isActive": "Active"
+    },
+    "validation": {
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Please enter a valid email format.",
+      "passwordRequired": "Password is required.",
+      "passwordPolicy": "Password must contain no spaces and use letters/numbers/special characters with either 10+ characters (at least 2 categories) or 8+ characters (all 3 categories)."
+    },
+    "table": {
+      "id": "ID",
+      "email": "Email",
+      "isActive": "Active",
+      "status": "Status",
+      "createdAt": "Created At"
+    },
+    "result": {
+      "successTitle": "Completed",
+      "errorTitle": "Failed",
+      "saveSuccess": "Admin account saved successfully.",
+      "saveFailed": "An error occurred while saving the admin account.",
+      "deleteSuccess": "Admin has been marked as deleted.",
+      "deleteFailed": "An error occurred while deleting the admin account.",
+      "restoreSuccess": "Admin has been restored.",
+      "restoreFailed": "An error occurred while restoring the admin account."
+    }
+  },
+  "smtpSettings": {
+    "title": "SMTP Settings",
+    "description": "Configure SMTP connection details used for token email delivery.",
+    "loadFailed": "Failed to load SMTP settings.",
+    "saveSuccess": "SMTP settings have been saved.",
+    "saveFailed": "An error occurred while saving SMTP settings.",
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
+    "validation": {
+      "smtpExternalRequired": "In External SMTP mode, both SMTP host and sender email are required.",
+      "smtpHostRequired": "In External SMTP mode, SMTP host is required.",
+      "smtpFromRequired": "In External SMTP mode, sender email is required.",
+      "smtpHostAndFromPair": "When SMTP is enabled, SMTP host and sender address must be provided together.",
+      "smtpPort": "SMTP port must be between 1 and 65535."
+    },
+    "mode": {
+      "label": "SMTP Mode",
+      "local": "Use Local Settings",
+      "external": "Use External SMTP Settings",
+      "help": "Local mode uses server env SMTP values, while External mode prefers the values configured below."
+    },
+    "hostLabel": "SMTP Host",
+    "portLabel": "SMTP Port",
+    "secureLabel": "Use Secure (SSL/TLS)",
+    "userLabel": "SMTP User",
+    "passLabel": "SMTP Password",
+    "passPlaceholder": "Enter a new password to update it.",
+    "passSaved": "A stored SMTP password exists.",
+    "passNotSaved": "No stored SMTP password exists.",
+    "clearPassButton": "Clear stored SMTP password",
+    "fromLabel": "Sender Email",
+    "bootstrapUrlLabel": "Tenant Token Registration Link",
+    "bootstrapUrlPlaceholder": "e.g. https://admin.example.com/login",
+    "bootstrapUrlHelp": "When set, the token email includes the tenant token registration link.",
+    "passwordResetUrlLabel": "Tenant Password Reset Link",
+    "passwordResetUrlPlaceholder": "e.g. https://tenant.example.com/reset-password",
+    "passwordResetUrlHelp": "When set, password reset token emails include the reset link.",
+    "test": {
+      "toLabel": "Test Recipient Email",
+      "toPlaceholder": "e.g. operator@demo.local",
+      "help": "Sends a test mail with the currently applied SMTP mode (Local/External). Save settings first, then test.",
+      "sendButton": "Send Test Mail",
+      "success": "Test mail sent: to={{to}}, mode={{mode}}, host={{host}}:{{port}}",
+      "failed": "Failed to send test mail.",
+      "validation": {
+        "toRequired": "Please enter a test recipient email.",
+        "toInvalid": "Please enter a valid email address."
+      }
+    }
+  },
+  "vectorSettings": {
+    "title": "Vector Pipeline Settings",
+    "description": "Manage manufacturer parser profiles and view topic routing policies.",
+    "pipelineSummaryTitle": "Pipeline Execution Summary",
+    "pipelineSummaryDescription": "Maintain tenant isolation in shared-port (514) environments with Vector 2-stage parsing and Router final validation.",
+    "pipelineSteps": {
+      "s1": "Devices -> Vector Syslog collector",
+      "s2": "Vector first-pass manufacturer classification (envelope/matchIndicators)",
+      "s3": "Vector manufacturer-specific VRL parsing and device_code extraction",
+      "s4": "Vector -> input topic publish",
+      "s5": "Router final classification then publish to raw-logs.{tenant_id}"
+    },
+    "classificationPriority": "Final classification priority: (1) device_code+source_ip -> (2) device_code only -> (3) source_ip only (LOW) -> (4) quarantine",
+    "advanced": {
+      "openButton": "View Setting Details",
+      "dialogTitle": "Pipeline Setting Details",
+      "close": "Close"
+    },
+    "loadFailed": "Failed to load Vector settings.",
+    "saveSuccess": "Vector settings have been saved.",
+    "saveFailed": "An error occurred while saving Vector settings.",
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed"
+    },
+    "outputTopicLabel": "Input Topic",
+    "defaultValueLabel": "Default",
+    "outputTopicHelp": "Topic that carries successful Vector parse events into the routing engine (Router). (Read-only)",
+    "quarantineTopicLabel": "Quarantine Topic",
+    "quarantineTopicHelp": "Stores parse failures, ambiguous matches, and unmatched events. (Read-only)",
+    "routerOutputTopicLabel": "Router Output Topic Pattern",
+    "routerOutputTopicHelp": "The routing engine (Router) publishes finally classified events into tenant-scoped topics.",
+    "configVersionLabel": "Config Version",
+    "configVersionHelp": "The version is incremented automatically when settings change.",
+    "appliedVersionLabel": "Applied Version",
+    "appliedAtLabel": "Last Applied At",
+    "applyStatusLabel": "Apply Status",
+    "applyMessageLabel": "Apply Message",
+    "applyButton": "Apply Vector",
+    "dryRunButton": "Dry-run",
+    "dryRunning": "Validating...",
+    "historyButton": "Apply History",
+    "applying": "Applying...",
+    "applyFailed": "An error occurred while applying Vector settings.",
+    "dryRunFailed": "An error occurred during Vector dry-run validation.",
+    "applyResult": "Status={{status}}\nMessage={{message}}\nPath={{configPath}}\nSize={{renderedBytes}} bytes",
+    "dryRunResult": "Valid={{valid}}\nPath={{configPath}}\nSize={{renderedBytes}} bytes",
+    "applyStatus": {
+      "idle": "Idle",
+      "applied": "Applied",
+      "failed": "Failed"
+    },
+    "allowUnknownVendorLabel": "Allow Unknown Manufacturer",
+    "allowUnknownVendorHelp": "When enabled, unknown manufacturer events are handled in a separate path. When disabled, they are routed to quarantine.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "parserProfilesLabel": "Manufacturer Parser Profiles",
+    "parserProfilesHelp": "Configure collection mode and extraction rules per manufacturer.",
+    "applyResultsLabel": "Recent Apply Results",
+    "applyResultsHelp": "You can review Vector apply attempts directly below.",
+    "seed": {
+      "loadButton": "Load Seed Profiles",
+      "overwriteButton": "Reapply Seed Profiles",
+      "empty": "No seed manufacturer profiles are available.",
+      "noneAdded": "All seed manufacturer profiles are already registered.",
+      "added": "Added {{count}} seed manufacturer profile(s). Click Save to apply changes.",
+      "overwritten": "Reapplied {{count}} seed manufacturer profile(s). {{replaced}} existing profile(s) were refreshed to seed defaults. Click Save to apply changes."
+    },
+    "ingestionModes": {
+      "syslog": "Syslog",
+      "snmp": "SNMP",
+      "http": "HTTP",
+      "cmd": "CMD",
+      "file": "File",
+      "kafka": "Kafka"
+    },
+    "profileTable": {
+      "vendor": "Manufacturer",
+      "ingestionMode": "Collection Mode",
+      "matchIndicators": "Manufacturer Match Indicators",
+      "deviceCodeRegex": "device_code Regex",
+      "vrlScript": "VRL",
+      "vrlDefault": "Default",
+      "vrlCustom": "Custom",
+      "sourceConfig": "Source Config",
+      "enabled": "Enabled"
+    },
+    "profileDialog": {
+      "createTitle": "Add Manufacturer Profile",
+      "editTitle": "Edit Manufacturer Profile",
+      "addButton": "Add Profile",
+      "vendor": "Manufacturer Code",
+      "ingestionMode": "Collection Mode",
+      "matchIndicators": "Manufacturer Match Indicators",
+      "matchIndicatorsPlaceholder": "e.g. panos, palo alto",
+      "deviceCodeRegex": "device_code Extraction Regex",
+      "vrlScript": "Additional VRL Script (Optional)",
+      "vrlScriptPlaceholder": "e.g. .parsed.site = \"dc1\"",
+      "transport": "Transport",
+      "address": "Address",
+      "port": "Port",
+      "path": "HTTP Path",
+      "authStrategy": "Auth Strategy",
+      "authNone": "None",
+      "authBasic": "Basic",
+      "authToken": "Token",
+      "authStrategyHelp": "Auth strategy is stored as metadata only. Enforce actual auth in backend/proxy.",
+      "command": "Command",
+      "intervalSeconds": "Interval (seconds)",
+      "includePatterns": "File Include Patterns",
+      "includePatternsPlaceholder": "e.g. /var/log/*.log, /opt/app/logs/*.json",
+      "readFrom": "Read From",
+      "readFromBeginning": "Beginning",
+      "readFromEnd": "End",
+      "bootstrapServers": "Kafka Bootstrap Servers",
+      "topic": "Kafka Topic",
+      "groupId": "Kafka Group ID"
+    },
+    "validation": {
+      "outputTopicRequired": "Output topic is required.",
+      "quarantineTopicRequired": "Quarantine topic is required.",
+      "profilesJsonInvalid": "Parser profiles JSON format is invalid.",
+      "profilesArrayRequired": "Parser profiles must be a JSON array.",
+      "profilesEmpty": "At least one parser profile is required.",
+      "profileShapeInvalid": "Parser profile item shape is invalid.",
+      "vendorRequired": "Each parser profile must include a manufacturer code.",
+      "vendorDuplicated": "Duplicated manufacturer code exists: {{vendor}}",
+      "matchIndicatorsRequired": "Each parser profile must include at least one match indicator.",
+      "deviceCodeRegexRequired": "Each parser profile must include deviceCodeRegex.",
+      "portRange": "Port must be an integer between 1 and 65535.",
+      "intervalRange": "Interval must be an integer between 1 and 86400.",
+      "enabledRequired": "Each parser profile must have enabled set to true or false."
+    }
+  },
+  "vectorApplyHistory": {
+    "title": "Vector Apply History",
+    "description": "Review apply attempts and reload success results.",
+    "loadFailed": "Failed to load Vector apply history.",
+    "reloadSucceeded": "Reload Succeeded",
+    "reloadNotSucceeded": "Reload Not Succeeded",
+    "table": {
+      "attemptedAt": "Attempted At",
+      "configVersion": "Config Version",
+      "status": "Status",
+      "reload": "Reload Result",
+      "size": "Rendered Size (bytes)",
+      "path": "Config Path",
+      "message": "Message"
+    }
+  },
+  "licenseWarning": {
+    "dialogTitle": "License Expiry Warning",
+    "dialogBody": "Your license will expire in {{days}} day(s).\nExpiry date: {{date}}\n\nPlease update the license on the Product Info page."
+  },
+  "systemStatus": {
+    "title": "System Status History",
+    "checkNow": "Check Now",
+    "checkDone": "Check Complete",
+    "memory": "Memory",
+    "disk": "Disk",
+    "services": "Service Status",
+    "checkedAt": "Checked at: {{at}}",
+    "service": {
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
+      "UNKNOWN": "Unknown"
+    },
+    "tabs": {
+      "alerts": "Alert Events",
+      "history": "Status History"
+    },
+    "alert": {
+      "severity": "Severity",
+      "type": "Type",
+      "message": "Message",
+      "count": "Count",
+      "resolved": "Resolved",
+      "resolveBtn": "Mark Resolved"
+    },
+    "history": {
+      "checkedAt": "Checked At",
+      "hasAlert": "Alert"
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed",
+      "loadFailed": "Failed to load system status data.",
+      "checkFailed": "An error occurred while running immediate check.",
+      "resolveSuccess": "Alert has been marked as resolved.",
+      "resolveFailed": "An error occurred while resolving the alert."
+    }
+  },
+  "integrity": {
+    "title": "Integrity Check",
+    "checkAllBtn": "Check All",
+    "registerBtn": "Register File",
+    "syncBtn": "Sync",
+    "checkDone": "Integrity check complete",
+    "syncDone": "Sync complete",
+    "syncFailed": "Sync failed",
+    "deleteTitle": "Remove File Tracking",
+    "deleteConfirm": "Remove tracking for {{label}}?",
+    "warningMsg": "Tampering detected: {{changed}} changed, {{missing}} missing",
+    "validation": {
+      "filePathRequired": "File path is required.",
+      "fileLabelRequired": "File label is required."
+    },
+    "resultDialog": {
+      "successTitle": "Completed",
+      "failedTitle": "Failed",
+      "checkFailed": "An error occurred while running integrity check.",
+      "registerSuccess": "Tracking file has been registered.",
+      "registerFailed": "An error occurred while registering tracking file.",
+      "deleteSuccess": "File tracking has been deleted.",
+      "deleteFailed": "An error occurred while deleting file tracking."
+    },
+    "status": {
+      "OK": "OK",
+      "CHANGED": "Changed",
+      "MISSING": "Missing",
+      "UNCHECKED": "Unchecked"
+    },
+    "table": {
+      "label": "File Label",
+      "path": "Path",
+      "status": "Status",
+      "expectedHash": "Expected Hash",
+      "currentHash": "Current Hash",
+      "lastCheckedAt": "Last Checked",
+      "lastSyncedAt": "Last Synced"
+    },
+    "registerDialog": {
+      "title": "Register File",
+      "filePath": "File Path (absolute path inside container)",
+      "fileLabel": "File Label (display name)"
+    }
+  }
+}

@@ -35,15 +35,10 @@ info "Backend 의존성 설치 중..."
 cd "$REPO_ROOT/backend" && npm ci
 success "Backend 의존성 설치 완료"
 
-# ── Frontend Admin npm ci ─────────────────────────────────────────────────────
-info "Frontend Admin 의존성 설치 중..."
-cd "$REPO_ROOT/frontend-admin" && npm install
-success "Frontend Admin 의존성 설치 완료"
-
-# ── Frontend Tenant npm ci ────────────────────────────────────────────────────
-info "Frontend Tenant 의존성 설치 중..."
-cd "$REPO_ROOT/frontend-tenant" && npm install
-success "Frontend Tenant 의존성 설치 완료"
+# ── Frontend Master npm ci ────────────────────────────────────────────────────
+info "Frontend Master 의존성 설치 중..."
+cd "$REPO_ROOT/frontend" && npm install
+success "Frontend Master 의존성 설치 완료"
 
 # ── Go 의존성 다운로드 ────────────────────────────────────────────────────────
 if command -v go &>/dev/null; then

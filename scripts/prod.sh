@@ -7,14 +7,16 @@
 #   ./scripts/prod.sh docker   → docker compose --profile prod --env-file .env.prod up -d (권장)
 #   ./scripts/prod.sh fix-perms → RedPanda 데이터 경로 권한 복구 (sudo 필요)
 #   ./scripts/prod.sh backend  → 백엔드 빌드 + 기동
-#   ./scripts/prod.sh admin    → Frontend Admin 빌드 (정적 파일 생성)
-#   ./scripts/prod.sh tenant   → Frontend Tenant 빌드 (정적 파일 생성)
+#   ./scripts/prod.sh frontend → Frontend 빌드 (정적 파일 생성)
+#   ./scripts/prod.sh master   → Frontend 빌드 (호환 별칭)
 #   ./scripts/prod.sh engine   → Go Engine 빌드 + 기동
 # =============================================================================
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="${TMS_ENV_FILE:-$REPO_ROOT/.env.prod}"
+export HOST_UID="${HOST_UID:-$(id -u)}"
+export HOST_GID="${HOST_GID:-$(id -g)}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
@@ -49,7 +51,7 @@ print_prod_stop_hint() {
     build)
       echo -e "  빌드 전용 실행입니다. 종료할 런타임 프로세스가 없습니다."
       ;;
-    admin|tenant)
+    frontend|master)
       echo -e "  빌드 전용 실행입니다. 종료할 런타임 프로세스가 없습니다."
       ;;
   esac
@@ -317,20 +319,12 @@ start_backend_prod() {
 }
 
 # ── Frontend 빌드 ─────────────────────────────────────────────────────────────
-build_admin() {
-  info "Frontend Admin 빌드 중..."
-  cd "$REPO_ROOT/frontend-admin"
+build_frontend() {
+  info "Frontend 빌드 중..."
+  cd "$REPO_ROOT/frontend"
   npm ci
   npm run build
-  success "Frontend Admin 빌드 완료: frontend-admin/dist/"
-}
-
-build_tenant() {
-  info "Frontend Tenant 빌드 중..."
-  cd "$REPO_ROOT/frontend-tenant"
-  npm ci
-  npm run build
-  success "Frontend Tenant 빌드 완료: frontend-tenant/dist/"
+  success "Frontend 빌드 완료: frontend/dist/"
 }
 
 # ── Go Engine 빌드 + 기동 ────────────────────────────────────────────────────
@@ -368,11 +362,9 @@ start_docker() {
   echo ""
   echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
   echo -e "${BOLD} TMS 운영 서버 기동 완료 (Docker)${RESET}"
-  echo -e "  Gateway    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}"
-  echo -e "  Admin UI   → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/admin"
-  echo -e "  Tenant UI  → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/tenant"
-  echo -e "  Swagger    → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/docs"
-  echo -e "  API/Auth   → http://localhost:${PORT_ADMIN_GATEWAY:-8088}/api, /auth"
+  echo -e "  Master UI  → http://localhost:${PORT_FRONTEND:-5173}/master"
+  echo -e "  Swagger    → http://localhost:${PORT_BACKEND:-3000}/docs"
+  echo -e "  API/Auth   → http://localhost:${PORT_BACKEND:-3000}/api, /auth"
   echo -e "  Go Engine  → http://localhost:${PORT_GO_ENGINE:-8081}"
   echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
   echo -e "${YELLOW}종료: docker compose down${RESET}"
@@ -392,8 +384,7 @@ case "$SERVICE" in
     ;;
   build)
     build_backend
-    build_admin
-    build_tenant
+    build_frontend
     build_engine
     success "전체 빌드 완료"
     print_prod_stop_hint build
@@ -404,13 +395,9 @@ case "$SERVICE" in
     start_backend_prod
     print_prod_stop_hint backend
     ;;
-  admin)
-    build_admin
-    print_prod_stop_hint admin
-    ;;
-  tenant)
-    build_tenant
-    print_prod_stop_hint tenant
+  frontend|master)
+    build_frontend
+    print_prod_stop_hint frontend
     ;;
   engine)
     start_infra
@@ -421,8 +408,7 @@ case "$SERVICE" in
   all)
     start_infra
     build_backend
-    build_admin
-    build_tenant
+    build_frontend
     build_engine
     sleep 3
     start_backend_prod
@@ -431,16 +417,15 @@ case "$SERVICE" in
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo -e "${BOLD} TMS 운영 서버 기동 완료${RESET}"
     echo -e "  Backend    → http://localhost:${PORT_BACKEND:-3000}"
+    echo -e "  Master UI  → frontend/dist/ (별도 웹서버 필요)"
     echo -e "  Go Engine  → http://localhost:${PORT_GO_ENGINE:-8081}"
-    echo -e "  Admin UI   → frontend-admin/dist/ (별도 웹서버 필요)"
-    echo -e "  Tenant UI  → frontend-tenant/dist/ (별도 웹서버 필요)"
     echo -e "${YELLOW}※ 운영 환경 권장: ./scripts/prod.sh docker${RESET}"
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     print_prod_stop_hint all
     ;;
   *)
     error "알 수 없는 서비스: $SERVICE"
-    echo "사용법: $0 [all|build|docker|fix-perms|backend|admin|tenant|engine]"
+    echo "사용법: $0 [all|build|docker|fix-perms|backend|frontend|master|engine]"
     exit 1
     ;;
 esac

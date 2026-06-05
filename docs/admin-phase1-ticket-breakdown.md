@@ -28,7 +28,7 @@
   2. 미구현 메뉴는 숨김 또는 준비중 배지 정책 적용
   3. breadcrumb 동작 점검
 - 범위:
-  1. frontend-admin 라우팅
+  1. frontend 라우팅
   2. AdminLayout 메뉴 구성
 - 산출물:
   1. 메뉴 정책 반영 코드

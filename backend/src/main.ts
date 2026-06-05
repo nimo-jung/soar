@@ -14,8 +14,7 @@ async function bootstrap() {
   // CORS 설정
   app.enableCors({
     origin: [
-      `http://localhost:${process.env.PORT_FRONTEND_ADMIN ?? 5174}`,
-      `http://localhost:${process.env.PORT_FRONTEND_TENANT ?? 5173}`,
+      `http://localhost:${process.env.PORT_FRONTEND ?? 5173}`,
     ],
     credentials: true,
   });
