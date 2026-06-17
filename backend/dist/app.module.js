@@ -15,6 +15,7 @@ const messaging_module_1 = require("./common/messaging/messaging.module");
 const admin_module_1 = require("./admin/admin.module");
 const tenant_module_1 = require("./tenant/tenant.module");
 const auth_module_1 = require("./auth/auth.module");
+const ai_module_1 = require("./common/ai/ai.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -26,6 +27,7 @@ exports.AppModule = AppModule = __decorate([
             redis_module_1.RedisModule,
             messaging_module_1.MessagingModule,
             auth_module_1.AuthModule,
+            ai_module_1.AiModule,
             admin_module_1.AdminModule,
             tenant_module_1.TenantModule,
         ],

@@ -25,6 +25,15 @@ success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 
+# Preflight dependency check (docker/docker compose) — warn only
+if [[ -f "$REPO_ROOT/scripts/check-deps.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$REPO_ROOT/scripts/check-deps.sh"
+  if ! check_deps; then
+    warn "Docker/Docker Compose 확인 실패 — docker 관련 명령은 실패할 수 있습니다."
+  fi
+fi
+
 print_prod_stop_hint() {
   local scope="$1"
 

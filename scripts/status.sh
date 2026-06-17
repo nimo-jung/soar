@@ -16,6 +16,16 @@ ENV_PROD_FILE="$REPO_ROOT/.env.prod"
 BOLD='\033[1m'; GREEN='\033[0;32m'; RED='\033[0;31m'
 YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RESET='\033[0m'
 
+# Preflight dependency check (docker/docker compose) — warn only
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$REPO_ROOT/scripts/check-deps.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$REPO_ROOT/scripts/check-deps.sh"
+  if ! check_deps; then
+    echo "[WARN] Docker/Docker Compose가 동작하지 않아 컨테이너 상태 판단이 부정확할 수 있습니다."
+  fi
+fi
+
 docker_running() {
   local container="$1"
   docker inspect "$container" --format '{{.State.Status}}' 2>/dev/null | grep -q "running"

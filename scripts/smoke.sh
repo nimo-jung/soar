@@ -70,6 +70,10 @@ if [[ "$MODE" == "dev" ]]; then
   code=$(curl --max-time 10 -sS -o /tmp/tms_smoke_docs_dev.txt -w '%{http_code}' "$BACKEND_BASE/docs/" || echo 000)
   check_code "dev backend docs" 200 "$code" || failed=1
 
+  # python-ai health
+  code=$(curl --max-time 5 -sS -o /tmp/tms_smoke_python_health.txt -w '%{http_code}' "http://localhost:8000/health" || echo 000)
+  check_code "dev python-ai health" 200 "$code" || failed=1
+
   code=$(post_json "$BACKEND_BASE/auth/master/login" "{\"email\":\"$MASTER_EMAIL\",\"password\":\"$MASTER_PASSWORD\"}" /tmp/tms_smoke_master_backend.json || echo 000)
   check_code "dev backend master login" 200 "$code" || failed=1
 

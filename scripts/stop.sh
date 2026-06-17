@@ -27,6 +27,14 @@ info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
 success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 
+# Preflight dependency check (docker/docker compose) — warn only
+if [[ -f "$REPO_ROOT/scripts/check-deps.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$REPO_ROOT/scripts/check-deps.sh"
+  if ! check_deps; then
+    warn "Docker/Docker Compose 확인 실패 — docker 관련 중지/삭제 명령은 실패할 수 있습니다."
+  fi
+fi
 find_pid_by_port() {
   local port="$1"
   ss -ltnp "( sport = :$port )" 2>/dev/null \

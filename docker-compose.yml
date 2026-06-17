@@ -1,4 +1,9 @@
 name: tms
+# Host prerequisites
+# - Docker Engine (https://docs.docker.com/get-docker/)
+# - Docker Compose plugin (docker compose) or docker-compose binary
+# - Recommended: sufficient disk for ClickHouse/Qdrant volumes, NVMe for Qdrant storage
+# The scripts in `scripts/` will run preflight checks using scripts/check-deps.sh
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 실행 방법
@@ -141,6 +146,26 @@ services:
       redpanda:
         condition: service_healthy
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: tms-qdrant
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+      QDRANT__SERVICE__HTTP_PORT: 6333
+    ports:
+      - "${PORT_QDRANT_HTTP:-6333}:6333"
+      - "${PORT_QDRANT_GRPC:-6334}:6334"
+    volumes:
+      - /home1/tms/qdrant:/qdrant/storage
+    networks:
+      - tms-network
+    healthcheck:
+      test: ["CMD-SHELL","curl -sS http://localhost:6333/api/v1/collections || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   mailpit:
     profiles: [dev, prod]
     image: axllent/mailpit:v1.26
@@ -171,6 +196,8 @@ services:
     depends_on:
       redpanda:
         condition: service_healthy
+      qdrant:
+        condition: service_started
 
   vector-prod:
     profiles: [prod]
@@ -192,6 +219,8 @@ services:
     depends_on:
       redpanda:
         condition: service_healthy
+      qdrant:
+        condition: service_started
 
   # ───────────────────────────────────────────────────────────────────────────
   # Application
@@ -358,6 +387,8 @@ services:
         condition: service_healthy
       vector-dev:
         condition: service_started
+      qdrant:
+        condition: service_healthy
 
   go-engine-prod:
     profiles: [prod]
@@ -397,6 +428,31 @@ services:
         condition: service_healthy
       vector-prod:
         condition: service_started
+      qdrant:
+        condition: service_healthy
+
+  python-ai:
+    profiles: [dev, prod]
+    build:
+      context: ./python-ai
+      dockerfile: Dockerfile
+    container_name: tms-python-ai
+    env_file:
+      - .env.dev
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      REDPANDA_HOST: redpanda
+      REDPANDA_PORT: "9092"
+    ports:
+      - "8000:8000"
+    networks:
+      - tms-network
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
 
   # Unified Master UI  —  Tenant 디자인 기반 통합 콘솔
   frontend-dev:

@@ -6,6 +6,7 @@ import { MessagingModule } from './common/messaging/messaging.module';
 import { AdminModule } from './admin/admin.module';
 import { TenantModule } from './tenant/tenant.module';
 import { AuthModule } from './auth/auth.module';
+import { AiModule } from './common/ai/ai.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
     RedisModule,
     MessagingModule,
     AuthModule,
+    AiModule,
     AdminModule,
     TenantModule,
   ],

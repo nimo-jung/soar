@@ -1,0 +1,30 @@
+name: Build Python-AI with ONNX
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-onnx-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU (for cross-build caching)
+        uses: docker/setup-qemu-action@v2
+
+      - name: Build python-ai image with ONNX conversion
+        run: |
+          docker build --progress=plain \
+            --build-arg CONVERT_ONNX=1 \
+            --build-arg MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2 \
+            -t tms-python-ai:onnx ./python-ai
+
+      - name: Run python-ai container readiness check
+        run: |
+          docker run -d --name tms-python-ai-test -p 8000:8000 tms-python-ai:onnx || true
+          sleep 5
+          curl --retry 5 --retry-delay 2 --fail http://localhost:8000/ready
+        env:
+          PYTHON_ENV: production

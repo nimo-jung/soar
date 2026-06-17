@@ -28,6 +28,16 @@ success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
 
+# Preflight dependency check (docker/docker compose)
+if [[ -f "$REPO_ROOT/scripts/check-deps.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$REPO_ROOT/scripts/check-deps.sh"
+  if ! check_deps; then
+    error "필수 의존성 확인 실패: Docker/Docker Compose 필요"
+    exit 1
+  fi
+fi
+
 print_dev_stop_hint() {
   local scope="$1"
 
