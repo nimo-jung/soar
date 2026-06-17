@@ -106,7 +106,7 @@ stop_dev() {
   kill_service backend
   kill_service frontend
   kill_service go-engine
-  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-dev mailpit
+  stop_compose_services "dev" backend-dev vector-dev go-engine-dev frontend-dev mailpit qdrant python-ai
   success "dev 프로파일 종료 완료"
 }
 
@@ -115,13 +115,13 @@ stop_prod() {
   kill_service backend
   kill_service frontend
   kill_service go-engine
-  stop_compose_services "prod" backend-prod vector-prod go-engine-prod frontend-prod mailpit
+  stop_compose_services "prod" backend-prod vector-prod go-engine-prod frontend-prod mailpit qdrant python-ai
   success "prod 프로파일 종료 완료"
 }
 
 stop_infra() {
   info "인프라 컨테이너 종료 중..."
-  stop_compose_services "" mariadb redis clickhouse redpanda redpanda-console mailpit
+  stop_compose_services "" mariadb redis clickhouse redpanda redpanda-console mailpit qdrant python-ai
   success "인프라 종료 완료"
 }
 

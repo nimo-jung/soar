@@ -100,6 +100,8 @@ print_mode_summary() {
     tms-redpanda
     tms-redpanda-console
     tms-mailpit-dev
+    tms-qdrant
+    tms-python-ai
   )
   local dev_containers=(
     tms-backend-dev
@@ -170,6 +172,8 @@ check_container tms-clickhouse "ClickHouse"
 check_container tms-redpanda   "RedPanda"
 check_container tms-redpanda-console "RedPanda Console"
 check_container tms-mailpit-dev "Mailpit (Dev SMTP)"
+check_container tms-qdrant     "Qdrant"
+check_container tms-python-ai  "Python AI"
 
 echo -e "\n${CYAN}[ Dev 컨테이너 ]${RESET}"
 check_container tms-backend-dev "Backend Dev"
