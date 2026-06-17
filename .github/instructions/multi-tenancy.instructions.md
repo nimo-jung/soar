@@ -81,6 +81,8 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 * `frontend`과 `frontend`에서 사용자가 수행하는 모든 CUD(Create/Update/Delete) 액션은 기본적으로 감사로그를 남겨야 한다.
 * CUD 기능을 추가할 때는 프론트엔드 버튼/폼 구현과 함께 백엔드 API의 감사로그 기록(`AuditLogService`) 구현을 반드시 포함한다.
 * 감사로그에는 최소한 행위자(사용자), 액션 코드, 대상 리소스, 테넌트 식별자(해당 시), 발생 시각이 포함되어야 한다.
+* 티켓 생성/상태 변경/종결, 프로파일 생성/수정/비활성화, 조합 규칙 변경은 모두 감사로그 대상이다.
+* 감사로그에는 탐지 근거 ID(`profile_id`, `combination_id`, `ticket_id`)를 포함한다.
 * CUD API 코드 리뷰 기준: 감사로그 기록이 누락된 Create/Update/Delete 엔드포인트는 승인하지 않는다.
 * CI 검증 기준: `backend`에서 `npm run check:audit:cud`를 통과하지 못하면 병합하지 않는다.
 
@@ -114,6 +116,8 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 * 추출한 `tenant_id`는 `AsyncLocalStorage` 또는 `REQUEST` 스코프 Provider에 저장하여 이후 모든 Service·Repository 계층으로 자동 전파한다.
 * Repository 계층에서 DB 커넥션 선택 및 쿼리 바인딩은 항상 Tenant Context에서 `tenant_id`를 읽어 처리하며, 직접 파라미터로 전달하는 방식을 남용하지 않는다.
 * 테넌트 컨텍스트가 확인되지 않은 요청은 어떠한 DB 쿼리도 실행해서는 안 된다.
+* FastAPI 및 벡터 검색 요청에도 `tenant_id` 컨텍스트를 필수 전달한다.
+* `tenant_id` 미확인 상태의 벡터 검색/업서트 요청은 즉시 거부한다.
 
 ### Go 수집 엔진
 
@@ -129,6 +133,8 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 * ClickHouse 쿼리는 항상 테넌트 전용 DB(`db_tenant_{id}`)를 명시한다. `USE` 문 없이 공용 DB에서 테넌트 데이터를 조회하는 패턴을 금지한다.
 * NestJS에서 ClickHouse 쿼리 생성 시 DB 이름은 Tenant Context로부터 동적으로 바인딩하며, 소스 코드에 테넌트 식별자를 하드코딩하지 않는다.
 * 동적 커넥션 풀(Connection Pool)은 테넌트별로 독립적으로 관리하고, Redis에 커넥션 메타데이터를 캐싱하여 매 요청마다 신규 연결을 생성하지 않도록 한다.
+* Qdrant 검색은 tenant 필터를 쿼리 조건으로 강제하거나 tenant 분리 컬렉션을 사용한다.
+* 벡터 검색 결과에 타 테넌트 payload가 포함되면 보안 사고로 간주하고 즉시 차단/보고한다.
 
 ---
 
@@ -173,10 +179,12 @@ Master Admin(공급자), Tenant Admin(고객사), 그리고 백엔드 기술 프
 ### 파이프라인 기본 구조
 
 * 네트워크 장비는 Syslog를 Vector 수집기로 전송한다.
+* Vector는 raw 이벤트를 RedPanda `raw-logs` 토픽에 우선 적재하고, 파싱 실패 이벤트는 `dead-letter-queue`로 분리한다.
 * Vector는 2단계 처리(경량 벤더 분류 -> 벤더별 VRL 파싱)로 `device_code`를 추출한다.
 * Vector는 정형화 이벤트를 RedPanda 입력 토픽으로 발행한다.
 * Go 라우터 엔진은 `device_code`/`source_ip` 기반 최종 테넌트 판정을 수행한다.
 * 판정 성공 이벤트만 테넌트 전용 토픽 및 테넌트 전용 ClickHouse DB로 전달한다.
+* 테넌트 판정 전 이벤트는 운영 테넌트 데이터 집계에 포함하지 않는다.
 
 ### 벤더별 파싱 규칙
 

@@ -23,6 +23,7 @@ backend/
     │   ├── monitoring/          # 전체 테넌트 로그 유입·시스템 부하 모니터링
     │   ├── threat-intel/        # 글로벌 TI 등록 및 RedPanda 전파
     │   ├── vector-settings/     # Vector 벤더 파서/토픽 설정 관리
+    │   ├── detection-governance/# 프로파일 템플릿·탐지 정책 거버넌스
     │   ├── product-info/        # 제품 릴리즈 정보 조회 + 라이선스 조회/업데이트
     │   └── audit-logs/          # 감사로그 조회 (로그인/로그아웃, CUD 이벤트)
     │
@@ -33,7 +34,9 @@ backend/
     │   ├── users/               # 테넌트 내 사용자·역할 관리 (RBAC)
     │   ├── dashboard/           # 대시보드 위젯 설정
     │   ├── alerts/              # 알람 정책·알림 발송 이력
-    │   └── playbooks/           # TMS 플레이북 편집·실행
+    │   ├── playbooks/           # TMS 플레이북 편집·실행
+    │   ├── profiles/            # 탐지 프로파일/조합 규칙 관리
+    │   └── tickets/             # 트러블 티켓 생성·상태 전이·이력
     │
     └── common/                  # 공유 인프라 (두 영역에서 재사용)
         ├── guards/              # MasterGuard, TenantGuard, RolesGuard
@@ -107,7 +110,9 @@ frontend/
 infra/
 ├── mariadb/
 ├── clickhouse/
-└── vector/                     # Syslog 수집/벤더별 VRL 파싱/RedPanda 발행 설정
+├── vector/                     # Syslog 수집/벤더별 VRL 파싱/RedPanda 발행 설정
+├── redpanda/                   # 기본 토픽(raw-logs, dead-letter-queue, policy-distribution) 초기화
+└── qdrant/                     # AI 컨텍스트 벡터 저장소 설정
 
 .
 ├── docker-compose.yml         # dev/prod profile 및 frontend/backend 정의
@@ -136,7 +141,10 @@ go-engine/
     ├── ingestion/               # HTTP 수집 엔드포인트 (API Key 인증)
     ├── router/                  # Vector 파싱 로그의 tenant 판정 (device_code/source_ip)
     ├── parsing/                 # 테넌트별 파싱 룰 적용 (Redis 캐시)
+    ├── enrichment/              # GeoIP/CIDR/자산 매핑 인리치먼트
     ├── publisher/               # RedPanda raw-logs 토픽 발행
+    ├── profile-evaluator/       # 임계치/시퀀스 기반 프로파일 평가
+    ├── dlq-handler/             # 파싱/검증 실패 이벤트 재처리 및 격리
     ├── consumer/                # RedPanda 메시지 소비 → ClickHouse 배치 적재
     ├── whitelist/               # Redis 기반 소스 IP 검증
     └── context/                 # tenant_id 컨텍스트 전파

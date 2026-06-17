@@ -17,6 +17,9 @@
 	* `backend` 진입 경로: `/api`, `/auth`, `/docs`
 * Master 콘솔은 tenant-first 디자인 기반 통합 UI(`frontend`)를 기본으로 한다.
 * 컨테이너 내 프론트엔드 dev proxy는 `localhost`가 아닌 Docker 서비스명(`backend-dev`)을 기본 타깃으로 사용한다.
+* 로그 파이프라인 표준은 `Vector -> RedPanda -> Go Engine -> ClickHouse` 순서를 기본으로 한다.
+* 수집기 또는 API 서버가 ClickHouse로 직접 단건 Insert 하는 패턴을 금지한다.
+* RedPanda 기본 토픽은 `raw-logs`, `dead-letter-queue`, `policy-distribution`를 사용한다.
 
 ### Operations Reliability (중요)
 
@@ -52,12 +55,17 @@
 * 대용량 로그 처리는 **Goroutine과 Channel**을 활용한 비동기 병렬 처리 구조를 기본으로 한다.
 * 메시지 브로커는 **RedPanda**를 사용한다.
 * Kafka 호환 연동에는 `segmentio/kafka-go` 사용을 권장한다.
+* ClickHouse 적재는 배치 Insert(기본: 1000건 또는 5초 선도달) + 재시도/멱등 처리를 기본 전략으로 한다.
+* GeoIP/자산 CIDR 매핑은 메모리 캐시 기반으로 처리하고, 조회 시점 변환을 지양한다.
 
 ### Database - MariaDB & ClickHouse
 
 * **MariaDB**: 관리 데이터와 테넌트별 설정 저장용. 모든 테이블에는 `created_at`, `updated_at` 필드를 반드시 포함한다.
 * **ClickHouse**: 로그 적재 및 분석용 OLAP 저장소. 테넌트별 별도 Database를 생성해 물리적으로 격리한다.
 * **Optimization**: ClickHouse 적재 로직에는 반드시 **Batch 처리 전략**을 포함한다.
+* ClickHouse TTL은 테넌트 설정(`retention_days`) 기반으로 동적 적용한다.
+* 로그 저장 DB 네이밍은 `db_tenant_{id}` 단일 규칙으로 고정한다.
+* 벡터 지식 저장소는 **Qdrant**를 기본으로 하며, 검색 시 tenant 필터를 강제한다.
 
 ### Schema Visibility & Documentation (중요)
 
@@ -77,6 +85,8 @@
 
 * Redis는 멀티테넌트 세션 관리, DB 연결 정보 캐싱, 실시간 경보 이벤트 큐에 사용한다.
 * Redis 키 네이밍은 `tenant:{id}:key_name` 패턴을 사용한다.
+* 자산 매핑/화이트리스트/브랜딩/파싱룰은 `tenant:{id}:*` 접두사 규약으로 캐시한다.
+* 매핑 미존재 또는 비활성 장비는 fail-closed로 격리 처리한다.
 
 ### Backend - Migration & Schema
 
@@ -113,6 +123,8 @@
 	* 백엔드 컨트롤러/서비스: `AuditLogService`로 Create/Update/Delete 이벤트를 반드시 기록한다.
 	* 감사로그 필수 필드: 행위자, 액션 코드, 대상 리소스, 테넌트 식별자(해당 시), 발생 시각.
 	* CI 검증: `backend`에서 `npm run check:audit:cud`를 통과해야 한다.
+* **프로파일/티켓 근거 보존**: 프로파일 탐지 결과는 집계값, 윈도우, 조합 규칙 ID를 함께 저장한다.
+* **벡터 업서트 표준**: 벡터 DB 적재는 고유키 업서트 전략을 기본으로 하며 중복 삽입을 금지한다.
 
 ## 5. 금지 사항
 
@@ -121,3 +133,5 @@
 * 문자열 결합 기반 SQL을 금지한다. (TypeORM Query Builder 또는 Parameterized Query 사용)
 * 운영(production) 환경에서 Auto-Migration을 활성화하지 않는다.
 * ClickHouse 적재 시 단건 위주의 Insert 패턴을 사용하지 않는다.
+* 정책 배포를 주기적 Pull REST 방식에만 의존하는 구현을 금지한다.
+* 원시 5-Tuple 본문을 임베딩 본문으로 무제한 저장하는 패턴을 금지한다.

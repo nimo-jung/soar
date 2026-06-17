@@ -66,6 +66,12 @@ const navItems = [
 - 활성 메뉴: `NavLink`의 `isActive`가 `active-route` 클래스를 자동으로 부여한다.
 - 아이콘은 반드시 PrimeIcons(`pi pi-*`)를 사용한다.
 
+### Admin 프로파일 거버넌스 페이지 규칙
+
+- 관리자 콘솔에는 프로파일 템플릿/조합 관리 페이지를 Sakai 패턴으로 추가한다.
+- DataTable 필수 컬럼은 `윈도우`, `집계함수`, `임계치`, `활성상태`, `수정시각`을 포함한다.
+- 행 단위 액션(CUD)은 우측 Action 컬럼으로 고정하고, ConfirmDialog 패턴을 사용한다.
+
 ### 새 페이지 추가 시 구조 예시
 
 ```tsx
@@ -152,6 +158,12 @@ const NewPage: React.FC = () => (
 - `layout-main`이 이미 `padding: 2rem`을 가지므로 페이지 내부에 추가 padding을 중복 적용하지 않는다.
 - `page-header` + `page-subtitle` 클래스를 활용한다.
 
+### Tenant 티켓/프로파일 화면 패턴
+
+- 티켓 상세는 `Card + Timeline + Action Panel` 3영역 패턴을 기본으로 한다.
+- 프로파일 로그 상세는 `집계값`, `조건`, `유사도 근거`를 분리한 3패널 레이아웃을 사용한다.
+- 자동 발급 티켓은 추천 근거(프로파일 ID/조합 ID/유사도)를 상단 요약 영역에 고정 노출한다.
+
 ---
 
 ## 5. 화이트라벨링 (Tenant 전용)
@@ -170,6 +182,8 @@ Tenant 앱은 로그인 응답의 `brandingConfig`를 기반으로 CSS 변수를
 - `TenantLayout.tsx`의 `useEffect` 내에서만 CSS 변수를 `document.documentElement.style.setProperty`로 설정한다. 그 외 컴포넌트에서 직접 주입하지 않는다.
 - Admin 앱(`frontend/`)에는 브랜딩 변수를 절대 적용하지 않는다.
 - 브랜딩 설정이 없을 경우 `:root`에 정의된 기본값(`--brand-primary: var(--primary-color)`)이 폴백으로 동작한다.
+- 경보 severity 색상 팔레트(`critical/high/medium/low`)는 브랜딩 컬러와 분리해 고정한다.
+- 브랜드 변경 시에도 severity 의미가 바뀌지 않도록 시그널 컬러를 공용 토큰으로 유지한다.
 
 ---
 

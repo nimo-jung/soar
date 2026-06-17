@@ -20,6 +20,8 @@ applyTo: "**"
 - JWT에는 isMaster, role, tenantId(tenant 계정인 경우)를 포함한다.
 - Master API는 MasterGuard로 보호하고, Tenant API는 TenantGuard + RolesGuard로 보호한다.
 - Tenant RBAC 역할은 운영자(OPERATOR), 분석가(ANALYST), 감사자(AUDITOR)를 사용한다.
+- JWT에는 tenant scope 검증용 식별자를 일관 포함하고 API Guard에서 강제한다.
+- `profiles`, `tickets` 관련 Tenant API는 RolesGuard에서 역할별 접근 권한을 명시한다.
 
 ## 4. Dev/Prod 접근 경로 규칙
 - Dev 모드에서는 각 UI가 Vite proxy를 통해 backend-dev로 인증 요청을 전달해야 한다.
@@ -32,3 +34,7 @@ applyTo: "**"
 - 운영 환경에서는 auto-migration을 사용하지 않고 마이그레이션을 명시적으로 수행한다.
 - 배포/변경 후 scripts/smoke.sh dev 또는 scripts/smoke.sh prod 로 인증 스모크 테스트를 수행한다.
 - 프론트에서 ECONNREFUSED가 보이면 Vite proxy target과 backend 서비스 상태를 우선 점검한다.
+
+## 6. AI/티켓 연계 인증 규칙
+- AI 엔진 호출용 내부 토큰은 사용자 토큰과 분리하고 최소 권한 원칙을 적용한다.
+- 티켓 자동 발급 API는 서비스 계정 식별을 남기고 감사로그의 actor_type을 구분한다.
