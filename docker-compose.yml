@@ -444,6 +444,7 @@ services:
       QDRANT_PORT: "6333"
       REDPANDA_HOST: redpanda
       REDPANDA_PORT: "9092"
+      USE_EMBED_MODEL: "0"
     ports:
       - "8000:8000"
     networks:

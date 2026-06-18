@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -10,6 +10,7 @@ import { MonitoringEventsResponseDto, MonitoringOverviewResponseDto } from './dt
 import { UsageSnapshot } from '../tenants/entities/usage-snapshot.entity';
 import { AuditLog } from '../../common/audit/entities/audit-log.entity';
 import { Tenant } from '../tenants/entities/tenant.entity';
+import { ClickHouseRawLogsService } from './clickhouse-raw-logs.service';
 
 type EngineMetricsResponse = {
   status?: string;
@@ -21,6 +22,8 @@ type EngineMetricsResponse = {
 
 @Injectable()
 export class MonitoringService {
+  private readonly logger = new Logger(MonitoringService.name);
+
   constructor(
     private readonly configService: ConfigService,
     @InjectRepository(UsageSnapshot)
@@ -29,6 +32,7 @@ export class MonitoringService {
     private readonly auditLogRepo: Repository<AuditLog>,
     @InjectRepository(Tenant)
     private readonly tenantRepo: Repository<Tenant>,
+    private readonly chRawLogsService: ClickHouseRawLogsService,
   ) {}
 
   private parseDate(value?: string): Date | null {
@@ -167,25 +171,14 @@ export class MonitoringService {
     const fromDate = this.parseDate(query.from);
     const toDate = this.parseDate(query.to);
 
-    const epsQb = this.usageSnapshotRepo
-      .createQueryBuilder('usage')
-      .select('usage.snapshot_at', 'snapshotAt')
-      .addSelect('SUM(usage.eps_avg)', 'epsValue')
-      .groupBy('usage.snapshot_at')
-      .orderBy('usage.snapshot_at', 'ASC');
+    // EPS series from ClickHouse raw_logs (actual collected log count per 5min bucket)
+    const epsSeries = await this.chRawLogsService.getEpsSeries(
+      query.from || undefined,
+      query.to || undefined,
+      query.tenantId ?? undefined,
+    );
 
-    if (query.tenantId) {
-      epsQb.andWhere('usage.tenant_id = :tenantId', { tenantId: query.tenantId });
-    }
-    if (fromDate) {
-      epsQb.andWhere('usage.snapshot_at >= :fromDate', { fromDate });
-    }
-    if (toDate) {
-      epsQb.andWhere('usage.snapshot_at <= :toDate', { toDate });
-    }
-
-    const epsRaw = await epsQb.getRawMany();
-
+    // For ingest/parse error rates and latency, still use audit_logs as fallback (Go Engine metrics preferred)
     const auditBaseQb = this.auditLogRepo.createQueryBuilder('audit');
     if (fromDate) {
       auditBaseQb.andWhere('audit.created_at >= :fromDate', { fromDate });
@@ -229,10 +222,7 @@ export class MonitoringService {
     const engineCheckedAt = engineMetrics?.checkedAt ?? engine.checkedAt;
 
     return {
-      epsSeries: epsRaw.map((row) => ({
-        ts: row.snapshotAt instanceof Date ? row.snapshotAt.toISOString() : String(row.snapshotAt),
-        value: this.toNumber(row.epsValue),
-      })),
+      epsSeries,
       ingestErrorRate: this.toNumber(ingestErrorRate),
       parseErrorRate: this.toNumber(parseErrorRate),
       avgIngestLatencyMs: this.toNumber(avgIngestLatencyMs),
@@ -244,88 +234,25 @@ export class MonitoringService {
   async getEvents(query: GetMonitoringEventsQueryDto): Promise<MonitoringEventsResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const fromDate = this.parseDate(query.from);
-    const toDate = this.parseDate(query.to);
 
-    const qb = this.auditLogRepo.createQueryBuilder('audit');
-    if (query.tenantId) {
-      const tenant = await this.tenantRepo.findOne({ where: { id: query.tenantId } });
-      if (!tenant) {
-        return {
-          items: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-          },
-        };
-      }
-      qb.andWhere('audit.tenant_slug = :tenantSlug', { tenantSlug: tenant.slug });
-    }
-    if (query.severity) {
-      const severity = query.severity.toUpperCase();
-      if (severity === 'HIGH') {
-        qb.andWhere('(audit.action LIKE :fail OR audit.action LIKE :error OR audit.action LIKE :delete)', {
-          fail: '%FAIL%',
-          error: '%ERROR%',
-          delete: '%DELETE%',
-        });
-      } else if (severity === 'MEDIUM') {
-        qb.andWhere('(audit.action LIKE :update OR audit.action LIKE :suspend OR audit.action LIKE :deactivate)', {
-          update: '%UPDATE%',
-          suspend: '%SUSPEND%',
-          deactivate: '%DEACTIVATE%',
-        });
-      } else if (severity === 'LOW') {
-        qb.andWhere('(audit.action NOT LIKE :fail AND audit.action NOT LIKE :error AND audit.action NOT LIKE :delete)', {
-          fail: '%FAIL%',
-          error: '%ERROR%',
-          delete: '%DELETE%',
-        });
-      }
-    }
-    if (fromDate) {
-      qb.andWhere('audit.created_at >= :fromDate', { fromDate });
-    }
-    if (toDate) {
-      qb.andWhere('audit.created_at <= :toDate', { toDate });
-    }
-
-    const total = await qb.clone().getCount();
-    const rows = await qb
-      .clone()
-      .orderBy('audit.created_at', 'DESC')
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .getMany();
-
-    const tenantSlugs = Array.from(new Set(rows.map((row) => row.tenantSlug).filter((slug): slug is string => !!slug)));
-    const tenants = tenantSlugs.length
-      ? await this.tenantRepo
-          .createQueryBuilder('tenant')
-          .where('tenant.slug IN (:...slugs)', { slugs: tenantSlugs })
-          .getMany()
-      : [];
-    const tenantBySlug = new Map(tenants.map((tenant) => [tenant.slug, tenant]));
+    const chResult = await this.chRawLogsService.getRecentEvents(limit, (page - 1) * limit, {
+      tenantId: query.tenantId ?? undefined,
+      from: query.from || undefined,
+      to: query.to || undefined,
+      severity: query.severity || undefined,
+    });
 
     return {
-      items: rows.map((row) => {
-        const mappedTenant = row.tenantSlug ? tenantBySlug.get(row.tenantSlug) : undefined;
-        return {
-        id: String(row.id),
-        tenantId: mappedTenant?.id ?? null,
-        tenantLabel: mappedTenant?.name ?? row.tenantSlug ?? '-',
-        code: row.action,
-        message: row.message ?? '-',
-        severity: this.severityFromAction(row.action),
-        occurredAt: row.createdAt.toISOString(),
-        };
-      }),
-      pagination: {
-        page,
-        limit,
-        total,
-      },
+      items: chResult.items.map((item) => ({
+        id: `ch-${item.occurredAt}-${item.tenantId}`,
+        tenantId: item.tenantId,
+        tenantLabel: item.tenantLabel,
+        code: item.code,
+        message: item.message,
+        severity: item.severity,
+        occurredAt: item.occurredAt,
+      })),
+      pagination: { page, limit, total: chResult.total },
     };
   }
 }

@@ -44,8 +44,17 @@ def deterministic_embedding(text: str, dim: int = EMBED_DIM) -> List[float]:
 
 
 def model_embed(text: str) -> List[float]:
-    """Use sentence-transformers if available, otherwise fallback to deterministic."""
+    """
+    Embedding pipeline (in priority order):
+      1. ONNX model (if USE_ONNX=1 and model files exist)
+      2. sentence-transformers (if USE_EMBED_MODEL=1)
+      3. deterministic SHA-256 fallback (always available, not semantic)
+    """
     global _encoder
+
+    # ---- Fast path: no ML at all ----
+    use_ml = os.getenv("USE_EMBED_MODEL", "1") == "1"
+
     # ONNX path takes precedence when enabled
     if os.getenv("USE_ONNX", "0") == "1":
         try:
@@ -95,7 +104,8 @@ def model_embed(text: str) -> List[float]:
         except Exception:
             pass
 
-    if USE_MODEL == "1":
+    # ---- sentence-transformers path (CPU only) ----
+    if use_ml and os.getenv("USE_EMBED_MODEL", "1") == "1":
         try:
             if _encoder is None:
                 from sentence_transformers import SentenceTransformer
@@ -109,6 +119,7 @@ def model_embed(text: str) -> List[float]:
         except Exception:
             # fallback
             pass
+    # Always fallback to deterministic embedding
     return deterministic_embedding(text, EMBED_DIM)
 
 

@@ -1004,11 +1004,12 @@
     "chart": {
       "epsTitle": "EPS Trend",
       "noData": "No EPS data to display.",
-      "minLabel": "Min EPS: {{value}}",
-      "maxLabel": "Max EPS: {{value}}",
-      "startLabel": "Start: {{value}}",
-      "middleLabel": "Middle: {{value}}",
-      "endLabel": "End: {{value}}"
+      "avgLabel": "Avg {{value}} EPS",
+      "epsSummary": "EPS Summary",
+      "currentEps": "Current EPS",
+      "avgEps": "Avg EPS",
+      "minEps": "Min EPS",
+      "maxEps": "Max EPS"
     },
     "engine": {
       "healthy": "Healthy",
@@ -1020,8 +1021,9 @@
       "occurredAt": "Occurred At",
       "tenant": "Tenant",
       "severity": "Severity",
-      "code": "Code",
-      "message": "Message"
+      "logType": "Log Type",
+      "sourceInfo": "Source Info",
+      "emptyClickHouse": "No log events collected in ClickHouse. Verify that the log ingestion pipeline is running."
     }
   },
   "masterUsers": {
@@ -1362,5 +1364,40 @@
       "filePath": "File Path (absolute path inside container)",
       "fileLabel": "File Label (display name)"
     }
+  },
+  "networkTopology": {
+    "layeredStructure": "Network Layer Structure",
+    "addBand": "Add Band",
+    "delete": "Delete",
+    "topologyMap": "Network Topology Map",
+    "targetDetail": "Watch Target Details",
+    "selectedAssetInfo": "Selected asset/band info",
+    "nodeKey": "Node Key",
+    "mappingStatus": "Mapping Status",
+    "normalSync": "TMS Normal Sync",
+    "recentEvent": "Recent Event",
+    "criticalAlert": "Critical Alert",
+    "selectTarget": "Select a target from the left tree or central map.",
+    "assetPolicySetting": "Asset Policy Settings",
+    "nodes": {
+      "backboneSwitch": "Backbone Switch",
+      "firewall": "Firewall",
+      "dmzZone": "DMZ Zone",
+      "internalNetwork": "Internal Network",
+      "wasServer": "WAS Server",
+      "webServer": "Web Server"
+    },
+    "labels": {
+      "http": "HTTP"
+    },
+    "watchTargetTitle": "Watch Target Details",
+    "selectedInfoSubtitle": "Selected asset/band info",
+    "nodeKeyLabel": "Node Key",
+    "mappingStatusLabel": "Mapping Status",
+    "normalSyncStatus": "TMS Normal Sync",
+    "recentEventLabel": "Recent Event",
+    "criticalAlertLabel": "Critical Alert",
+    "selectTargetHint": "Select a target from the left tree or central map.",
+    "assetPolicyButton": "Asset Policy Settings"
   }
 }

@@ -47,6 +47,7 @@
     "securityCenter": "보안 센터",
     "alerts": "알람",
     "playbooks": "플레이북",
+    "networkTopology": "네트워크 토폴로지",
     "ingestion": "수집 파이프라인",
     "collectors": "수집 대상 관리",
     "tenantAdmin": "테넌트 관리",
@@ -1004,11 +1005,12 @@
     "chart": {
       "epsTitle": "EPS 추이",
       "noData": "표시할 EPS 데이터가 없습니다.",
-      "minLabel": "최저 EPS: {{value}}",
-      "maxLabel": "최고 EPS: {{value}}",
-      "startLabel": "시작: {{value}}",
-      "middleLabel": "중간: {{value}}",
-      "endLabel": "종료: {{value}}"
+      "avgLabel": "평균 {{value}} EPS",
+      "epsSummary": "EPS 요약",
+      "currentEps": "현재 EPS",
+      "avgEps": "평균 EPS",
+      "minEps": "최소 EPS",
+      "maxEps": "최대 EPS"
     },
     "engine": {
       "healthy": "정상",
@@ -1020,8 +1022,9 @@
       "occurredAt": "발생 시각",
       "tenant": "테넌트",
       "severity": "심각도",
-      "code": "코드",
-      "message": "메시지"
+      "logType": "로그 유형",
+      "sourceInfo": "출처 정보",
+      "emptyClickHouse": "ClickHouse에 수집된 로그 이벤트가 없습니다. 로그 수집 파이프라인이 실행 중인지 확인하세요."
     }
   },
   "masterUsers": {
@@ -1362,5 +1365,39 @@
       "filePath": "파일 경로 (컨테이너 내 절대 경로)",
       "fileLabel": "파일 레이블 (표시용)"
     }
+  },
+  "networkTopology": {
+    "layeredStructure": "네트워크 계층 구조",
+    "addBand": "대역 추가",
+    "delete": "삭제",
+    "topologyMap": "네트워크 토폴로지 맵",
+    "targetDetail": "관제 대상 상세 정보",
+    "nodeKey": "노드 키",
+    "mappingStatus": "매핑 상태",
+    "normalSync": "TMS 정상 연동 중",
+    "recentEvent": "최근 이벤트",
+    "criticalAlert": "Critical Alert",
+    "selectTarget": "좌측 트리나 중앙 맵에서 관제 대상을 선택해 주세요.",
+    "assetPolicySetting": "자산 정책 설정",
+    "nodes": {
+      "backboneSwitch": "백본 스위치",
+      "firewall": "방화벽 (Firewall)",
+      "dmzZone": "DMZ 대역",
+      "internalNetwork": "내부망",
+      "wasServer": "WAS 서버",
+      "webServer": "Web 서버"
+    },
+    "labels": {
+      "http": "HTTP"
+    },
+    "watchTargetTitle": "관제 대상 상세 정보",
+    "selectedInfoSubtitle": "선택된 자산/대역 정보",
+    "nodeKeyLabel": "노드 키",
+    "mappingStatusLabel": "매핑 상태",
+    "normalSyncStatus": "TMS 정상 연동 중",
+    "recentEventLabel": "최근 이벤트",
+    "criticalAlertLabel": "Critical Alert",
+    "selectTargetHint": "좌측 트리나 중앙 맵에서 관제 대상을 선택해 주세요.",
+    "assetPolicyButton": "자산 정책 설정"
   }
 }

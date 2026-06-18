@@ -14,6 +14,14 @@ import { STORAGE_KEYS, UI_CLASSES } from '../../constants/preferences';
 import { DEFAULT_TENANT_VISIBLE_MENU_PATHS } from '../../constants/tenant-menu';
 import api from '../../api';
 
+export const ThemeContext = React.createContext<{
+  isDarkMode: boolean;
+  setIsDarkMode: (value: boolean) => void;
+}>({
+  isDarkMode: false,
+  setIsDarkMode: () => {},
+});
+
 interface NavItem {
   labelKey: string;
   icon: string;
@@ -65,6 +73,7 @@ const navModel = [
         icon: 'pi pi-database',
         children: [
           { labelKey: 'nav.collectors', path: '/collectors', icon: 'pi pi-server' },
+          { labelKey: 'nav.networkTopology', path: '/network-topology', icon: 'pi pi-globe' },
         ],
       },
     ],
@@ -132,6 +141,7 @@ const masterNavModel = [
           { labelKey: 'nav.collectors', path: '/collectors', icon: 'pi pi-server' },
           { labelKey: 'nav.normalizationSettings', path: '/settings', icon: 'pi pi-cog' },
           { labelKey: 'nav.vectorSettings', path: '/system/vector-settings', icon: 'pi pi-sliders-h' },
+          { labelKey: 'nav.networkTopology', path: '/network-topology', icon: 'pi pi-globe' },
         ],
       },
       {
@@ -679,28 +689,30 @@ const TenantLayout: React.FC = () => {
         </div>
       </div>
 
-      <div className="layout-content-wrapper layout-main-container">
-        <div className="layout-content">
-          <div className="layout-content-inner">
-            <nav className="layout-breadcrumb">
-              <BreadCrumb
-                model={breadcrumbItems}
-                className="tenant-breadcrumb"
-              />
-            </nav>
-            <div className="layout-main">
-              <Outlet />
-            </div>
-            <div className="layout-footer mt-auto">
-              <div className="footer-start">
+      <ThemeContext.Provider value={{ isDarkMode, setIsDarkMode }}>
+        <div className="layout-content-wrapper layout-main-container">
+          <div className="layout-content">
+            <div className="layout-content-inner">
+              <nav className="layout-breadcrumb">
+                <BreadCrumb
+                  model={breadcrumbItems}
+                  className="tenant-breadcrumb"
+                />
+              </nav>
+              <div className="layout-main">
+                <Outlet />
               </div>
-              <div className="footer-right">
-                <span>{t('layout.footer.copyright')}</span>
+              <div className="layout-footer mt-auto">
+                <div className="footer-start">
+                </div>
+                <div className="footer-right">
+                  <span>{t('layout.footer.copyright')}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </ThemeContext.Provider>
 
       {/* Mobile overlay */}
       <div className="layout-mask" onClick={() => setMobileActive(false)} />

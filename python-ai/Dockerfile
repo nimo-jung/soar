@@ -17,6 +17,8 @@ ARG MODEL_NAME
 ARG CONVERT_ONNX
 RUN if [ "${CONVERT_ONNX}" = "1" ]; then \
             python3 tools/export_to_onnx.py --model "${MODEL_NAME}" --out /src/model || true; \
+        else \
+            mkdir -p /src/model; \
         fi
 
 # ------ Runtime stage: smaller image with runtime deps + model artifacts ------
@@ -32,6 +34,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy converted model artifacts from builder if present
 ARG CONVERT_ONNX
 COPY --from=builder /src/model /app/model
+RUN if [ "${CONVERT_ONNX}" != "1" ]; then mkdir -p /app/model; fi
 
 COPY app ./app
 COPY tools ./tools

@@ -20,6 +20,7 @@ export const TENANT_MENU_GROUPS: TenantMenuGroup[] = [
       { path: '/dashboard', labelKey: 'nav.dashboard', icon: 'pi pi-home' },
       { path: '/alerts', labelKey: 'nav.alerts', icon: 'pi pi-bell' },
       { path: '/playbooks', labelKey: 'nav.playbooks', icon: 'pi pi-sitemap' },
+      { path: '/network-topology', labelKey: 'nav.networkTopology', icon: 'pi pi-globe' },
     ],
   },
   {

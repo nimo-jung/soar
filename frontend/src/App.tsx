@@ -31,6 +31,7 @@ const IntegritySystemPage = lazy(() => import('./pages/system/IntegritySystemPag
 const SmtpSettingsSystemPage = lazy(() => import('./pages/system/SmtpSettingsSystemPage'));
 const TenantTiersSystemPage = lazy(() => import('./pages/system/TenantTiersSystemPage'));
 const VectorSettingsSystemPage = lazy(() => import('./pages/system/VectorSettingsSystemPage'));
+const NetworkTopologyPage = lazy(() => import('./pages/network-topology/NetworkTopologyPage'));
 
 const App: React.FC = () => {
   return (
@@ -48,6 +49,7 @@ const App: React.FC = () => {
               <Route path="/collectors" element={<CollectorsPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/playbooks" element={<PlaybooksPage />} />
+              <Route path="/network-topology" element={<NetworkTopologyPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/auth-settings" element={<AuthSettingsPage />} />
@@ -68,6 +70,7 @@ const App: React.FC = () => {
                 <Route path="/system/smtp-settings" element={<SmtpSettingsSystemPage />} />
                 <Route path="/system/tiers" element={<TenantTiersSystemPage />} />
                 <Route path="/system/vector-settings" element={<VectorSettingsSystemPage />} />
+                <Route path="/system/network-topology" element={<NetworkTopologyPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>

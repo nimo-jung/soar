@@ -1,0 +1,79 @@
+/* ==========================================================================
+   Network Topology — 정적 전역 스타일 (PrimeReact / ReactFlow 테마 대응)
+   ========================================================================== */
+
+/* PrimeReact Panel / Tree / Card 컴포넌트 배경·텍스트 강제 동기화 */
+.p-panel .p-panel-header { background-color: transparent !important; }
+.p-panel .p-panel-header .p-panel-title { color: inherit !important; }
+.p-panel .p-panel-content { color: inherit !important; }
+
+.p-tree .p-tree-container { color: inherit !important; }
+.p-tree .p-treenode-label { color: inherit !important; }
+.p-tree .p-treenode-content { color: inherit !important; background-color: transparent !important; }
+.p-tree .p-treenode-content:hover { background-color: var(--hover-bg, rgba(96, 165, 250, 0.1)) !important; }
+.p-tree .p-treenode-content.p-highlight { background-color: var(--highlight-bg, rgba(96, 165, 250, 0.2)) !important; }
+
+.p-card .p-card-header { background-color: transparent !important; }
+.p-card .p-card-title { color: inherit !important; }
+.p-card .p-card-subtitle { color: inherit !important; }
+.p-card .p-card-content { color: inherit !important; background-color: transparent !important; }
+
+/* 우측 패널 제목/부제목 다크/라이트 모드 텍스트 색상 보정 */
+.right-panel-title { color: var(--heading-text, #f1f5f9) !important; }
+.right-panel-subtitle { color: var(--text-primary, #e2e8f0) !important; }
+
+/* PrimeReact Panel 테두리 */
+.p-panel { border-color: var(--panel-border, #353a4f) !important; }
+.p-panel .p-panel-header { color: var(--heading-text, #e2e8f0) !important; }
+
+/* ReactFlow 다크 모드 보정 */
+.react-flow.dark .react-flow__node { color: inherit !important; }
+.react-flow.dark .react-flow__controls {
+  background-color: var(--rf-ctrl-bg, #1e2130) !important;
+  border-color: var(--rf-ctrl-border, #353a4f) !important;
+}
+.react-flow.dark .react-flow__controls button {
+  background-color: var(--rf-ctrl-bg, #1e2130) !important;
+  border-color: var(--rf-ctrl-border, #353a4f) !important;
+  color: var(--rf-ctrl-text, #94a3b8) !important;
+}
+.react-flow.dark .react-flow__controls-button:hover {
+  background-color: var(--rf-ctrl-hover, #2a2e3f) !important;
+  color: var(--rf-ctrl-text, #94a3b8) !important;
+}
+
+/* 트리 컴팩트 스타일 */
+.network-tree .p-treenode { padding: 4px 6px !important; }
+.network-tree .p-treenode-label { font-size: 13px !important; }
+.network-tree .p-treenode-content { gap: 6px !important; }
+.network-tree .p-tree-toggler { width: 18px; height: 18px; }
+.network-tree .p-treenode-icon { font-size: 0.9rem; }
+
+/* ReactFlow 에지 가시성 강제 */
+.react-flow__edges { z-index: 1 !important; }
+.react-flow__edges svg { z-index: 1 !important; }
+.react-flow__edges path,
+.react-flow__edges polyline,
+.react-flow__edges line {
+  stroke: var(--edge-normal) !important;
+  stroke-width: 2px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.react-flow__arrowhead polyline,
+.react-flow__arrowhead path {
+  stroke: var(--edge-normal) !important;
+  fill: var(--edge-normal) !important;
+}
+.react-flow__edges .react-flow__edge { z-index: 1 !important; }
+
+/* 배경 그리드 색상 */
+.react-flow__background rect,
+.react-flow__background circle { fill: var(--grid-dot) !important; }
+
+/* 트리 푸터 배색 */
+.network-tree .p-tree-footer { background-color: var(--bg-panel) !important; border-top: 1px solid var(--border-subtle); }
+
+/* 애니메이션 */
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes dash { to { stroke-dashoffset: -20; } }
