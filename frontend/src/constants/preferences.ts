@@ -27,3 +27,22 @@ export function applyStoredThemeClass(): void {
   const root = document.documentElement;
   root.classList.toggle(UI_CLASSES.darkMode, readStoredThemeMode() === 'dark');
 }
+
+/**
+ * 저장된 테마 모드를 localStorage에 기록하고 DOM 클래스를 즉시 적용한다.
+ */
+export function storeThemeMode(mode: ThemeMode): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(STORAGE_KEYS.themeMode, mode);
+  applyStoredThemeClass();
+}
+
+/**
+ * 현재 저장된 테마 모드를 반전하여 토글한다. ('light' ↔ 'dark')
+ */
+export function toggleTheme(): ThemeMode {
+  const current = readStoredThemeMode();
+  const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
+  storeThemeMode(next);
+  return next;
+}

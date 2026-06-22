@@ -24,11 +24,14 @@ import { TenantMiddleware } from '../common/middleware/tenant.middleware';
 import { TenantAuditLogsController } from './audit-logs/tenant-audit-logs.controller';
 import { TenantAuditLogsService } from './audit-logs/tenant-audit-logs.service';
 import { TenantVectorSourcesController } from './vector-sources/tenant-vector-sources.controller';
+import { NetworksController } from './networks/networks.controller';
+import { NetworksService } from './networks/networks.service';
 import { TenantVectorSourcesService } from './vector-sources/tenant-vector-sources.service';
+import { NetworkEntity } from './networks/entities/network.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tenant, TenantSettings, AuditLog]),
+    TypeOrmModule.forFeature([Tenant, TenantSettings, AuditLog, NetworkEntity]),
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'default_secret'),
@@ -46,6 +49,7 @@ import { TenantVectorSourcesService } from './vector-sources/tenant-vector-sourc
     ParsingRulesController,
     TenantAuditLogsController,
     TenantVectorSourcesController,
+    NetworksController,
   ],
   providers: [
     CollectorsService,
@@ -59,6 +63,7 @@ import { TenantVectorSourcesService } from './vector-sources/tenant-vector-sourc
     TenantVectorSourcesService,
     AuditLogService,
     TenantMiddleware,
+    NetworksService,
   ],
 })
 export class TenantModule implements NestModule {
@@ -75,6 +80,7 @@ export class TenantModule implements NestModule {
         ParsingRulesController,
         TenantAuditLogsController,
         TenantVectorSourcesController,
+        NetworksController,
       );
   }
 }

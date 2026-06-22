@@ -608,7 +608,14 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
         }
         await this.resetSecurityState(state);
-        const payload = { sub: user.id, email: user.email, isMaster: true, role: 'master' };
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            isMaster: true,
+            role: 'master',
+            tenantId: 'system',
+            tenantSlug: 'system',
+        };
         const session = await this.createSessionAndToken(payload, policy, dto.forceLogoutExistingSessions ?? false);
         await this.safeAudit({
             actorType: audit_log_entity_1.AuditActorType.MASTER,

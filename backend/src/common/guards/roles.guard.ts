@@ -32,7 +32,12 @@ export class RolesGuard implements CanActivate {
     }
 
     const req = context.switchToHttp().getRequest();
-    const user = req.user as { sub: number; tenantId: string; role: string };
+    const user = req.user as { sub: number; tenantId: string; role: string; isMaster: boolean };
+    
+    // If the user is a master user, allow access regardless of tenant role
+    if(user?.isMaster){
+      return true;
+    }
 
     if (!user?.tenantId) {
       throw new ForbiddenException('테넌트 컨텍스트가 없습니다.');

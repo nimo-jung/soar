@@ -5,7 +5,7 @@
 /* PrimeReact Panel / Tree / Card 컴포넌트 배경·텍스트 강제 동기화 */
 .p-panel .p-panel-header { background-color: transparent !important; }
 .p-panel .p-panel-header .p-panel-title { color: inherit !important; }
-.p-panel .p-panel-content { color: inherit !important; }
+.p-panel .p-panel-content { color: inherit !important; background-color: var(--bg-panel, transparent) !important; }
 
 .p-tree .p-tree-container { color: inherit !important; }
 .p-tree .p-treenode-label { color: inherit !important; }
@@ -25,6 +25,28 @@
 /* PrimeReact Panel 테두리 */
 .p-panel { border-color: var(--panel-border, #353a4f) !important; }
 .p-panel .p-panel-header { color: var(--heading-text, #e2e8f0) !important; }
+
+/* PrimeReact Button 다크 모드 보정 */
+.p-button-outlined {
+  border-color: var(--border-medium, #353a4f) !important;
+  background-color: transparent !important;
+  color: var(--text-primary, #e2e8f0) !important;
+}
+.p-button-outlined:hover {
+  background-color: var(--hover-bg, rgba(96, 165, 250, 0.1)) !important;
+  color: var(--accent-blue, #60a5fa) !important;
+}
+.p-button-sm {
+  background-color: var(--bg-card, #1e2130) !important;
+  border-color: var(--border-medium, #353a4f) !important;
+  color: var(--text-primary, #e2e8f0) !important;
+}
+.p-button-sm:hover {
+  background-color: var(--hover-bg, rgba(96, 165, 250, 0.1)) !important;
+}
+
+/* PrimeReact hr 보정 */
+hr { border-color: var(--border-subtle, #2a2e3f) !important; }
 
 /* ReactFlow 다크 모드 보정 */
 .react-flow.dark .react-flow__node { color: inherit !important; }

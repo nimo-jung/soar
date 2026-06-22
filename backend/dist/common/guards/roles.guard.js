@@ -31,6 +31,9 @@ let RolesGuard = class RolesGuard {
         }
         const req = context.switchToHttp().getRequest();
         const user = req.user;
+        if (user?.isMaster) {
+            return true;
+        }
         if (!user?.tenantId) {
             throw new common_1.ForbiddenException('테넌트 컨텍스트가 없습니다.');
         }

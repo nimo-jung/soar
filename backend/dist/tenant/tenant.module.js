@@ -33,19 +33,22 @@ const tenant_middleware_1 = require("../common/middleware/tenant.middleware");
 const tenant_audit_logs_controller_1 = require("./audit-logs/tenant-audit-logs.controller");
 const tenant_audit_logs_service_1 = require("./audit-logs/tenant-audit-logs.service");
 const tenant_vector_sources_controller_1 = require("./vector-sources/tenant-vector-sources.controller");
+const networks_controller_1 = require("./networks/networks.controller");
+const networks_service_1 = require("./networks/networks.service");
 const tenant_vector_sources_service_1 = require("./vector-sources/tenant-vector-sources.service");
+const network_entity_1 = require("./networks/entities/network.entity");
 let TenantModule = class TenantModule {
     configure(consumer) {
         consumer
             .apply(tenant_middleware_1.TenantMiddleware)
-            .forRoutes(collectors_controller_1.CollectorsController, ip_whitelist_controller_1.IpWhitelistController, playbooks_controller_1.PlaybooksController, auth_settings_controller_1.TenantAuthSettingsController, users_controller_1.UsersController, alerts_controller_1.AlertsController, parsing_rules_controller_1.ParsingRulesController, tenant_audit_logs_controller_1.TenantAuditLogsController, tenant_vector_sources_controller_1.TenantVectorSourcesController);
+            .forRoutes(collectors_controller_1.CollectorsController, ip_whitelist_controller_1.IpWhitelistController, playbooks_controller_1.PlaybooksController, auth_settings_controller_1.TenantAuthSettingsController, users_controller_1.UsersController, alerts_controller_1.AlertsController, parsing_rules_controller_1.ParsingRulesController, tenant_audit_logs_controller_1.TenantAuditLogsController, tenant_vector_sources_controller_1.TenantVectorSourcesController, networks_controller_1.NetworksController);
     }
 };
 exports.TenantModule = TenantModule;
 exports.TenantModule = TenantModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, audit_log_entity_1.AuditLog]),
+            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant, tenant_settings_entity_1.TenantSettings, audit_log_entity_1.AuditLog, network_entity_1.NetworkEntity]),
             jwt_1.JwtModule.registerAsync({
                 useFactory: (config) => ({
                     secret: config.get('JWT_SECRET', 'default_secret'),
@@ -63,6 +66,7 @@ exports.TenantModule = TenantModule = __decorate([
             parsing_rules_controller_1.ParsingRulesController,
             tenant_audit_logs_controller_1.TenantAuditLogsController,
             tenant_vector_sources_controller_1.TenantVectorSourcesController,
+            networks_controller_1.NetworksController,
         ],
         providers: [
             collectors_service_1.CollectorsService,
@@ -76,6 +80,7 @@ exports.TenantModule = TenantModule = __decorate([
             tenant_vector_sources_service_1.TenantVectorSourcesService,
             audit_log_service_1.AuditLogService,
             tenant_middleware_1.TenantMiddleware,
+            networks_service_1.NetworksService,
         ],
     })
 ], TenantModule);

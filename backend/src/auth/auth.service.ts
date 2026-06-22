@@ -774,7 +774,14 @@ export class AuthService {
 
     await this.resetSecurityState(state);
 
-    const payload = { sub: user.id, email: user.email, isMaster: true, role: 'master' };
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      isMaster: true, 
+      role: 'master',      
+      tenantId: 'system',
+      tenantSlug: 'system',
+    };
     const session = await this.createSessionAndToken(payload, policy, dto.forceLogoutExistingSessions ?? false);
 
     await this.safeAudit({

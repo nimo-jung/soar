@@ -35,14 +35,33 @@
 }
 
 .tenant-dark-mode {
-    --ca-bg-app: #111827;
-    --ca-bg-surface: #1f2937;
-    --ca-bg-elevated: #111827;
-    --ca-text-primary: #f3f4f6;
-    --ca-text-secondary: #9ca3af;
-    --ca-border: #374151;
-    --ca-border-chrome: #4b5563;
-    --surface-hover: #2b3648;
+    /* 배경색 - 조금 더 밝게 */
+    --ca-bg-app: #0f172a;
+    --ca-bg-surface: #1e293b;
+    --ca-bg-elevated: #1e293b;
+
+    /* 텍스트 색상 - 명확하게 밝게 조정 */
+    --ca-text-primary: #f8fafc;     /* 거의 흰색 */
+    --ca-text-secondary: #cbd5e1;   /* 연한 회색 (가독성 확보) */
+
+    /* 테두리 */
+    --ca-border: #334155;
+    --ca-border-chrome: #475569;
+
+    /* 호버 상태 */
+    --surface-hover: #283950;
+
+    /* PrimeNG 공통 CSS 변수 - 다크 모드용 explicitly 정의 */
+    --primary-color: #818cf8;
+    --primary-400: #a5b4fc;
+    --primary-500: #818cf8;
+    --surface-ground: var(--ca-bg-app);
+    --surface-section: var(--ca-bg-surface);
+    --surface-card: var(--ca-bg-surface);
+    --surface-overlay: var(--ca-bg-elevated);
+    --surface-border: var(--ca-border);
+    --text-color: var(--ca-text-primary);
+    --text-color-secondary: var(--ca-text-secondary);
 }
 
 @font-face {
