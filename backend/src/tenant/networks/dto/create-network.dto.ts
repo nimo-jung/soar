@@ -1,12 +1,21 @@
-import { IsString } from 'class-validator';
+import { IsString, IsNumber } from 'class-validator';
 
 export class CreateNetworkDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsString()
-  status: string;
+  status!: string;
 
   @IsString()
-  type: string;
+  type!: string;
+
+  @IsString()
+  ip_address?: string;
+
+  @IsNumber()
+  x_pos!: number;
+
+  @IsNumber()
+  y_pos!: number;
 }

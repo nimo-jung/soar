@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateNetworkDto {
   @IsOptional()
@@ -12,4 +12,12 @@ export class UpdateNetworkDto {
   @IsOptional()
   @IsString()
   type?: string;
+    
+  @IsOptional()
+  @IsNumber()
+  x_pos?: number;
+
+  @IsOptional()
+  @IsNumber()
+  y_pos?: number;
 }

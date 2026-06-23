@@ -1,190 +1,297 @@
-import { useState, useMemo, useContext, useEffect } from 'react';
+// NetworkTopologyPage.tsx
+import { useState, useContext, useEffect, useCallback } from 'react';
 import { Tree } from 'primereact/tree';
 import { Panel } from 'primereact/panel';
 import { Button } from 'primereact/button';
-import ReactFlow, { Controls, Background, MarkerType, Node, Edge, Handle, Position } from 'reactflow';
+import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
+import ReactFlow, { Controls, Background, Handle, Position, Node, Edge, Connection, addEdge, useNodesState, useEdgesState } from 'reactflow';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 import 'reactflow/dist/style.css';
-// 정적 전역 스타일 (PrimeReact / ReactFlow 테마 대응)
 import '../../styles/network-topology-global.css';
-// 테마 토큰 팔레트 및 CSS 변수 적용 유틸리티
 import { NETWORK_THEMES, applyNetworkTopologyTheme, toReactFlowColors } from '../../styles/network-topology-tokens';
 import { ThemeContext } from '../../components/layouts/TenantLayout';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 
-// ------------------------------------------------------------------
-// 0. 커스텀 노드 컴포넌트
-// ------------------------------------------------------------------
 function CustomNetworkNode({ data }: { data: { label: string; status?: 'normal' | 'warning' | 'danger'; themeColors: any } }) {
   const { label, status, themeColors } = data;
   const statusColor = { normal: themeColors.accentGreen, warning: themeColors.accentAmber, danger: themeColors.accentRed }[status || 'normal'];
 
   return (
     <div style={{
-      padding: '14px 18px',
-      borderRadius: '10px',
-      border: `2px solid ${themeColors.borderMedium}`,
-      backgroundColor: themeColors.bgNode,
-      color: themeColors.textPrimary,
-      minWidth: '160px',
-      boxShadow: `0 4px 12px ${themeColors.shadow}`,
-      display: 'flex', alignItems: 'center', gap: '10px',
-      transition: 'all 0.2s ease',
+      padding: '14px 18px', borderRadius: '10px', border: `2px solid ${themeColors.borderMedium}`,
+      backgroundColor: themeColors.bgNode, color: themeColors.textPrimary, minWidth: '160px',
+      boxShadow: `0 4px 12px ${themeColors.shadow}`, display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s ease',
     }}>
+      {/* 노드 상단 타겟 핸들: 마우스 드래그 선을 받는 지점 */}
       <Handle type="target" position={Position.Top} style={{ background: themeColors.accentBlue, width: 8, height: 8 }} />
+      {/* 노드 하단 소스 핸들: 마우스 드래그 선을 시작하는 지점 */}
       <Handle type="source" position={Position.Bottom} style={{ background: themeColors.accentGreen, width: 8, height: 8 }} />
       <div style={{
         width: '10px', height: '10px', borderRadius: '50%', backgroundColor: statusColor,
-        animation: status === 'danger' ? 'blink 1s infinite' : 'none',
-        boxShadow: `0 0 8px ${statusColor}`,
+        animation: status === 'danger' ? 'blink 1s infinite' : 'none', boxShadow: `0 0 8px ${statusColor}`,
       }} />
       <span style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '0.3px' }}>{label}</span>
     </div>
   );
 }
 
-// ------------------------------------------------------------------
-// 1. 메인 페이지 컴포넌트
-// ------------------------------------------------------------------
 export default function NetworkTopologyPage() {
   const { isDarkMode } = useContext(ThemeContext);
   const { t } = useTranslation();
   const [selectedNodeKey, setSelectedNodeKey] = useState<string | null>(null);
   const [selectedTopoNode, setSelectedTopoNode] = useState<string | null>(null);
 
-  // 트리 데이터
-  const [networkTreeNodes, setNetworkTreeNodes] = useState([
-    {
-      key: '0', label: '전체 네트워크 (Backbone)', icon: 'pi pi-fw pi-globe',
-      children: [
-        { key: '0-0', label: 'DMZ 구간 (10.10.10.0/24)', icon: 'pi pi-fw pi-shield',
-          children: [
-            { key: '0-0-0', label: 'Web Server 01 (10.10.10.11)', icon: 'pi pi-fw pi-server' },
-            { key: '0-0-1', label: 'WAS Server 01 (10.10.10.12)', icon: 'pi pi-fw pi-server' },
-          ],
-        },
-        { key: '0-1', label: '내부 사내망 (192.168.1.0/24)', icon: 'pi pi-fw pi-home',
-          children: [
-            { key: '0-1-0', label: '인사팀 PC 대역', icon: 'pi pi-fw pi-desktop' },
-            { key: '0-1-1', label: '개발팀 PC 대역', icon: 'pi pi-fw pi-desktop' },
-          ],
-        },
-      ],
-    },
-  ]);
+  const [networkTreeNodes, setNetworkTreeNodes] = useState<any[]>([]);
+  // 🌟 일반 useState 대신 ReactFlow 전용 State Hook 사용 (이 부분이 드래그를 가능하게 만듭니다)
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // State for nodes and edges
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
+  const [bandDialogVisible, setBandDialogVisible] = useState(false);
+  const [bandName, setBandName] = useState('');
+  const [bandStatus, setBandStatus] = useState('normal');
+  const [bandType, setBandType] = useState('network_device');
+  const [bandIp, setBandIp] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Fetch data from backend API
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await api.get('/api/networks'); // Replace with your actual endpoint
-        setNodes(response.data.nodes);
-        setEdges(response.data.edges);
-      } catch (error) {
-        console.error('Error fetching network topology data:', error);
-      }
-    }
-
-    fetchData();
-  }, []);
+  const [editDialogVisible, setEditDialogVisible] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editStatus, setEditStatus] = useState('normal');
+  const [editType, setEditType] = useState('network_device');
+  const [editIp, setEditIp] = useState('');
+  const [editNodeId, setEditNodeId] = useState<string | null>(null);
 
   const palette = isDarkMode ? NETWORK_THEMES.dark : NETWORK_THEMES.light;
   const colors = toReactFlowColors(palette);
 
-  // Apply theme palette to root CSS variables
-  useEffect(() => {
-    const palette = isDarkMode ? NETWORK_THEMES.dark : NETWORK_THEMES.light;
-    applyNetworkTopologyTheme(palette);
-  }, [isDarkMode]);
+  const buildNetworkTree = useCallback((networks: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    for (const net of networks) {
+      const t = net.type || 'pc_mobile';
+      if (!grouped[t]) grouped[t] = [];
+      grouped[t].push(net);
+    }
+    const typeIcons: Record<string, string> = { network_device: 'pi pi-fw pi-server', server: 'pi pi-fw pi-th-large', pc_mobile: 'pi pi-fw pi-user' };
+    const typeLabels: Record<string, string> = { network_device: '네트워크 장비', server: '서버', pc_mobile: 'PC/모바일' };
+
+    const children = Object.entries(grouped).map(([type, items]) => ({
+      key: `group-${type}`,
+      label: typeLabels[type] || type,
+      icon: typeIcons[type] || 'pi pi-fw pi-circle',
+      children: items.map((net) => ({
+        key: String(net.id),
+        label: `${net.name} (${net.status || 'normal'})`,
+        icon: 'pi pi-fw pi-server',
+      })),
+    }));
+
+    return [{ key: '0', label: '전체 네트워크 (Backbone)', icon: 'pi pi-fw pi-globe', children }];
+  }, []);
+
+  const loadData = useCallback(async () => {
+    try {
+      const response = await api.get('/api/networks');
+      const rawNodes = response.data.nodes || [];
+      const rawEdges = response.data.edges || [];
+
+      setNodes(rawNodes.map((n: any) => ({
+        id: String(n.id),
+        type: 'customNode',
+        position: { x: n.x_pos, y: n.y_pos },
+        data: { label: n.name, status: n.status, themeColors: palette }
+      })));
+
+      setEdges(rawEdges.map((e: any) => ({
+        id: String(e.id),
+        source: String(e.source_id),
+        target: String(e.target_id),
+        label: e.label,
+        type: e.type || 'smoothstep',
+        style: { stroke: colors['edge-normal'] }
+      })));
+
+      setNetworkTreeNodes(buildNetworkTree(rawNodes));
+    } catch (error) {
+      console.error('Data load error:', error);
+    }
+  }, [palette, colors, buildNetworkTree]);
+
+  useEffect(() => { loadData(); }, []);
+
+  useEffect(() => { applyNetworkTopologyTheme(palette); }, [isDarkMode, palette]);
+
+  /**
+   * 🌟 노드 연결선(Edge) 생성 이벤트 핸들러 추가
+   * 두 장비/대역 노드를 선으로 연결했을 때 백엔드 API 호출을 연동하여 영구 보존합니다.
+   */
+  const onConnect = useCallback(async (params: Connection) => {
+    if (!params.source || !params.target) return;
+    
+    // UI에 선을 미리 낙관적으로 표시(Buffer 형태)
+    setEdges((eds) => addEdge({ ...params, type: 'smoothstep', style: { stroke: colors['edge-normal'] } }, eds));
+
+    try {
+      // 이전에 보완해 둔 백엔드 컨트롤러의 Post('edges') API를 호출합니다.
+      await api.post('/api/networks/edges', {
+        source_id: parseInt(params.source, 10),
+        target_id: parseInt(params.target, 10),
+        type: 'smoothstep',
+        label: '' // 필요 시 기입
+      });
+      // DB 저장 완료 후 최신 상태 동기화 재로드
+      await loadData();
+    } catch (error) {
+      console.error('연결선(Edge) 저장 실패:', error);
+      // 실패 시 데이터 롤백 처리
+      await loadData();
+    }
+  }, [colors, loadData]);
+
+  const onNodeDragStop = async (_event: any, node: Node) => {
+    try {
+      await api.patch(`/api/networks/nodes/position/${node.id}`, {
+        x_pos: node.position.x,
+        y_pos: node.position.y,
+      });
+    } catch (error) {
+      console.error('좌표 저장 실패:', error);
+    }
+  };
+
+  const handleEditBand = () => {
+    if (!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))) return;
+    setEditNodeId(selectedNodeKey);
+    const node = nodes.find((n: any) => n.id === String(selectedNodeKey));
+    if (!node) return;
+    setEditName(node.data.label);
+    setEditStatus(node.data.status || 'normal');
+    // type과 ip는 원본 데이터에 없을 수 있으므로 기본값 사용
+    setEditType('network_device');
+    setEditIp('');
+    setEditDialogVisible(true);
+  };
+
+  const handleUpdateBand = async () => {
+    if (!editNodeId || !editName.trim()) return;
+    setLoading(true);
+    try {
+      await api.patch(`/api/networks/${editNodeId}`, { name: editName.trim(), status: editStatus, type: editType, ip_address: editIp });
+      setEditDialogVisible(false);
+      await loadData();
+    } catch (error) {
+      console.error('대역 수정 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddBand = async () => {
+    if (!bandName.trim()) return;
+    setLoading(true);
+    try {
+      await api.post('/api/networks', { name: bandName.trim(), status: bandStatus, type: bandType, ip_address: bandIp, x_pos: 100, y_pos: 100 });
+      setBandDialogVisible(false);
+      setBandName('');
+      await loadData();
+    } catch (error) {
+      console.error('대역 추가 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBand = async () => {
+    if (!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))) return;
+    if (!window.confirm(t('networkTopology.confirmDelete') || '정말 삭제하시겠습니까?')) return;
+    setLoading(true);
+    try {
+      await api.delete(`/api/networks/${selectedNodeKey}`);
+      setSelectedNodeKey(null);
+      await loadData();
+    } catch (error) {
+      console.error('대역 삭제 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={{
-      display: 'flex', width: '100%', height: 'calc(100vh - 190px)',
-      backgroundColor: 'transparent', borderRadius: '8px', overflow: 'hidden',
-      border: `1px solid ${colors.borderSubtle}`,
-    }}>
-      {/* Left Tree */}
-      <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '1px', padding: '5px', flexShrink: 0, backgroundColor: 'transparent' }}>
-        <Panel header={t('networkTopology.layeredStructure')} style={{ flex: 1, overflow: 'hidden', borderColor: colors.borderMedium, backgroundColor: 'transparent' }}>
+    <div style={{ display: 'flex', width: '100%', height: 'calc(100vh - 190px)', border: `1px solid ${colors.borderSubtle}`, borderRadius: '8px', overflow: 'hidden' }}>
+      <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '1px', padding: '5px', flexShrink: 0 }}>
+        <Panel header={t('networkTopology.layeredStructure')} style={{ flex: 1, overflow: 'hidden', borderColor: colors.borderMedium }}>
           <div className="flex gap-2 mb-3">
-            <Button icon="pi pi-plus" className="p-button-sm p-button-success" label={t('networkTopology.addBand')} style={{ fontSize: '12px' }} size="small" />
-            <Button icon="pi pi-trash" className="p-button-sm p-button-danger" label={t('networkTopology.delete')} style={{ fontSize: '12px' }} size="small" />
+            <Button icon="pi pi-plus" className="p-button-sm p-button-success" label="추가" onClick={() => setBandDialogVisible(true)} size="small" />
+            <Button icon="pi pi-pencil" className="p-button-sm p-button-warning" label="수정" onClick={handleEditBand} disabled={!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))} size="small" />
+            <Button icon="pi pi-trash" className="p-button-sm p-button-danger" label={t('networkTopology.delete') || '대역 삭제'} onClick={handleDeleteBand} disabled={!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))} size="small" />
           </div>
-          <Tree
-            value={networkTreeNodes}
-            selectionMode="single"
-            selectionKeys={selectedNodeKey}
-            onSelectionChange={(e: any) => setSelectedNodeKey(typeof e.value === 'string' ? e.value : Object.keys(e.value || {})[0] || null)}
-            className={`network-tree ${isDarkMode ? 'p-tree-dark' : ''}`}
-            style={{ backgroundColor: 'var(--bg-panel, transparent)' }}
-          />
+          <Tree value={networkTreeNodes} selectionMode="single" selectionKeys={selectedNodeKey} onSelectionChange={(e: any) => setSelectedNodeKey(typeof e.value === 'string' ? e.value : Object.keys(e.value || {})[0] || null)} style={{ backgroundColor: 'transparent' }} />
         </Panel>
       </div>
 
-      {/* Center Map */}
-      <div style={{ flex: 1, display: 'flex', padding: '5px', flexDirection: 'column', minWidth: 0 }}>
-        <div style={{ position: 'absolute', top: '24px', left: '360px', zIndex: 10, fontWeight: 'bold', fontSize: '1.25rem', color: colors.textHeading }}>
+      <div style={{ flex: 1, display: 'flex', padding: '5px', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+        <div style={{ position: 'absolute', top: '15px', left: '20px', zIndex: 10, fontWeight: 'bold', fontSize: '1.25rem', color: colors.textHeading }}>
           {t('networkTopology.topologyMap')}
         </div>
-        <div style={{ flex: 1, margin: '1px', borderRadius: '8px', backgroundColor: colors.bgPanel, border: `1px solid ${colors.borderMedium}`, overflow: 'hidden' }}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            fitView fitViewOptions={{ padding: 0.5 }}
-            nodeTypes={{ customNode: CustomNetworkNode }}
-            onNodeClick={(_, node) => setSelectedTopoNode(node.id)}
-            className={isDarkMode ? 'dark' : ''}
+        <div style={{ flex: 1, borderRadius: '8px', border: `1px solid ${colors.borderMedium}`, overflow: 'hidden' }}>
+          {/* ReactFlow 에 onConnect 핸들러 연결 */}
+          <ReactFlow 
+            nodes={nodes} 
+            edges={edges} 
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeDragStop={onNodeDragStop} 
+            fitView 
+            fitViewOptions={{ padding: 0.5 }} 
+            nodeTypes={{ customNode: CustomNetworkNode }} 
+            onNodeClick={(_, node) => setSelectedTopoNode(node.id)} 
             style={{ backgroundColor: colors.bgPanel }}
-            defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: colors['edge-normal'] } }}
           >
-            <Controls
-              style={{ backgroundColor: colors.ctrlBg, borderColor: colors.ctrlBorder }}
-            />
+            <Controls />
             <Background color={colors['grid-dot']} gap={16} />
           </ReactFlow>
         </div>
       </div>
 
-      {/* Right Panel */}
-      <div style={{ width: '320px', display: 'flex', padding: '5px', flexShrink: 0, backgroundColor: 'transparent'}}>
-        <Panel
-          header={t('networkTopology.watchTargetTitle')}
-          style={{
-            flex: 1,
-            overflow: 'hidden',
-            borderColor: colors.borderMedium,
-            backgroundColor: 'transparent',
-          }}
-        >
-          <div style={{ backgroundColor: 'var(--bg-panel, transparent)' }}>
-            {selectedNodeKey || selectedTopoNode ? (
-              <div>
-                <p style={{ fontSize: '14px' }}>
-                  <strong style={{ color: colors.textHeading }}>{t('networkTopology.nodeKeyLabel')}:</strong> <span style={{ color: colors.textPrimary }}>{selectedNodeKey || selectedTopoNode}</span>
-                </p>
-                <p style={{ fontSize: '14px' }}>
-                  <strong style={{ color: colors.textHeading }}>{t('networkTopology.mappingStatusLabel')}:</strong> <span style={{ color: colors.accentGreen }}>{t('networkTopology.normalSyncStatus')}</span>
-                </p>
-                <p style={{ fontSize: '14px' }}>
-                  <strong style={{ color: colors.textHeading }}>{t('networkTopology.recentEventLabel')}:</strong> <span style={{ color: colors.accentRed }}>{t('networkTopology.criticalAlertLabel')}</span>
-                </p>
-                <hr style={{ border: `0.5px solid ${colors.borderSubtle}`, margin: '15px 0' }} />
-                <Button label={t('networkTopology.assetPolicyButton')} icon="pi pi-cog" className="w-full p-button-outlined" />
-              </div>
-            ) : (
-              <p style={{ color: colors.textMuted, textAlign: 'center', marginTop: '40px' }}>{t('networkTopology.selectTargetHint')}</p>
-            )}
+      <Dialog visible={editDialogVisible} onHide={() => setEditDialogVisible(false)} header="수정" modal style={{ width: '450px' }}>
+        <div className="flex flex-column gap-3 pt-2">
+          <div><label className="tenant-form-label">이름</label><InputText value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="예: DMZ 구간" className="w-full" autoFocus /></div>
+          <div><label className="tenant-form-label">유형</label>
+            <select value={editType} onChange={(e) => setEditType(e.target.value)} className="p-inputtext w-full p-component">
+              <option value="network_device">네트워크 장비</option><option value="server">서버</option><option value="pc_mobile">PC/모바일</option>
+            </select>
           </div>
-        </Panel>
-      </div>
+          <div><label className="tenant-form-label">IP(단일 또는 CIDR)</label><InputText value={editIp} onChange={(e) => setEditIp(e.target.value)} placeholder="예: 192.168.1.1 또는 192.168.1.0/24" className="w-full" /></div>
+          <div><label className="tenant-form-label">상태</label>
+            <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="p-inputtext w-full p-component">
+              <option value="normal">정상</option><option value="warning">경고</option><option value="danger">위험</option>
+            </select>
+          </div>
+          <Button className="tenant-primary-action" label="저장" icon="pi pi-check" onClick={handleUpdateBand} disabled={loading || !editName.trim()} loading={loading} />
+        </div>
+      </Dialog>
+
+      <Dialog visible={bandDialogVisible} onHide={() => setBandDialogVisible(false)} header="추가" modal style={{ width: '450px' }}>
+        <div className="flex flex-column gap-3 pt-2">
+          <div><label className="tenant-form-label">이름</label><InputText value={bandName} onChange={(e) => setBandName(e.target.value)} placeholder="예: DMZ 구간" className="w-full" autoFocus /></div>
+          <div><label className="tenant-form-label">유형</label>
+            <select value={bandType} onChange={(e) => setBandType(e.target.value)} className="p-inputtext w-full p-component">
+              <option value="network_device">네트워크 장비</option><option value="server">서버</option><option value="pc_mobile">PC/모바일</option>
+            </select>
+          </div>
+          <div><label className="tenant-form-label">IP(단일 또는 CIDR)</label><InputText value={bandIp} onChange={(e) => setBandIp(e.target.value)} placeholder="예: 192.168.1.1 또는 192.168.1.0/24" className="w-full" /></div>
+          <div><label className="tenant-form-label">상태</label>
+            <select value={bandStatus} onChange={(e) => setBandStatus(e.target.value)} className="p-inputtext w-full p-component">
+              <option value="normal">정상</option><option value="warning">경고</option><option value="danger">위험</option>
+            </select>
+          </div>
+          <Button className="tenant-primary-action" label="추가" icon="pi pi-check" onClick={handleAddBand} disabled={loading || !bandName.trim()} loading={loading} />
+        </div>
+      </Dialog>
     </div>
   );
 }

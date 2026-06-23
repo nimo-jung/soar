@@ -70,7 +70,6 @@ const App: React.FC = () => {
                 <Route path="/system/smtp-settings" element={<SmtpSettingsSystemPage />} />
                 <Route path="/system/tiers" element={<TenantTiersSystemPage />} />
                 <Route path="/system/vector-settings" element={<VectorSettingsSystemPage />} />
-                <Route path="/system/network-topology" element={<NetworkTopologyPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
