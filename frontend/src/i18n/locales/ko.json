@@ -1371,6 +1371,35 @@
     "addBand": "대역 추가",
     "delete": "삭제",
     "topologyMap": "네트워크 토폴로지 맵",
+    "confirmDelete": "정말 삭제하시겠습니까?",
+    "nodeTypes": {
+      "network_device": "네트워크 장비",
+      "server": "서버",
+      "pc_mobile": "PC/모바일"
+    },
+    "rootTreeLabel": "전체 네트워크 (Backbone)",
+    "dialog": {
+      "editTitle": "수정",
+      "addTitle": "추가"
+    },
+    "formFields": {
+      "name": "이름",
+      "namePlaceholder": "예: DMZ 구간",
+      "type": "유형",
+      "ip": "IP(단일 또는 CIDR)",
+      "ipPlaceholder": "예: 192.168.1.1 또는 192.168.1.0/24",
+      "status": "상태"
+    },
+    "statusOptions": {
+      "normal": "정상",
+      "warning": "경고",
+      "danger": "위험"
+    },
+    "buttons": {
+      "save": "저장",
+      "add": "추가",
+      "edit": "수정"
+    },
     "targetDetail": "관제 대상 상세 정보",
     "nodeKey": "노드 키",
     "mappingStatus": "매핑 상태",

@@ -12,6 +12,10 @@ export class UpdateNetworkDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsString()
+  ip_address?: string;
     
   @IsOptional()
   @IsNumber()

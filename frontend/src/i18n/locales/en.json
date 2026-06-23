@@ -1370,8 +1370,36 @@
     "addBand": "Add Band",
     "delete": "Delete",
     "topologyMap": "Network Topology Map",
+    "confirmDelete": "Are you sure you want to delete?",
+    "nodeTypes": {
+      "network_device": "Network Device",
+      "server": "Server",
+      "pc_mobile": "PC/Mobile"
+    },
+    "rootTreeLabel": "All Networks (Backbone)",
+    "dialog": {
+      "editTitle": "Edit",
+      "addTitle": "Add"
+    },
+    "formFields": {
+      "name": "Name",
+      "namePlaceholder": "e.g. DMZ Zone",
+      "type": "Type",
+      "ip": "IP (single or CIDR)",
+      "ipPlaceholder": "e.g. 192.168.1.1 or 192.168.1.0/24",
+      "status": "Status"
+    },
+    "statusOptions": {
+      "normal": "Normal",
+      "warning": "Warning",
+      "danger": "Danger"
+    },
+    "buttons": {
+      "save": "Save",
+      "add": "Add",
+      "edit": "Edit"
+    },
     "targetDetail": "Watch Target Details",
-    "selectedAssetInfo": "Selected asset/band info",
     "nodeKey": "Node Key",
     "mappingStatus": "Mapping Status",
     "normalSync": "TMS Normal Sync",

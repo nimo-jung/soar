@@ -40,6 +40,11 @@ function CustomNetworkNode({ data }: { data: { label: string; status?: 'normal' 
   );
 }
 
+// 🌟 [수정 핵심]: nodeTypes를 메인 컴포넌트 바깥에 상수로 분리 선언합니다.
+const NODE_TYPES = {
+  customNode: CustomNetworkNode,
+};
+
 export default function NetworkTopologyPage() {
   const { isDarkMode } = useContext(ThemeContext);
   const { t } = useTranslation();
@@ -71,12 +76,16 @@ export default function NetworkTopologyPage() {
   const buildNetworkTree = useCallback((networks: any[]) => {
     const grouped: Record<string, any[]> = {};
     for (const net of networks) {
-      const t = net.type || 'pc_mobile';
-      if (!grouped[t]) grouped[t] = [];
-      grouped[t].push(net);
+      const type = net.type || 'pc_mobile';
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push(net);
     }
     const typeIcons: Record<string, string> = { network_device: 'pi pi-fw pi-server', server: 'pi pi-fw pi-th-large', pc_mobile: 'pi pi-fw pi-user' };
-    const typeLabels: Record<string, string> = { network_device: '네트워크 장비', server: '서버', pc_mobile: 'PC/모바일' };
+    const typeLabels: Record<string, string> = {
+      network_device: t('networkTopology.nodeTypes.network_device'),
+      server: t('networkTopology.nodeTypes.server'),
+      pc_mobile: t('networkTopology.nodeTypes.pc_mobile'),
+    };
 
     const children = Object.entries(grouped).map(([type, items]) => ({
       key: `group-${type}`,
@@ -89,8 +98,8 @@ export default function NetworkTopologyPage() {
       })),
     }));
 
-    return [{ key: '0', label: '전체 네트워크 (Backbone)', icon: 'pi pi-fw pi-globe', children }];
-  }, []);
+    return [{ key: '0', label: t('networkTopology.rootTreeLabel'), icon: 'pi pi-fw pi-globe', children }];
+  }, [t]);
 
   const loadData = useCallback(async () => {
     try {
@@ -153,7 +162,7 @@ export default function NetworkTopologyPage() {
 
   const onNodeDragStop = async (_event: any, node: Node) => {
     try {
-      await api.patch(`/api/networks/nodes/position/${node.id}`, {
+      await api.patch(`/api/networks/nodes/${node.id}/position`, {
         x_pos: node.position.x,
         y_pos: node.position.y,
       });
@@ -224,9 +233,9 @@ export default function NetworkTopologyPage() {
       <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '1px', padding: '5px', flexShrink: 0 }}>
         <Panel header={t('networkTopology.layeredStructure')} style={{ flex: 1, overflow: 'hidden', borderColor: colors.borderMedium }}>
           <div className="flex gap-2 mb-3">
-            <Button icon="pi pi-plus" className="p-button-sm p-button-success" label="추가" onClick={() => setBandDialogVisible(true)} size="small" />
-            <Button icon="pi pi-pencil" className="p-button-sm p-button-warning" label="수정" onClick={handleEditBand} disabled={!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))} size="small" />
-            <Button icon="pi pi-trash" className="p-button-sm p-button-danger" label={t('networkTopology.delete') || '대역 삭제'} onClick={handleDeleteBand} disabled={!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))} size="small" />
+            <Button icon="pi pi-plus" className="p-button-sm p-button-success" title={t('networkTopology.buttons.add')} onClick={() => setBandDialogVisible(true)} size="small" />
+            <Button icon="pi pi-pencil" className="p-button-sm p-button-warning" title={t('networkTopology.buttons.edit')} onClick={handleEditBand} disabled={!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))} size="small" />
+            <Button icon="pi pi-trash" className="p-button-sm p-button-danger" title={t('networkTopology.delete')} onClick={handleDeleteBand} disabled={!selectedNodeKey || !/^\d+$/.test(String(selectedNodeKey))} size="small" />
           </div>
           <Tree value={networkTreeNodes} selectionMode="single" selectionKeys={selectedNodeKey} onSelectionChange={(e: any) => setSelectedNodeKey(typeof e.value === 'string' ? e.value : Object.keys(e.value || {})[0] || null)} style={{ backgroundColor: 'transparent' }} />
         </Panel>
@@ -247,7 +256,7 @@ export default function NetworkTopologyPage() {
             onNodeDragStop={onNodeDragStop} 
             fitView 
             fitViewOptions={{ padding: 0.5 }} 
-            nodeTypes={{ customNode: CustomNetworkNode }} 
+            nodeTypes={NODE_TYPES} 
             onNodeClick={(_, node) => setSelectedTopoNode(node.id)} 
             style={{ backgroundColor: colors.bgPanel }}
           >
@@ -257,39 +266,39 @@ export default function NetworkTopologyPage() {
         </div>
       </div>
 
-      <Dialog visible={editDialogVisible} onHide={() => setEditDialogVisible(false)} header="수정" modal style={{ width: '450px' }}>
+      <Dialog visible={editDialogVisible} onHide={() => setEditDialogVisible(false)} header={t('networkTopology.dialog.editTitle')} modal style={{ width: '450px' }}>
         <div className="flex flex-column gap-3 pt-2">
-          <div><label className="tenant-form-label">이름</label><InputText value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="예: DMZ 구간" className="w-full" autoFocus /></div>
-          <div><label className="tenant-form-label">유형</label>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.name')}</label><InputText value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('networkTopology.formFields.namePlaceholder')} className="w-full" autoFocus /></div>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.type')}</label>
             <select value={editType} onChange={(e) => setEditType(e.target.value)} className="p-inputtext w-full p-component">
-              <option value="network_device">네트워크 장비</option><option value="server">서버</option><option value="pc_mobile">PC/모바일</option>
+              <option value="network_device">{t('networkTopology.nodeTypes.network_device')}</option><option value="server">{t('networkTopology.nodeTypes.server')}</option><option value="pc_mobile">{t('networkTopology.nodeTypes.pc_mobile')}</option>
             </select>
           </div>
-          <div><label className="tenant-form-label">IP(단일 또는 CIDR)</label><InputText value={editIp} onChange={(e) => setEditIp(e.target.value)} placeholder="예: 192.168.1.1 또는 192.168.1.0/24" className="w-full" /></div>
-          <div><label className="tenant-form-label">상태</label>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.ip')}</label><InputText value={editIp} onChange={(e) => setEditIp(e.target.value)} placeholder={t('networkTopology.formFields.ipPlaceholder')} className="w-full" /></div>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.status')}</label>
             <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="p-inputtext w-full p-component">
-              <option value="normal">정상</option><option value="warning">경고</option><option value="danger">위험</option>
+              <option value="normal">{t('networkTopology.statusOptions.normal')}</option><option value="warning">{t('networkTopology.statusOptions.warning')}</option><option value="danger">{t('networkTopology.statusOptions.danger')}</option>
             </select>
           </div>
-          <Button className="tenant-primary-action" label="저장" icon="pi pi-check" onClick={handleUpdateBand} disabled={loading || !editName.trim()} loading={loading} />
+          <Button className="tenant-primary-action" label={t('networkTopology.buttons.save')} icon="pi pi-check" onClick={handleUpdateBand} disabled={loading || !editName.trim()} loading={loading} />
         </div>
       </Dialog>
 
-      <Dialog visible={bandDialogVisible} onHide={() => setBandDialogVisible(false)} header="추가" modal style={{ width: '450px' }}>
+      <Dialog visible={bandDialogVisible} onHide={() => setBandDialogVisible(false)} header={t('networkTopology.dialog.addTitle')} modal style={{ width: '450px' }}>
         <div className="flex flex-column gap-3 pt-2">
-          <div><label className="tenant-form-label">이름</label><InputText value={bandName} onChange={(e) => setBandName(e.target.value)} placeholder="예: DMZ 구간" className="w-full" autoFocus /></div>
-          <div><label className="tenant-form-label">유형</label>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.name')}</label><InputText value={bandName} onChange={(e) => setBandName(e.target.value)} placeholder={t('networkTopology.formFields.namePlaceholder')} className="w-full" autoFocus /></div>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.type')}</label>
             <select value={bandType} onChange={(e) => setBandType(e.target.value)} className="p-inputtext w-full p-component">
-              <option value="network_device">네트워크 장비</option><option value="server">서버</option><option value="pc_mobile">PC/모바일</option>
+              <option value="network_device">{t('networkTopology.nodeTypes.network_device')}</option><option value="server">{t('networkTopology.nodeTypes.server')}</option><option value="pc_mobile">{t('networkTopology.nodeTypes.pc_mobile')}</option>
             </select>
           </div>
-          <div><label className="tenant-form-label">IP(단일 또는 CIDR)</label><InputText value={bandIp} onChange={(e) => setBandIp(e.target.value)} placeholder="예: 192.168.1.1 또는 192.168.1.0/24" className="w-full" /></div>
-          <div><label className="tenant-form-label">상태</label>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.ip')}</label><InputText value={bandIp} onChange={(e) => setBandIp(e.target.value)} placeholder={t('networkTopology.formFields.ipPlaceholder')} className="w-full" /></div>
+          <div><label className="tenant-form-label">{t('networkTopology.formFields.status')}</label>
             <select value={bandStatus} onChange={(e) => setBandStatus(e.target.value)} className="p-inputtext w-full p-component">
-              <option value="normal">정상</option><option value="warning">경고</option><option value="danger">위험</option>
+              <option value="normal">{t('networkTopology.statusOptions.normal')}</option><option value="warning">{t('networkTopology.statusOptions.warning')}</option><option value="danger">{t('networkTopology.statusOptions.danger')}</option>
             </select>
           </div>
-          <Button className="tenant-primary-action" label="추가" icon="pi pi-check" onClick={handleAddBand} disabled={loading || !bandName.trim()} loading={loading} />
+          <Button className="tenant-primary-action" label={t('networkTopology.buttons.add')} icon="pi pi-check" onClick={handleAddBand} disabled={loading || !bandName.trim()} loading={loading} />
         </div>
       </Dialog>
     </div>
